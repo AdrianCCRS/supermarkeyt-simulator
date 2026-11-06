@@ -1,0 +1,83 @@
+[
+  {
+    "path": "public/assets/img/environment/fondo.png",
+    "size": [
+      320,
+      180
+    ],
+    "colors": 17,
+    "transparent": false
+  },
+  {
+    "path": "public/assets/img/environment/mostrador.png",
+    "size": [
+      320,
+      68
+    ],
+    "colors": 10,
+    "transparent": true
+  },
+  {
+    "path": "public/assets/img/environment/cinta.png",
+    "size": [
+      768,
+      8
+    ],
+    "colors": 5,
+    "transparent": true
+  },
+  {
+    "path": "public/assets/img/environment/escaner.png",
+    "size": [
+      40,
+      16
+    ],
+    "colors": 10,
+    "transparent": true
+  },
+  {
+    "path": "public/assets/img/environment/caja-registradora.png",
+    "size": [
+      48,
+      40
+    ],
+    "colors": 11,
+    "transparent": true
+  },
+  {
+    "path": "public/assets/img/characters/cliente-1.png",
+    "size": [
+      128,
+      48
+    ],
+    "colors": 12,
+    "transparent": true
+  },
+  {
+    "path": "public/assets/img/products/fru-001.png",
+    "size": [
+      16,
+      16
+    ],
+    "colors": 7,
+    "transparent": true
+  },
+  {
+    "path": "public/assets/img/products/lac-001.png",
+    "size": [
+      16,
+      16
+    ],
+    "colors": 8,
+    "transparent": true
+  },
+  {
+    "path": "public/assets/img/products/pan-001.png",
+    "size": [
+      16,
+      16
+    ],
+    "colors": 10,
+    "transparent": true
+  }
+]

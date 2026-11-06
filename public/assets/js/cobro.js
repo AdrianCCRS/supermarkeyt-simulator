@@ -56,6 +56,18 @@ const Cobro = (function () {
         return { cuentas: out, suma: elegido.suma * 100 };
     }
 
+    /**
+     * Billetes que tiene el cliente para ESTA cuenta. Si ya sacó billetes para el mismo total y le alcanzan, son los mismos
+     * (así cancelar y volver a cobrar no los cambia); si la cuenta cambió, saca otros que cubran el total nuevo.
+     * dineroActual: lo devuelto antes por esta función (o null). Devuelve {cuentas, suma, paraTotal} con suma >= totalCentavos.
+     */
+    function asegurar(dineroActual, totalCentavos, rnd) {
+        if (dineroActual && dineroActual.paraTotal === totalCentavos && dineroActual.suma >= totalCentavos) { return dineroActual; }
+        const nuevo = generarBilletes(totalCentavos, rnd);
+        nuevo.paraTotal = totalCentavos;
+        return nuevo;
+    }
+
     /** Cobrador de pruebas: mismas reglas que checkout.php (efectivo suficiente, cambio = efectivo - total). */
     function local(resolver, latenciaMs) {
         return function (pedido) {
@@ -76,5 +88,5 @@ const Cobro = (function () {
         };
     }
 
-    return { BILLETES, generarBilletes, local };
+    return { BILLETES, generarBilletes, asegurar, local };
 })();

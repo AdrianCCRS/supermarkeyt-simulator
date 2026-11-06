@@ -43,6 +43,11 @@ Errores posibles (misma filosofía de responsabilidad que las pérdidas):
 
 (`Auditoria` guarda `efectivo_real` y `efectivo_tecleado` para calcular esas diferencias; no hace falta tocar el backend.)
 
+### Los billetes siempre cubren la cuenta
+`Cobro.asegurar()` da al cliente billetes que cubren el total **de ese momento**. Si cancelas (`CLR`) y vuelves a cobrar con la misma cuenta, conserva los mismos billetes;
+si la cuenta cambió, saca otros. Escanear, pesar o anular (`VOID`) con el cobro abierto **cancela el cobro** (el cliente guarda su dinero y lo vuelve a sacar al pulsar `PAY`),
+así el efectivo de la bandeja nunca se queda corto respecto a lo que se va a cobrar.
+
 ### Punto de conexión con el backend (lo implementa el autor)
 El juego no llama a la API. Pide el cobro a una función que se puede sustituir:
 

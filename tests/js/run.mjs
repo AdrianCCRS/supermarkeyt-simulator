@@ -133,6 +133,23 @@ const exito = await cobrar({ carrito: { 'BEB-002': 1, 'FRU-001': 2 }, efectivo: 
 ok(exito.total === 749900 && exito.cambio === 250100, 'cobrador local: total y cambio');
 let rechazo = null; try { await cobrar({ carrito: { 'BEB-002': 1 }, efectivo: 100000 }); } catch (e) { rechazo = e; }
 ok(rechazo && rechazo.status === 422, 'cobrador local: efectivo insuficiente = 422 y no cobra');
+// asegurar(): los billetes siempre cubren la cuenta actual, aunque la cuenta cambie
+let dinero = null;
+const rnd3 = () => 0.5;
+dinero = Cobro.asegurar(dinero, 114000, rnd3);
+const misma = Cobro.asegurar(dinero, 114000, rnd3);
+ok(misma === dinero, 'misma cuenta: el cliente conserva sus billetes');
+const mayor = Cobro.asegurar(dinero, 1659900, rnd3);                                  // la cuenta subió de 1.140 a 16.599
+ok(mayor !== dinero && mayor.suma >= 1659900 && mayor.paraTotal === 1659900, 'cuenta mayor: saca billetes nuevos que la cubren (' + Money.fromCents(mayor.suma) + ')');
+const menor = Cobro.asegurar(mayor, 114000, rnd3);                                    // la cuenta bajó: los de antes sobrarían, pero eran para otro total
+ok(menor.suma >= 114000 && menor.paraTotal === 114000, 'cuenta menor: billetes ajustados a la cuenta nueva');
+let alcanzan = true;
+for (let i = 0; i < 300; i++) {                                                       // cuentas que cambian una y otra vez
+    const total = 100 + rnd(50000000);
+    dinero = Cobro.asegurar(dinero, total, rnd2);
+    if (dinero.suma < total) { alcanzan = false; ok(false, 'no alcanza: ' + total + ' ' + JSON.stringify(dinero)); break; }
+}
+ok(alcanzan, '300 cambios de cuenta seguidos: los billetes siempre cubren el total');
 console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
 
 console.log(fallos ? '\n' + fallos + ' FALLOS de ' + pruebas : '\nTodo correcto (' + pruebas + ' comprobaciones)');

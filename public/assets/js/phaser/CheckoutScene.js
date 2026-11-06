@@ -540,6 +540,7 @@ class CheckoutScene extends Phaser.Scene {
 
     /** El producto escaneado entra en la bolsa: sigue siendo el mismo sprite, y se puede volver a sacar. */
     meterEnBolsa(p) {
+        this.cancelarCobroAbierto();
         const unidades = p.grupo || [p];                            // QTY: varias unidades entran juntas
         const sku = p.skuCobrado || p.sku;                          // lo que se COBRA (puede no ser lo que es, si se tecleó otro código)
         p.cantidad = p.kg || p.cantidad || 1;                       // la fruta cuenta por kg
@@ -558,6 +559,7 @@ class CheckoutScene extends Phaser.Scene {
         if (this.venta.pagada) { return this.avisar('YA COBRADO', 'NO SE ANULA', 1400); }
         const r = this.registros.pop();
         if (!r) { return this.avisar('NADA QUE', 'ANULAR', 1400); }
+        this.cancelarCobroAbierto();
         const q = this.venta.quitar(r.sku, r.cantidad);
         this.avisar('ANULADO', '-' + Money.pantalla(Money.fromCents(q.delta)), 1500);
         this.itemsBolsa = this.itemsBolsa.filter((it) => !r.sprites.includes(it));
@@ -789,7 +791,7 @@ class CheckoutScene extends Phaser.Scene {
             return this.avisar('ESPERA', 'UN MOMENTO', 1000);
         }
         // El cliente saca su dinero: el tendero tiene que leer los billetes de la bandeja y teclear la suma.
-        if (!this.dinero) { this.dinero = Cobro.generarBilletes(this.venta.total(), Math.random); }
+        this.dinero = Cobro.asegurar(this.dinero, this.venta.total(), Math.random);      // siempre alcanzan para la cuenta de AHORA
         this.mostrarBilletes();
         const servido = this.fila[this.fila.length - 1];
         if (servido && this.animar(servido, 'dinero')) {
@@ -810,6 +812,10 @@ class CheckoutScene extends Phaser.Scene {
         if (!this.entrada) { return this.avisar('ESCRIBE EL', 'EFECTIVO', 1200); }
         const efectivo = parseInt(this.entrada, 10) * 100;
         this.entrada = '';
+        if (!this.dinero || this.dinero.suma < this.venta.total()) {      // no debería pasar: la cuenta cambió sin cancelar el cobro
+            this.cancelarCobroAbierto();
+            return this.avisar('LA CUENTA', 'CAMBIO: PAY', 1600);
+        }
         this.cobrando = true;
         this.mostrar('PROCESANDO', 'ESPERE...');
         Juego.cobrar({ carrito: this.venta.carrito(), efectivo })
@@ -840,6 +846,14 @@ class CheckoutScene extends Phaser.Scene {
     // ------------------------------------------------------------------
     // Billetes, recibo y cambio (animaciones de la caja)
     // ------------------------------------------------------------------
+    /** Si la cuenta cambia mientras se está cobrando, el cobro se cancela: el cliente guarda su dinero y sacará otro para la cuenta nueva. */
+    cancelarCobroAbierto() {
+        if (this.modo !== 'EFECTIVO') { return; }
+        this.quitarBilletes(false);
+        this.modo = 'CODIGO';
+        this.entrada = '';
+    }
+
     /** Los billetes del cliente aparecen en los compartimentos de la bandeja (una pila por valor). */
     mostrarBilletes() {
         this.quitarBilletes(false);

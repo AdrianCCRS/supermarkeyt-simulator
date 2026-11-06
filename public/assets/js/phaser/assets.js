@@ -141,26 +141,26 @@ const GLIFOS_BILLETE = {
 
 // Catálogo de muestra (el del seed). Se usa mientras el catálogo de la API no esté cargado.
 const PRODUCTOS_DEMO = {
-    'FRU-001': { nombre: 'Manzanas rojas 1 kg',    precio_base: '2500.00', iva_pct: '0.00' },
-    'FRU-002': { nombre: 'Bananas 1 kg',           precio_base: '1800.00', iva_pct: '0.00' },
-    'FRU-003': { nombre: 'Tomates 1 kg',           precio_base: '2300.00', iva_pct: '0.00' },
+    'FRU-001': { nombre: 'Manzana roja 1 kg',    precio_base: '2500.00', iva_pct: '0.00' },
+    'FRU-002': { nombre: 'Banano 1 kg',           precio_base: '1800.00', iva_pct: '0.00' },
+    'FRU-003': { nombre: 'Tomate chonto 1 kg',           precio_base: '2300.00', iva_pct: '0.00' },
     'LAC-001': { nombre: 'Leche entera 1 L',       precio_base: '1150.00', iva_pct: '0.00' },
-    'LAC-002': { nombre: 'Yogur natural pack 4',   precio_base: '2350.00', iva_pct: '0.00' },
-    'LAC-003': { nombre: 'Queso manchego 250 g',   precio_base: '4900.00', iva_pct: '5.00' },
+    'LAC-002': { nombre: 'Yogur natural pack x4',   precio_base: '2350.00', iva_pct: '0.00' },
+    'LAC-003': { nombre: 'Queso campesino 250 g',   precio_base: '4900.00', iva_pct: '5.00' },
     'CAR-001': { nombre: 'Pechuga de pollo 500 g', precio_base: '5750.00', iva_pct: '5.00' },
-    'CAR-002': { nombre: 'Carne molida 500 g',     precio_base: '6400.00', iva_pct: '5.00' },
-    'CAR-003': { nombre: 'Filete de salmon 300 g', precio_base: '8950.00', iva_pct: '5.00' },
+    'CAR-002': { nombre: 'Carne molida de res 500 g',     precio_base: '6400.00', iva_pct: '5.00' },
+    'CAR-003': { nombre: 'Lomo de cerdo 300 g', precio_base: '8950.00', iva_pct: '5.00' },
     'DES-001': { nombre: 'Arroz blanco 1 kg',      precio_base: '1950.00', iva_pct: '5.00' },
-    'DES-002': { nombre: 'Pasta espagueti 500 g',  precio_base: '1250.00', iva_pct: '5.00' },
+    'DES-002': { nombre: 'Frijol cargamanto 500 g',  precio_base: '1250.00', iva_pct: '5.00' },
     'DES-003': { nombre: 'Aceite de oliva 1 L',    precio_base: '7800.00', iva_pct: '5.00' },
-    'BEB-001': { nombre: 'Agua mineral 1.5 L',     precio_base: '750.00',  iva_pct: '5.00' },
-    'BEB-002': { nombre: 'Refresco de cola 2 L',   precio_base: '2100.00', iva_pct: '19.00' },
-    'BEB-003': { nombre: 'Zumo de naranja 1 L',    precio_base: '2650.00', iva_pct: '5.00' },
-    'PAN-001': { nombre: 'Pan de molde 500 g',     precio_base: '2200.00', iva_pct: '5.00' },
-    'PAN-002': { nombre: 'Barra de pan',           precio_base: '950.00',  iva_pct: '0.00' },
+    'BEB-001': { nombre: 'Agua en botella 1,5 L',     precio_base: '750.00',  iva_pct: '5.00' },
+    'BEB-002': { nombre: 'Gaseosa cola 350 ml (lata)',   precio_base: '2100.00', iva_pct: '19.00' },
+    'BEB-003': { nombre: 'Jugo de naranja 1 L',    precio_base: '2650.00', iva_pct: '5.00' },
+    'PAN-001': { nombre: 'Pan campesino 500 g',     precio_base: '2200.00', iva_pct: '5.00' },
+    'PAN-002': { nombre: 'Baguette',           precio_base: '950.00',  iva_pct: '0.00' },
     'LIM-001': { nombre: 'Detergente liquido 2 L', precio_base: '6500.00', iva_pct: '19.00' },
-    'LIM-002': { nombre: 'Papel de cocina 3 rollos', precio_base: '3400.00', iva_pct: '19.00' },
-    'HIG-001': { nombre: 'Gel de ducha 750 ml',    precio_base: '3150.00', iva_pct: '19.00' }
+    'LIM-002': { nombre: 'Papel higienico 3 rollos', precio_base: '3400.00', iva_pct: '19.00' },
+    'HIG-001': { nombre: 'Champu 750 ml',    precio_base: '3150.00', iva_pct: '19.00' }
 };
 
 // Inventario de compra de cada cliente de muestra: {sku: cantidad} (la fruta, en kg). En el hito 2 lo genera cada cliente.

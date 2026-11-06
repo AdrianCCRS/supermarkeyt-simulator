@@ -34,7 +34,7 @@ error: {"success": false, "error": "mensaje legible"}
 
 ### `GET productos.php` (solo activos)
 ```json
-{"id":1,"sku":"FRU-001","nombre":"Manzanas rojas 1 kg","categoria_id":1,"precio_base":"2500.00","iva_pct":"0.00","stock":78,"imagen_url":"/assets/img/manzanas.jpg"}
+{"id":1,"sku":"FRU-001","nombre":"Manzana roja 1 kg","categoria_id":1,"precio_base":"2500.00","iva_pct":"0.00","stock":78,"imagen_url":"/assets/img/icons/fru-001.png"}
 ```
 `imagen_url` apunta a archivos que **aún no existen**; usa `assets/img/placeholder.svg` como respaldo.
 
@@ -49,7 +49,7 @@ Una venta con `detalles`, o la lista de ventas de una jornada (sin detalles).
 {"jornada_id":2,"cliente_nombre":"Cliente 1","carrito":{"FRU-001":2,"LAC-003":1},"efectivo_recibido":"50000.00"}
 // respuesta (data)
 {"venta_id":9,"numero_venta":"V-000009","cliente_nombre":"Cliente 1","jornada_id":2,
- "detalles":[{"producto_id":1,"sku":"FRU-001","nombre":"Manzanas rojas 1 kg","cantidad":2,
+ "detalles":[{"producto_id":1,"sku":"FRU-001","nombre":"Manzana roja 1 kg","cantidad":2,
    "precio_unitario":"2500.00","iva_pct":"0.00","subtotal_linea":"5000.00","iva_linea":"0.00","total_linea":"5000.00"}, ...],
  "subtotal":"9900.00","iva_total":"245.00","descuento_total":"0.00","total":"10145.00",
  "efectivo_recibido":"50000.00","cambio":"39855.00","estado":"completada"}

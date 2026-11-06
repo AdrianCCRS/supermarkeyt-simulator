@@ -10,6 +10,7 @@ foreach ([
     'Repositories/JornadaRepository',
     'Services/PricingService',
     'Services/CheckoutService',
+    'Services/JornadaService',
 ] as $file) {
     require_once __DIR__ . "/$file.php";
 }

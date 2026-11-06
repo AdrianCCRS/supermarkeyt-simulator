@@ -1,7 +1,7 @@
 <?php
 // Mini arnés de pruebas sin dependencias. Uso: php tests/run.php
 
-foreach (['Services/PricingService', 'Services/CheckoutService',
+foreach (['Services/PricingService', 'Services/CheckoutService', 'Services/JornadaService',
           'Repositories/ProductoRepository', 'Repositories/VentaRepository',
           'Repositories/JornadaRepository', 'Config/Env'] as $f) {
     require_once __DIR__ . "/../src/$f.php";

@@ -3,6 +3,7 @@ require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/PricingServiceTest.php';
 require __DIR__ . '/CheckoutServiceTest.php';
 require __DIR__ . '/ApiTest.php';
+require __DIR__ . '/JornadaTest.php';
 
 printf("\n%d passed, %d failed, %d skipped\n", T::$passed, T::$failed, T::$skipped);
 

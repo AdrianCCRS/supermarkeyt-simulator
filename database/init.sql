@@ -28,7 +28,13 @@ CREATE TABLE jornadas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fecha_inicio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_fin TIMESTAMP NULL,
-    estado ENUM('abierta', 'cerrada') NOT NULL DEFAULT 'abierta'
+    estado ENUM('abierta', 'cerrada') NOT NULL DEFAULT 'abierta',
+    -- 1 mientras la jornada esté abierta, NULL si está cerrada. El índice único
+    -- (que ignora NULL) garantiza como máximo UNA jornada abierta a la vez,
+    -- incluso con peticiones simultáneas.
+    abierta_unica TINYINT
+        GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED,
+    UNIQUE KEY uq_jornada_abierta (abierta_unica)
 );
 
 

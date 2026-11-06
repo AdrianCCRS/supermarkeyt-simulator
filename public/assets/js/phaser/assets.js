@@ -51,7 +51,7 @@ const ASSETS = {
     libro:       { path: 'caja/libro.png',         w: 144, h: 68 },
     // Cobro: bandeja con los billetes del cliente, y el recibo que sale de la impresora
     'bandeja-efectivo': { path: 'caja/bandeja-efectivo.png', w: 144, h: 30 },
-    billetes:    { path: 'caja/billetes.png',      w: 32,  h: 14, frames: 6 },   // 2.000 · 5.000 · 10.000 · 20.000 · 50.000 · 100.000
+    billetes:    { path: 'caja/billetes.png',      w: 38,  h: 18, frames: 6 },   // 2.000 · 5.000 · 10.000 · 20.000 · 50.000 · 100.000
     'recibo-imprimir': { path: 'caja/recibo-imprimir.png', w: 36, h: 60, frames: 10 },
     'recibo-arrancar': { path: 'caja/recibo-arrancar.png', w: 36, h: 60, frames: 4 },
     // Animaciones (opcionales: si no existen, el juego se mueve con deslizamientos sencillos).
@@ -124,6 +124,7 @@ const PLU = {
 
 // Columna de la caja: posición de la bandeja de efectivo, del recibo y del libro (coordenadas del lienzo).
 const COBRO = {
+    billete: [38, 18], zonaValor: [14, 5, 18, 8],            // tamaño del billete y zona lisa donde se escribe su valor
     bandeja: [328, 160], compartimentos: [[4, 4, 40, 22], [52, 4, 40, 22], [100, 4, 40, 22]],
     recibo: [332, 50], libro: [328, 198]
 };

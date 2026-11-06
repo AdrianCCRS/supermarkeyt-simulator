@@ -844,19 +844,25 @@ class CheckoutScene extends Phaser.Scene {
     mostrarBilletes() {
         this.quitarBilletes(false);
         const [bx, by] = COBRO.bandeja;
+        const [bw, bh] = COBRO.billete;
+        const [zx, zy, zw, zh] = COBRO.zonaValor;
         Object.keys(this.dinero.cuentas).map(Number).sort((a, b) => a - b).forEach((valor, k) => {
-            const [cx, cy, , ch] = COBRO.compartimentos[k];
+            const [cx, cy, cw, ch] = COBRO.compartimentos[k];
             const n = this.dinero.cuentas[valor];
+            const paso = n > 1 ? Math.min(2, Math.floor(4 / (n - 1))) : 0;      // la pila cabe en el compartimento
             for (let i = 0; i < n; i++) {
-                const x = bx + cx + 4;
-                const y = by + cy + ch - 16 - i * 2;                         // cada billete de la pila, 2 px más arriba
+                const x = bx + cx + Math.floor((cw - bw) / 2);
+                const y = by + cy + ch - bh - 1 - i * paso;
                 const img = this.add.image(x - 60, y, 'billetes', Cobro.BILLETES.indexOf(valor)).setOrigin(0).setDepth(3 + i).setAlpha(0);
                 this.billetesObjs.push(img);
                 this.tweens.add({ targets: img, x, alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
-                if (i === n - 1) {                                            // el valor, escrito en el billete de arriba
-                    const t = this.add.text(x - 60 + 16, y + 3, String(valor / 1000), { ...FUENTE, color: '#181425' }).setOrigin(0.5, 0).setDepth(10).setAlpha(0);
+                if (i === n - 1) {                                            // el valor, escrito en la zona lisa del billete de arriba
+                    const texto = String(valor / 1000);
+                    const t = this.add.text(x - 60 + zx + zw / 2, y + zy, texto, { ...FUENTE, color: '#181425' })
+                        .setOrigin(0.5, 0).setDepth(10).setAlpha(0);
+                    if (texto.length > 2) { t.setLetterSpacing(-2); }          // "100" no cabe en 18 px con el espaciado normal
                     this.billetesObjs.push(t);
-                    this.tweens.add({ targets: t, x: x + 16, alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
+                    this.tweens.add({ targets: t, x: x + zx + zw / 2, alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
                 }
             }
         });
@@ -1038,8 +1044,8 @@ const Placeholders = (function () {
                 return;
             case 'billetes': {
                 const col = [C.gris1, C.madera, C.rojo, C.naranja, 0xb55088, C.verde][frame];
-                bloque(g, x, 0, 32, 14, col, C.blanco, C.gris4);
-                g.fillStyle(C.crema).fillRect(x + 8, 4, 16, 6);
+                bloque(g, x, 0, w, h, col, C.blanco, C.gris4);
+                g.fillStyle(C.crema).fillRect(x + 14, 5, 18, 8);
                 return;
             }
             case 'recibo-imprimir': case 'recibo-arrancar': {

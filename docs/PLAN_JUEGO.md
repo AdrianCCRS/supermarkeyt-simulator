@@ -54,7 +54,24 @@ de error son HTML, y el ticket aparece encima del juego cuando la API confirma l
 - **Fruta (sin código de barras):** de la banda a la balanza (marca los kg) → buscar su código en el libro →
   teclearlo y pulsar ENT → la pantalla muestra el precio según el peso (hoy 1 kg = 1 unidad) → entra sola en la bolsa.
   La fruta no pasa por el escáner, y lo envasado no se pesa. Si el código no coincide con la fruta pesada, se avisa.
-- Al terminar: **ENTREGAR** cierra la bolsa y **PAY** cobra (hito 2: ambos llaman a la API).
+- Cada producto escaneado muestra su **precio con IVA** en la pantalla de la caja y luego vuelve al **total acumulado**
+  (con `-5%` si llega al umbral de descuento). La estimación replica `PricingService.php` y se comprueba contra él.
+- **Cobro:** `PAY` solo funciona con productos en la bolsa y nada pendiente en la banda ni la balanza. Se teclea el efectivo
+  (se ve el total y lo tecleado) y `ENT` lo confirma: si no alcanza dice `FALTAN`, si alcanza muestra el `CAMBIO`.
+- **Inventario de compra:** cada cliente trae `{sku: cantidad}` (la fruta, en kg). En la banda hay un producto por unidad, y la
+  fruta pesa lo que dice su inventario. Es lo que el cliente SE LLEVA, y se compara con lo que el tendero COBRÓ.
+- **El tendero es responsable de sus errores** (el juego casi no los impide):
+  - Productos que quedan en la banda al cobrar se los lleva el cliente sin pagar → **pérdida**.
+  - Cobrar de menos (QTY o escaneo de menos, o una fruta con el código de otra más barata) → **pérdida**.
+  - Cobrar de más (QTY mayor a las unidades reales, fruta con el código de otra más cara) → **sobrecobro**:
+    el cliente protesta al momento (`CLIENTE PROTESTA`, −50 puntos). Una venta exacta da +100.
+  - Las pérdidas NO se avisan en el momento: aparecen en el cierre de la jornada (ver [CIERRE_JORNADA.md](CIERRE_JORNADA.md)).
+- **QTY:** teclear un número + `QTY` + escanear UNA unidad cuenta esa cantidad y retira de la banda las demás unidades del mismo
+  producto (si hay menos, retira las que haya y cobra la cantidad tecleada). Siempre hay que pasar al menos una por el escáner.
+  **VOID** anula lo último registrado: sus unidades vuelven a la banda y hay que escanearlas otra vez.
+- Cobrada la venta queda **bloqueada** (no se añade ni se quita nada). **ENTREGAR** solo funciona con la venta cobrada:
+  sin cobrar avisa `COBRA PRIMERO`. Al entregar se cierra la bolsa y empieza una venta nueva
+  (hito 2: ahí se llama a `checkout.php` con `venta.carrito()` y el efectivo).
 - **Banda:** gira solo mientras algún producto avanza; se detiene cuando todos han llegado.
 
 ---

@@ -63,16 +63,18 @@ class Api
         }
 
         try {
-            $data = json_decode($raw, true, 8, JSON_THROW_ON_ERROR);
+            // Se decodifica sin "assoc" para distinguir {} de []: con arrays
+            // asociativos ambos serían un array vacío.
+            $decoded = json_decode($raw, false, 8, JSON_THROW_ON_ERROR);
         } catch (JsonException) {
             throw new ApiException(400, 'JSON inválido');
         }
 
-        if (!is_array($data) || array_is_list($data) && $data !== []) {
+        if (!$decoded instanceof stdClass) {
             throw new ApiException(400, 'Se esperaba un objeto JSON');
         }
 
-        return $data;
+        return json_decode($raw, true, 8, JSON_THROW_ON_ERROR);
     }
 
     private static function send(int $status, array $payload): never

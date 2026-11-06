@@ -856,16 +856,28 @@ class CheckoutScene extends Phaser.Scene {
                 const img = this.add.image(x - 60, y, 'billetes', Cobro.BILLETES.indexOf(valor)).setOrigin(0).setDepth(3 + i).setAlpha(0);
                 this.billetesObjs.push(img);
                 this.tweens.add({ targets: img, x, alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
-                if (i === n - 1) {                                            // el valor, escrito en la zona lisa del billete de arriba
-                    const texto = String(valor / 1000);
-                    const t = this.add.text(x - 60 + zx + zw / 2, y + zy, texto, { ...FUENTE, color: '#181425' })
-                        .setOrigin(0.5, 0).setDepth(10).setAlpha(0);
-                    if (texto.length > 2) { t.setLetterSpacing(-2); }          // "100" no cabe en 18 px con el espaciado normal
+                if (i === n - 1) {                                            // el valor (2K, 10K…), escrito en la zona lisa del billete de arriba
+                    const t = this.etiquetaBillete(String(valor / 1000) + 'K');
+                    t.setPosition(x - 60 + zx + Math.floor((zw - t.ancho) / 2), y + zy + Math.floor((zh - 6) / 2)).setDepth(10).setAlpha(0);
                     this.billetesObjs.push(t);
-                    this.tweens.add({ targets: t, x: x + zx + zw / 2, alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
+                    this.tweens.add({ targets: t, x: x + zx + Math.floor((zw - t.ancho) / 2), alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
                 }
             }
         });
+    }
+
+    /** Etiqueta de un billete dibujada píxel a píxel con GLIFOS_BILLETE (4 x 6, 1 px entre letras). */
+    etiquetaBillete(texto) {
+        const g = this.add.graphics().fillStyle(COLOR.contorno);
+        let cursor = 0;
+        texto.split('').forEach((c) => {
+            GLIFOS_BILLETE[c].forEach((fila, y) => fila.split('').forEach((px, x) => {
+                if (px === 'X') { g.fillRect(cursor + x, y, 1, 1); }
+            }));
+            cursor += 5;
+        });
+        g.ancho = cursor - 1;
+        return g;
     }
 
     /** Retira los billetes: al cobrar pasan al cajón (suben y desaparecen); al cancelar, vuelven al cliente. */

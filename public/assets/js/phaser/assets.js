@@ -129,6 +129,16 @@ const COBRO = {
     recibo: [332, 50], libro: [328, 198]
 };
 
+// Fuente de píxeles de 4 x 6 solo para las etiquetas de los billetes (2K, 10K, 100K…): la fuente del juego
+// (8 px) no cabe en la zona del valor, que mide 18 x 8. Cada glifo son 6 filas de 4 columnas ('X' = píxel).
+const GLIFOS_BILLETE = {
+    '0': ['.XX.', 'X..X', 'X..X', 'X..X', 'X..X', '.XX.'],
+    '1': ['..X.', '.XX.', '..X.', '..X.', '..X.', '.XXX'],
+    '2': ['.XX.', 'X..X', '...X', '..X.', '.X..', 'XXXX'],
+    '5': ['XXXX', 'X...', 'XXX.', '...X', 'X..X', '.XX.'],
+    'K': ['X..X', 'X.X.', 'XX..', 'XX..', 'X.X.', 'X..X']
+};
+
 // Catálogo de muestra (el del seed). Se usa mientras el catálogo de la API no esté cargado.
 const PRODUCTOS_DEMO = {
     'FRU-001': { nombre: 'Manzanas rojas 1 kg',    precio_base: '2500.00', iva_pct: '0.00' },

@@ -154,7 +154,6 @@ class CheckoutScene extends Phaser.Scene {
     crearTienda() {
         this.add.tileSprite(0, 0, 160, 270, 'suelo').setOrigin(0);
         this.add.image(0, 0, 'pared').setOrigin(0);
-        this.add.image(...TIENDA.expositor, 'expositor').setOrigin(0);
         this.add.image(...TIENDA.cestas, 'cestas').setOrigin(0);
         this.add.image(...TIENDA.planta, 'planta').setOrigin(0);
         this.add.image(...TIENDA.mueble, 'mueble-trasero').setOrigin(0);
@@ -244,8 +243,7 @@ class CheckoutScene extends Phaser.Scene {
         if (!this.finBolsa || !this.finClientes) { return; }
         this.finBolsa = false;
         this.finClientes = false;
-        this.numCompra++;                                         // demo: el cliente trae su inventario de compra
-        this.nuevaCompra(COMPRAS_DEMO[this.numCompra % COMPRAS_DEMO.length]);
+        this.nuevaCompra(this.compraDelSiguiente());
     }
 
     /** Versión pequeña de lo que se juega en las otras columnas: escáner, balanza, caja y productos de la banda. */
@@ -324,9 +322,12 @@ class CheckoutScene extends Phaser.Scene {
         this.textoExtra = this.add.text(bolsaX + 72, bolsaY + 38, '', { ...FUENTE, color: '#181425' }).setOrigin(0.5, 0.5).setDepth(4);
         this.crearBotonEntregar();
 
-        // Demo: llega un pedido de muestra (en el hito 2 lo genera cada cliente)
-        this.numCompra = 0;
-        this.nuevaCompra(COMPRAS_DEMO[0]);
+        this.nuevaCompra(this.compraDelSiguiente());          // el primer cliente trae su compra
+    }
+
+    /** Compra del próximo cliente: la aleatoria del juego (Juego.compraAleatoria), que el backend puede sustituir. */
+    compraDelSiguiente() {
+        return Juego.compraAleatoria((sku) => this.esFruta(sku));
     }
 
     /** ¿Es una fruta/verdura sin código de barras? Estas hay que pesarlas antes de escanearlas. */

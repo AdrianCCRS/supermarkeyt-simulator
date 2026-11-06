@@ -8,11 +8,11 @@ import path from 'node:path';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ctx = vm.createContext({ Intl, console, setTimeout });
-for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'phaser/assets.js']) {
+for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'phaser/assets.js']) {
     const codigo = fs.readFileSync(path.join(raiz, 'public/assets/js', f), 'utf8').replace(/^const (\w+) =/gm, 'globalThis.$1 =');
     vm.runInContext(codigo, ctx);
 }
-const { Money, Pricing, Venta, Auditoria, Cobro, PRODUCTOS_DEMO } = ctx;
+const { Money, Pricing, Venta, Auditoria, Cobro, Compra, PRODUCTOS_DEMO } = ctx;
 const skus = Object.keys(PRODUCTOS_DEMO);
 
 let fallos = 0, pruebas = 0;
@@ -142,6 +142,22 @@ ok(Cobro.generarBilletes(1139900, rnd2).suma >= 1139900 && Cobro.generarBilletes
     const e = Cobro.desglosarCambio(365000);
     ok(JSON.stringify(e.billetes) === '[2000]' && e.monedas === 165000, 'cambio 3.650$ = un billete de 2K + 1.650$ en monedas');
     ok(Cobro.desglosarCambio(0).billetes.length === 0 && Cobro.desglosarCambio(0).monedas === 0, 'cambio 0: nada que dar');
+}
+// compras aleatorias de los clientes
+{
+    const skus = Object.keys(PRODUCTOS_DEMO), plu = new Set(Object.values(ctx.PLU));
+    const esFruta = (s) => plu.has(s);
+    let bien = true, distintas = new Set();
+    for (let i = 0; i < 500 && bien; i++) {
+        const c = Compra.generar({ skus, esFruta, rnd: rnd2 });
+        const ks = Object.keys(c);
+        const piezas = ks.reduce((a, k) => a + (esFruta(k) ? 1 : c[k]), 0);
+        bien = ks.length >= 2 && ks.length <= 5 && piezas <= 12 && ks.every((k) => skus.includes(k) && Number.isInteger(c[k]) && c[k] >= 1 && c[k] <= (esFruta(k) ? 3 : 4));
+        distintas.add(JSON.stringify(c));
+        if (!bien) { ok(false, 'compra mal: ' + JSON.stringify(c)); }
+    }
+    ok(bien && distintas.size > 100, '500 compras aleatorias válidas (2-5 productos, ≤12 piezas, frutas 1-3 kg) y variadas: ' + distintas.size + ' distintas');
+    ok(Object.keys(Compra.generar({ skus: ['A'], esFruta, rnd: rnd2 })).length === 1 && Object.keys(Compra.generar({ skus: [], esFruta })).length === 0, 'catálogo corto o vacío no rompe');
 }
 // cobrador local (mock de checkout.php)
 const cobrar = Cobro.local(resolver, 0);

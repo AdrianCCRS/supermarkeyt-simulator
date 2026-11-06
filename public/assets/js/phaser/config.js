@@ -24,6 +24,16 @@ const Juego = (function () {
     function setCobrador(fn) { cobrador = fn; }
 
     /** Datos de un SKU ({nombre, precio_base, iva_pct}): de la API si está cargada, si no los de muestra. */
+    // Compras de los clientes. Por defecto se generan al azar con el catálogo; el backend puede aportar las suyas:
+    //   Juego.setGeneradorCompras(() => ({ 'LAC-002': 2, 'FRU-001': 1 }))      // {sku: cantidad}, la fruta en kg
+    let generadorCompras = null;
+    function setGeneradorCompras(fn) { generadorCompras = fn || null; }
+    function compraAleatoria(esFruta) {
+        if (generadorCompras) { return generadorCompras(); }
+        const skus = catalogo.length ? catalogo.map((p) => p.sku) : Object.keys(PRODUCTOS_DEMO);
+        return Compra.generar({ skus, esFruta });
+    }
+
     function producto(sku) {
         const p = catalogo.find((x) => x.sku === sku);
         return p || Object.assign({ sku }, PRODUCTOS_DEMO[sku]);
@@ -56,5 +66,5 @@ const Juego = (function () {
         return game.scene.getScene('CheckoutScene').jornadaJuego.resumen();
     }
 
-    return { iniciar, juego: () => game, setCatalogo, producto, resumenJornada, cobrar, setCobrador };
+    return { iniciar, juego: () => game, setCatalogo, setGeneradorCompras, compraAleatoria, producto, resumenJornada, cobrar, setCobrador };
 })();

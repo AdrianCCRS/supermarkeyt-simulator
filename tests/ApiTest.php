@@ -88,7 +88,7 @@ T::test('GET productos: 200, solo activos y tipos correctos', function () {
     T::same(200, $s);
     T::same('application/json; charset=utf-8', $type);
     T::same(true, $j['success']);
-    T::same(2, count($j['data']), 'el inactivo no debe aparecer');
+    T::same(3, count($j['data']), 'el inactivo no debe aparecer');
     T::same(1, $j['data'][0]['id']);
     T::same(10, $j['data'][0]['stock']);
     T::same('1000.00', $j['data'][0]['precio_base']);

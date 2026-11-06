@@ -6,71 +6,6 @@ class ProductoRepository
         private PDO $pdo
     ) {}
 
-    public function getById(int $id): ?array
-    {
-        $query = $this->pdo->prepare(
-            "SELECT
-                p.id,
-                p.sku,
-                p.nombre,
-                p.categoria_id,
-                p.precio_base,
-                p.iva_pct,
-                p.stock,
-                p.imagen_url
-            FROM productos AS p
-            WHERE p.id = ?
-              AND p.is_active = 1"
-        );
-
-        $query->execute([$id]);
-
-        $producto = $query->fetch(PDO::FETCH_ASSOC);
-
-        return $producto ?: null;
-    }
-
-    public function getSeveralById(array $ids): array
-    {
-        if (empty($ids)) {
-            return [];
-        }
-
-        foreach ($ids as $id) {
-            if (!is_int($id) || $id <= 0) {
-                throw new InvalidArgumentException(
-                    "Los IDs deben ser enteros positivos"
-                );
-            }
-        }
-
-        $ids = array_values(array_unique($ids));
-
-        $placeholders = implode(
-            ',',
-            array_fill(0, count($ids), '?')
-        );
-
-        $query = $this->pdo->prepare(
-            "SELECT
-                p.id,
-                p.sku,
-                p.nombre,
-                p.categoria_id,
-                p.precio_base,
-                p.iva_pct,
-                p.stock,
-                p.imagen_url
-            FROM productos AS p
-            WHERE p.id IN ($placeholders)
-              AND p.is_active = 1"
-        );
-
-        $query->execute($ids);
-
-        return $query->fetchAll(PDO::FETCH_ASSOC);
-    }
-
     public function getAll(): array
     {
         $query = $this->pdo->prepare(
@@ -177,6 +112,70 @@ class ProductoRepository
         $query->execute($skus);
 
         return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /** Busca por SKU sin filtrar por is_active (para administración). */
+    public function findBySku(string $sku): ?array
+    {
+        $query = $this->pdo->prepare(
+            "SELECT id, sku, nombre, stock, is_active
+            FROM productos
+            WHERE sku = ?"
+        );
+
+        $query->execute([$sku]);
+
+        $producto = $query->fetch(PDO::FETCH_ASSOC);
+
+        return $producto ?: null;
+    }
+
+    /** Suma stock sin tope (devolución por venta cancelada). */
+    public function devolverStock(int $productoId, int $cantidad): void
+    {
+        if ($cantidad <= 0) {
+            throw new InvalidArgumentException(
+                "La cantidad a devolver debe ser mayor que cero"
+            );
+        }
+
+        $query = $this->pdo->prepare(
+            "UPDATE productos SET stock = stock + ? WHERE id = ?"
+        );
+
+        $query->execute([$cantidad, $productoId]);
+
+        if ($query->rowCount() === 0) {
+            throw new RuntimeException(
+                "No se pudo devolver el stock del producto con ID $productoId"
+            );
+        }
+    }
+
+    /**
+     * Reposición de inventario con tope. Devuelve false si el resultado
+     * superaría $maxStock (no modifica nada en ese caso).
+     */
+    public function reponerStock(int $productoId, int $cantidad, int $maxStock): bool
+    {
+        $query = $this->pdo->prepare(
+            "UPDATE productos
+            SET stock = stock + ?
+            WHERE id = ? AND stock <= ?"
+        );
+
+        $query->execute([$cantidad, $productoId, $maxStock - $cantidad]);
+
+        return $query->rowCount() === 1;
+    }
+
+    public function setActivo(int $productoId, bool $activo): void
+    {
+        $query = $this->pdo->prepare(
+            "UPDATE productos SET is_active = ? WHERE id = ?"
+        );
+
+        $query->execute([$activo ? 1 : 0, $productoId]);
     }
 
     public function descontarStock(int $productoId, int $cantidad): void

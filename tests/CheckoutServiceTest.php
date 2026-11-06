@@ -37,7 +37,8 @@ function testPdo(): PDO
     $root->exec("INSERT INTO productos (id, sku, nombre, categoria_id, precio_base, iva_pct, stock, imagen_url, is_active) VALUES
         (1, 'A-1', 'Leche', 1, 1000.00, 0.00, 10, 'x', 1),
         (2, 'B-2', 'Queso', 1, 4900.00, 5.00, 3, 'x', 1),
-        (3, 'C-3', 'Inactivo', 1, 100.00, 0.00, 5, 'x', 0)");
+        (3, 'C-3', 'Inactivo', 1, 100.00, 0.00, 5, 'x', 0),
+        (4, 'D-4', 'Caro', 1, 60000.00, 19.00, 10, 'x', 1)");
     $root->exec("INSERT INTO jornadas (id, estado) VALUES (1, 'abierta'), (2, 'cerrada')");
     return $root;
 }
@@ -125,4 +126,18 @@ T::test('rollback revierte venta y stock cuando falla tras insertar el encabezad
     T::same(0, (int) $pdo->query('SELECT COUNT(*) FROM ventas')->fetchColumn(), 'ventas');
     T::same(10, stockOf($pdo, 1), 'stock');
     T::same(false, $pdo->inTransaction());
+});
+
+T::test('compra grande aplica el 5% de descuento y el cambio lo refleja', function () {
+    $pdo = testPdo();
+    // 2 x 60.000 = 120.000 + IVA 19% (22.800) = 142.800 -> descuento 7.140
+    $r = makeCheckout($pdo)->procesarCompra(1, 'Ana', ['D-4' => 2], '140000.00');
+    T::same('120000.00', $r['subtotal']);
+    T::same('22800.00', $r['iva_total']);
+    T::same('7140.00', $r['descuento_total']);
+    T::same('135660.00', $r['total']);
+    T::same('4340.00', $r['cambio']);
+    $fila = $pdo->query('SELECT descuento_total, total FROM ventas')->fetch();
+    T::same('7140.00', $fila['descuento_total']);
+    T::same('135660.00', $fila['total']);
 });

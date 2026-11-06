@@ -12,6 +12,15 @@ class PricingService
      */
     public const MAX_IMPORTE_CENTAVOS = 999999999999;
 
+    /**
+     * Descuento por compra grande: si el total con IVA llega a 100.000,00 COP
+     * se descuenta el 5 % (redondeo half-up). Es una regla del simulador;
+     * se aplica sobre el total (no antes del IVA) para no cambiar el esquema
+     * de detalles_venta, que no guarda descuento por línea.
+     */
+    public const DESCUENTO_UMBRAL_CENTAVOS = 10000000;
+    public const DESCUENTO_PORCENTAJE = 5;
+
     public function calcularTicket(
         array $productos,
         array $cantidades
@@ -33,14 +42,16 @@ class PricingService
 
         $subtotalGeneral = array_sum($subtotales);
         $ivaTotal = array_sum($ivas);
-        $descuentoTotal = 0;
-        $totalGeneral = array_sum($totales) - $descuentoTotal;
+        $totalBruto = array_sum($totales);
 
-        if ($totalGeneral > self::MAX_IMPORTE_CENTAVOS) {
+        if ($totalBruto > self::MAX_IMPORTE_CENTAVOS) {
             throw new InvalidArgumentException(
                 "El total del ticket excede el máximo permitido"
             );
         }
+
+        $descuentoTotal = $this->calcularDescuento($totalBruto);
+        $totalGeneral = $totalBruto - $descuentoTotal;
 
         $detalles = [];
 
@@ -73,6 +84,19 @@ class PricingService
             'descuento_total' => $this->centavosADecimal($descuentoTotal),
             'total' => $this->centavosADecimal($totalGeneral)
         ];
+    }
+
+    private function calcularDescuento(int $totalBrutoCentavos): int
+    {
+        if ($totalBrutoCentavos < self::DESCUENTO_UMBRAL_CENTAVOS) {
+            return 0;
+        }
+
+        // Half-up: (x * pct + 50) / 100
+        return intdiv(
+            $totalBrutoCentavos * self::DESCUENTO_PORCENTAJE + 50,
+            100
+        );
     }
 
     private function getSubtotalPorProducto(

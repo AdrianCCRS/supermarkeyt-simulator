@@ -85,7 +85,29 @@ T::test('rechaza tickets con muchas líneas cuya suma supera el máximo', functi
     T::throws(InvalidArgumentException::class, fn() => $svc->calcularTicket($productos, $carrito));
 });
 
-T::test('acepta un ticket justo en el límite de DECIMAL(12,2)', function () use ($svc) {
+T::test('acepta un ticket justo en el límite de DECIMAL(12,2) (antes del descuento)', function () use ($svc) {
     $t = $svc->calcularTicket([prod('A', '9999999999.99', '0.00')], ['A' => 1]);
-    T::same('9999999999.99', $t['total']);
+    T::same('9999999999.99', $t['subtotal']);
+    T::same('500000000.00', $t['descuento_total']); // 5 % half-up
+    T::same('9499999999.99', $t['total']);
+});
+
+T::test('sin descuento por debajo de 100.000,00', function () use ($svc) {
+    $t = $svc->calcularTicket([prod('A', '99999.99', '0.00')], ['A' => 1]);
+    T::same('0.00', $t['descuento_total']);
+    T::same('99999.99', $t['total']);
+});
+
+T::test('descuento 5% justo en el umbral de 100.000,00', function () use ($svc) {
+    $t = $svc->calcularTicket([prod('A', '100000.00', '0.00')], ['A' => 1]);
+    T::same('5000.00', $t['descuento_total']);
+    T::same('95000.00', $t['total']);
+});
+
+T::test('el descuento se calcula sobre el total con IVA y redondea half-up', function () use ($svc) {
+    // 100.000,10 + 19% = 119.000,12 -> 5% = 5.950,006 -> 5.950,01 
+    $t = $svc->calcularTicket([prod('A', '100000.10', '19.00')], ['A' => 1]);
+    T::same('19000.02', $t['iva_total']);
+    T::same('5950.01', $t['descuento_total']);
+    T::same('113050.11', $t['total']);
 });

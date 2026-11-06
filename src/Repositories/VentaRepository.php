@@ -107,7 +107,7 @@ class VentaRepository{
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getAll(): array{
+    public function getByJornadaId(int $jornadaId): array{
         $query = $this->pdo->prepare("SELECT
                 v.id,
                 v.numero_venta,
@@ -121,11 +121,46 @@ class VentaRepository{
                 v.fecha_hora,
                 v.estado,
                 v.jornada_id
-            FROM ventas AS v");
+            FROM ventas AS v
+            WHERE v.jornada_id = ?
+            ORDER BY v.id");
 
-        $query->execute();
-        $result = $query->fetchAll(PDO::FETCH_ASSOC);
-        return $result ?: [];
+        $query->execute([$jornadaId]);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function getByIdForUpdate(int $id): ?array{
+        $query = $this->pdo->prepare("SELECT
+                v.id,
+                v.numero_venta,
+                v.cliente_nombre,
+                v.subtotal,
+                v.iva_total,
+                v.descuento_total,
+                v.total,
+                v.efectivo_recibido,
+                v.cambio,
+                v.fecha_hora,
+                v.estado,
+                v.jornada_id
+            FROM ventas AS v
+            WHERE v.id = ?
+            FOR UPDATE");
+
+        $query->execute([$id]);
+        $result = $query->fetch(PDO::FETCH_ASSOC);
+        return $result ?: null;
+    }
+
+    public function marcarCancelada(int $id): void{
+        $query = $this->pdo->prepare("UPDATE ventas
+            SET estado = 'cancelada'
+            WHERE id = ? AND estado = 'completada'");
+        $query->execute([$id]);
+
+        if ($query->rowCount() !== 1) {
+            throw new RuntimeException("No se pudo cancelar la venta $id");
+        }
     }
 
 }

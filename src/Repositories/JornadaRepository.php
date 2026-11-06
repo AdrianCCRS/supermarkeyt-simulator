@@ -17,34 +17,6 @@ class JornadaRepository {
         return $result ?: null;
     }
 
-    public function findAll(): array{
-        $query = $this->pdo->prepare("SELECT
-                j.id,
-                j.fecha_inicio,
-                j.fecha_fin,
-                j.estado
-            FROM jornadas AS j");
-
-        $query->execute();
-        $result = $query->fetchAll(PDO::FETCH_ASSOC);
-        return $result ?: [];
-    }
-
-    public function getByRangoFechas(string $fechaInicio, string $fechaFin): array {
-        $query = $this->pdo->prepare("SELECT
-                j.id,
-                j.fecha_inicio,
-                j.fecha_fin,
-                j.estado
-            FROM jornadas AS j
-            WHERE j.fecha_inicio >= ?
-              AND j.fecha_fin <= ?");
-
-        $query->execute([$fechaInicio, $fechaFin]);
-        $result = $query->fetchAll(PDO::FETCH_ASSOC);
-        return $result ?: [];
-    }
-
     public function findAbierta(): ?array
     {
         $query = $this->pdo->query(

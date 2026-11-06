@@ -28,6 +28,12 @@ Copy `.env.example` to `.env` and fill in your database credentials.
 variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`) as
 environment variables on the host.
 
+## Frontend
+
+`public/index.html` (maqueta) + `public/assets/js/{money,api,app}.js` + jQuery 3.7.1 local.
+`app.js` solo comprueba la conexión con la API; lo que falta está en su lista `TODO`.
+Contrato de la API con ejemplos reales: [docs/API_FRONTEND.md](docs/API_FRONTEND.md).
+
 ## API
 
 Servidor local: `php -S localhost:8000 -t public`

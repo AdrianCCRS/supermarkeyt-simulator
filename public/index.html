@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Supermarket Simulator</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body>
+    <!-- ENCABEZADO: estado de la jornada -->
+    <header class="topbar">
+        <h1>Supermarket Simulator</h1>
+        <div id="jornada" class="jornada">
+            <span id="jornada-estado">Cargando jornada…</span>
+            <button id="btn-abrir-jornada" type="button" hidden>Abrir jornada</button>
+            <button id="btn-cerrar-jornada" type="button" hidden>Cerrar jornada</button>
+        </div>
+    </header>
+
+    <!-- Mensajes (errores de la API, avisos) -->
+    <div id="mensaje" class="mensaje" role="status" hidden></div>
+
+    <main class="layout">
+        <!-- CATÁLOGO -->
+        <section class="catalogo">
+            <nav id="categorias" class="categorias" aria-label="Categorías"></nav>
+            <div id="productos" class="productos"></div>
+        </section>
+
+        <!-- CARRITO / CAJA -->
+        <aside class="caja">
+            <h2>Carrito</h2>
+            <ul id="carrito" class="carrito"></ul>
+            <p class="total">Total estimado: <strong id="total-estimado">$ 0</strong></p>
+
+            <form id="form-cobro" autocomplete="off">
+                <label>Cliente
+                    <input id="cliente" name="cliente_nombre" maxlength="100" required>
+                </label>
+                <label>Efectivo recibido
+                    <input id="efectivo" name="efectivo_recibido" inputmode="decimal" placeholder="50000.00" required>
+                </label>
+                <button id="btn-cobrar" type="submit">Cobrar</button>
+            </form>
+        </aside>
+    </main>
+
+    <!-- TICKET (se llena con la respuesta de /api/checkout.php) -->
+    <section id="ticket" class="ticket" hidden></section>
+
+    <script src="assets/js/vendor/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="assets/js/money.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/app.js"></script>
+</body>
+</html>

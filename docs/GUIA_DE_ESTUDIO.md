@@ -4,7 +4,7 @@ Esta guía no repite el código: te dice **qué leer, en qué orden y qué debes
 Cada enlace apunta al archivo real. Todo lo que está aquí está implementado y probado
 (`/opt/lampp/bin/php tests/run.php` → 53 pruebas).
 
-> **Alcance:** esto cubre el backend (PHP + MySQL + API JSON). **El frontend jQuery todavía no existe.**
+> **Alcance:** backend completo (PHP + MySQL + API JSON). Del frontend solo existe el **esqueleto** (ver sección 7); la lógica jQuery la construyes tú.
 
 ## 0. Cómo correr todo
 
@@ -105,7 +105,7 @@ Notas:
 `ProductoRepository::getById`, `getSeveralById`; `JornadaRepository::findAll`, `getByRangoFechas`; `VentaRepository::getAll` (reemplazado por `getByJornadaId`). Si más adelante los necesitas, el historial de Git los conserva.
 
 ## 5. Lo que NO está hecho
-- **Frontend jQuery** (caja registradora, carrito, AJAX). Es lo que sigue.
+- **Lógica del frontend jQuery** (catálogo, carrito, cobro). Existe el esqueleto; ver sección 7.
 - **Idempotencia del checkout:** dos POST iguales crean dos ventas. Requiere una clave por intento + columna única.
 - **Autenticación/roles.**
 - La BD real `supermarket_simulator` necesita el `ALTER TABLE` del README (índice de jornada única) o recrearse con `init.sql` + `seed.sql`.
@@ -121,3 +121,24 @@ Notas:
 8. ¿Por qué `public/` y `src/` están separados?
 9. ¿Qué es una inyección SQL y dónde se previene aquí?
 10. ¿Qué cambiarías para que un doble clic en "Cobrar" no cree dos ventas?
+
+## 7. Esqueleto del frontend (punto de partida)
+
+| Archivo | Qué es |
+|---|---|
+| [public/index.html](../public/index.html) | Maqueta con los contenedores (`#productos`, `#carrito`, `#form-cobro`, `#ticket`…) |
+| [assets/js/api.js](../public/assets/js/api.js) | Cliente de la API con `$.ajax` y promesas (`Api.productos()`, `Api.checkout(...)`). **Léelo primero** |
+| [assets/js/money.js](../public/assets/js/money.js) | Formato de moneda y conversión a centavos (misma idea que en PHP) |
+| [assets/js/app.js](../public/assets/js/app.js) | Arranque: carga jornada y catálogo. Termina con la lista `TODO` en orden sugerido |
+| [assets/css/styles.css](../public/assets/css/styles.css) | Estilos base |
+| [docs/API_FRONTEND.md](API_FRONTEND.md) | Contrato de la API con respuestas reales |
+
+Conceptos jQuery que vas a usar (y que te pueden preguntar):
+`$(function(){})` (DOM listo) · selectores y `.text()/.prop()/.toggleClass()` · **delegación de eventos**
+(`$('#productos').on('click', '.producto', fn)`, necesaria porque las tarjetas se crean dinámicamente) ·
+`$.ajax` y promesas (`.done/.fail`, `$.when` para esperar varias peticiones, ver [cargarCatalogo](../public/assets/js/app.js)) ·
+`JSON.stringify` + `contentType: 'application/json'` · manejo de errores por código HTTP.
+
+Decisiones: jQuery se sirve **local** (no desde una CDN) con hash de integridad verificado;
+`Api` entrega solo `data` y convierte los errores en `{status, mensaje}`;
+el estado vive en un único objeto `state` y la UI se redibuja desde él.

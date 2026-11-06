@@ -1,4 +1,3 @@
-
 <?php
 
 class ProductoRepository
@@ -132,6 +131,54 @@ class ProductoRepository
         return $query->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    /**
+     * Igual que getBySkus() pero bloquea las filas (FOR UPDATE).
+     * Debe llamarse dentro de una transacción. Ordena por id para
+     * adquirir los bloqueos siempre en el mismo orden y evitar deadlocks.
+     */
+    public function getBySkusForUpdate(array $skus): array
+    {
+        if (empty($skus)) {
+            return [];
+        }
+
+        foreach ($skus as $sku) {
+            if (!is_string($sku) || trim($sku) === '') {
+                throw new InvalidArgumentException(
+                    "Los SKUs deben ser textos no vacíos"
+                );
+            }
+        }
+
+        $skus = array_values(array_unique($skus));
+
+        $placeholders = implode(
+            ',',
+            array_fill(0, count($skus), '?')
+        );
+
+        $query = $this->pdo->prepare(
+            "SELECT
+                p.id,
+                p.sku,
+                p.nombre,
+                p.categoria_id,
+                p.precio_base,
+                p.iva_pct,
+                p.stock,
+                p.imagen_url
+            FROM productos AS p
+            WHERE p.sku IN ($placeholders)
+              AND p.is_active = 1
+            ORDER BY p.id
+            FOR UPDATE"
+        );
+
+        $query->execute($skus);
+
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function descontarStock(int $productoId, int $cantidad): void
     {
         if ($cantidad <= 0) {
@@ -143,14 +190,16 @@ class ProductoRepository
         $query = $this->pdo->prepare(
             "UPDATE productos
             SET stock = stock - ?
-            WHERE id = ? AND stock >= ?"
+            WHERE id = ?
+              AND is_active = 1
+              AND stock >= ?"
         );
 
         $query->execute([$cantidad, $productoId, $cantidad]);
 
         if ($query->rowCount() === 0) {
         throw new RuntimeException(
-            "No se pudo descontar el stock para el producto con ID $productoId. Puede que no haya suficiente stock."
+            "No se pudo descontar el stock para el producto con ID $productoId. Puede que no haya suficiente stock o que el producto esté inactivo."
         );
         }
     }

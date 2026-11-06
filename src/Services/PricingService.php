@@ -1,8 +1,17 @@
-
 <?php
 
 class PricingService
 {
+    /** Máximo de unidades por línea del carrito. */
+    public const MAX_CANTIDAD_POR_LINEA = 1000;
+
+    /**
+     * Límite de cualquier importe, en centavos. Coincide con DECIMAL(12,2)
+     * (9,999,999,999.99) y garantiza que ninguna operación intermedia
+     * (subtotal * iva escalado <= 1e12 * 1e4 = 1e16) desborde un int de 64 bits.
+     */
+    public const MAX_IMPORTE_CENTAVOS = 999999999999;
+
     public function calcularTicket(
         array $productos,
         array $cantidades
@@ -26,6 +35,12 @@ class PricingService
         $ivaTotal = array_sum($ivas);
         $descuentoTotal = 0;
         $totalGeneral = array_sum($totales) - $descuentoTotal;
+
+        if ($totalGeneral > self::MAX_IMPORTE_CENTAVOS) {
+            throw new InvalidArgumentException(
+                "El total del ticket excede el máximo permitido"
+            );
+        }
 
         $detalles = [];
 
@@ -83,8 +98,31 @@ class PricingService
                 $producto['precio_base']
             );
 
-            $subtotales[$sku] = $precioCentavos
-                * $cantidades[$sku];
+            $cantidad = $cantidades[$sku];
+
+            if ($cantidad > self::MAX_CANTIDAD_POR_LINEA) {
+                throw new InvalidArgumentException(
+                    "Cantidad máxima por producto excedida: $sku"
+                );
+            }
+
+            // Comparación segura: no se multiplica antes de validar.
+            if ($precioCentavos > intdiv(
+                self::MAX_IMPORTE_CENTAVOS,
+                $cantidad
+            )) {
+                throw new InvalidArgumentException(
+                    "El importe de la línea excede el máximo permitido: $sku"
+                );
+            }
+
+            $subtotales[$sku] = $precioCentavos * $cantidad;
+        }
+
+        if (array_sum($subtotales) > self::MAX_IMPORTE_CENTAVOS) {
+            throw new InvalidArgumentException(
+                "El importe del ticket excede el máximo permitido"
+            );
         }
 
         return $subtotales;
@@ -129,7 +167,7 @@ class PricingService
 
     private function decimalACentavos(string $valor): int
     {
-        if (!preg_match('/^\d+\.\d{2}$/', $valor)) {
+        if (!preg_match('/^\d{1,10}\.\d{2}$/', $valor)) {
             throw new InvalidArgumentException(
                 "Formato decimal inválido: $valor"
             );

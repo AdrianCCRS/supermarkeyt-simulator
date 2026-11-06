@@ -1,4 +1,3 @@
-
 <?php
 
 class CheckoutService
@@ -59,11 +58,12 @@ class CheckoutService
                 );
             }
 
-            // 4. Consultar productos
-            $skus = array_keys($carrito);
+            // 4. Consultar y bloquear productos (precio y stock no
+            //    pueden cambiar hasta el commit)
+            $skus = array_map('strval', array_keys($carrito));
 
             $productos = $this->productoRepository
-                ->getBySkus($skus);
+                ->getBySkusForUpdate($skus);
 
             if (count($productos) !== count($skus)) {
                 throw new InvalidArgumentException(

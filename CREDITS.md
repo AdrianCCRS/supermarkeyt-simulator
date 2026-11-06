@@ -2,7 +2,7 @@
 
 | Archivo(s) | Autor | Licencia | Origen |
 |---|---|---|---|
-| `public/assets/img/icons/fru-001.png`, `fru-002`, `fru-003`, `lac-003`, `beb-002`, `beb-003`, `pan-001`, `pan-002` | Alex — *Free pixel food 16x16* (100 iconos) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | `assets-src/Free_pixel_food_16x16.zip` (TODO: añadir URL de la página de descarga) |
+| `public/assets/img/icons/` (88 iconos del catalogo ampliado, mas `fru-001`, `fru-002`, `fru-003`, `lac-003`, `beb-002`, `beb-003`, `pan-001`, `pan-002`; copiados por `tools/generar_catalogo.py`) | Alex — *Free pixel food 16x16* (100 iconos) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | `assets-src/Free_pixel_food_16x16.zip` (TODO: añadir URL de la página de descarga) |
 | `public/assets/img/icons/lac-001.png` | Generado con IA para este proyecto | Propio | `assets-src/supermarket_pixel_art_assets.zip` |
 | `public/assets/img/tienda/*`, `public/assets/img/characters/*` (incluidas las animaciones `*-anim.png`), `icons/` (los 11 productos que faltaban) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/tienda.aseprite`, `assets-src/puesto-caja.aseprite`, `assets-src/iconos-faltantes.aseprite` |
 | `public/assets/img/caja/*` (cuerpo y teclas de la caja), `public/assets/img/banda/*` | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/caja.aseprite`, `assets-src/banda.aseprite` |

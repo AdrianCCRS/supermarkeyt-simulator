@@ -41,6 +41,11 @@ Juego.setGeneradorCompras(() => ({ 'LAC-002': 2, 'FRU-001': 1 }));   // {sku: ca
 ```
 Se llama de forma **síncrona** cada vez que llega un cliente: precarga las compras en un array y ve sacándolas.
 
+## Catálogo en la base de datos
+Los 108 productos (con su `imagen_url` = `/assets/img/icons/<sku>.png`) se cargan con `database/productos_juego.sql` (no destructivo) y los precios en pesos de los 20 primeros con `database/precios_cop.sql`. Se regeneran con `python3 tools/generar_catalogo.py`.
+Solo manzana, banano y tomate se pesan (PLU); el resto de frutas y verduras se venden empacadas con código de barras.
+**PHP:** usa el de XAMPP/LAMPP (`/opt/lampp/bin/php -S localhost:8124 -t public`): el del sistema no trae `pdo_mysql`.
+
 ## Qué probar al conectar
 1. Recarga: sin banner de error rojo, el catálogo carga y los precios de la caja son los de la base de datos.
 2. Un cobro normal: PAY → teclear la suma de los billetes → PAY. Debe salir el recibo y el cambio. Compruébalo en la tabla `ventas`.

@@ -109,6 +109,31 @@ NUEVOS = [
     ('HEL-007', 'helados/popsicle_red', 'Paleta de cereza', 9, 1800, 19),
     ('HEL-008', 'helados/popsicle_yellow', 'Paleta de maracuya', 9, 1800, 19),
 ]
+
+# Precios de venta realistas en COP (antes de IVA), por SKU. Sobrescriben los de la tabla y los del seed.
+PRECIOS = {
+    'FRU-001': 8500, 'FRU-002': 3800, 'FRU-003': 4500, 'LAC-001': 4600, 'LAC-002': 9800, 'LAC-003': 8900,
+    'CAR-001': 11500, 'CAR-002': 13500, 'CAR-003': 12900, 'DES-001': 4800, 'DES-002': 7900, 'DES-003': 38000,
+    'BEB-001': 3500, 'BEB-002': 2800, 'BEB-003': 6500, 'PAN-001': 6800, 'PAN-002': 3200,
+    'LIM-001': 18900, 'LIM-002': 6500, 'HIG-001': 21900,
+    'FRU-004': 5200, 'FRU-005': 6500, 'FRU-006': 14900, 'FRU-007': 12900, 'FRU-008': 12500, 'FRU-009': 7900,
+    'FRU-010': 3900, 'FRU-011': 3500, 'FRU-012': 6900, 'FRU-013': 5900, 'FRU-014': 8900, 'FRU-015': 9500,
+    'FRU-016': 14900, 'FRU-017': 6900, 'FRU-018': 4900, 'FRU-019': 5900, 'FRU-020': 5900, 'FRU-021': 3200,
+    'FRU-022': 5500, 'FRU-023': 3500, 'FRU-024': 4500, 'FRU-025': 3900, 'FRU-026': 3800, 'FRU-027': 3500,
+    'FRU-028': 3900, 'FRU-029': 6900, 'FRU-030': 3500,
+    'LAC-004': 16900, 'LAC-005': 14500, 'LAC-006': 12900, 'LAC-007': 14500, 'LAC-008': 13800, 'LAC-009': 5900,
+    'DES-004': 5500, 'DES-005': 7900, 'DES-006': 7500, 'DES-007': 8500, 'DES-008': 7900, 'DES-009': 7900,
+    'DES-010': 28900, 'DES-011': 27900, 'DES-012': 28500, 'DES-013': 26900, 'DES-014': 39900,
+    'BEB-004': 2800, 'BEB-005': 2800, 'BEB-006': 2800, 'BEB-007': 4500, 'BEB-008': 3500, 'BEB-009': 3500,
+    'BEB-010': 3800, 'BEB-011': 3800, 'BEB-012': 3900, 'BEB-013': 3500, 'BEB-014': 3200, 'BEB-015': 3500,
+    'BEB-016': 9500, 'BEB-017': 9500, 'BEB-018': 9900, 'BEB-019': 9500, 'BEB-020': 9500, 'BEB-021': 9900,
+    'BEB-022': 9900, 'BEB-023': 3500, 'BEB-024': 5500, 'BEB-025': 3800, 'BEB-026': 3500,
+    'PAN-003': 8900, 'PAN-004': 8500, 'PAN-005': 9500, 'PAN-006': 9900, 'PAN-007': 8900,
+    'PAN-008': 5500, 'PAN-009': 6500, 'PAN-010': 7500, 'PAN-011': 6000, 'PAN-012': 5500,
+    'PAN-013': 3800, 'PAN-014': 4200, 'PAN-015': 3500,
+    'HEL-001': 4500, 'HEL-002': 4500, 'HEL-003': 4500,
+    'HEL-004': 2500, 'HEL-005': 2500, 'HEL-006': 2500, 'HEL-007': 2500, 'HEL-008': 2500,
+}
 CAT_NUEVA = (9, 'Helados', 'Helados y paletas.')
 q = lambda s: s.replace("'", "''")
 
@@ -117,7 +142,7 @@ seed = open(P('database', 'seed.sql')).read()
 cabecera, resto = seed.split('INSERT INTO productos', 1)
 bloque, cola = resto.split('INSERT INTO jornadas', 1)
 base = re.findall(r"\((\d+), '([A-Z]{3}-\d{3})', '([^']*)', (\d), ([\d.]+), ([\d.]+), (\d+), '[^']*', TRUE\)", bloque)
-base = [(int(i), s, n, int(c), pr, iva, int(st)) for i, s, n, c, pr, iva, st in base if int(i) <= 20]
+base = [(int(i), s, n, int(c), f'{PRECIOS[s]}.00', iva, int(st)) for i, s, n, c, pr, iva, st in base if int(i) <= 20]
 assert len(base) == 20, len(base)
 
 # --- 2) iconos ---
@@ -127,7 +152,7 @@ for sku, ruta, *_ in NUEVOS:
     shutil.copyfile(origen, P('public', 'assets', 'img', 'icons', sku.lower() + '.png'))
 
 rng = random.Random(2026)
-nuevos = [(21 + k, s, n, c, f'{pr}.00', f'{iva}.00', rng.randint(20, 120)) for k, (s, _, n, c, pr, iva) in enumerate(NUEVOS)]
+nuevos = [(21 + k, s, n, c, f'{PRECIOS[s]}.00', f'{iva}.00', rng.randint(20, 120)) for k, (s, _, n, c, pr, iva) in enumerate(NUEVOS)]
 todos = base + nuevos
 img = lambda s: '/assets/img/icons/' + s.lower() + '.png'
 
@@ -154,6 +179,13 @@ sql = ["-- Catalogo completo del juego: nombres colombianos y su asset (icono 16
        ",\n".join(f"    ('{s}', '{q(n)}', {c}, {pr}, {iva}, {st}, '{img(s)}', TRUE)" for _, s, n, c, pr, iva, st in todos),
        "ON DUPLICATE KEY UPDATE nombre = VALUES(nombre), imagen_url = VALUES(imagen_url), is_active = TRUE;", ""]
 open(P('database', 'productos_juego.sql'), 'w').write("\n".join(sql))
+
+# --- 4b) precios_cop.sql: precios e IVA de TODOS los productos del juego ---
+pc = ["-- Lleva PRECIO e IVA de los productos del juego a pesos colombianos realistas (generado por tools/generar_catalogo.py).",
+      "-- Solo cambia precio_base e iva_pct de esos SKU: no toca stock, ventas ni detalles (guardan su propio precio historico).",
+      "-- Idempotente. Uso:  mysql -u USUARIO -p supermarket_simulator < database/precios_cop.sql", "", "USE supermarket_simulator;", ""]
+pc += [f"UPDATE productos SET precio_base = {pr}, iva_pct = {iva} WHERE sku = '{s}';" for _, s, n, c, pr, iva, st in todos]
+open(P('database', 'precios_cop.sql'), 'w').write("\n".join(pc) + "\n")
 
 # --- 5) assets.js ---
 a = open(P('public', 'assets', 'js', 'phaser', 'assets.js')).read()

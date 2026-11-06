@@ -41,7 +41,15 @@ for (let t = 0; t < 300; t++) {
 console.log('Pricing vs PHP: 300 cestas comparadas');
 
 // 2) Venta
-const resolver = (sku) => ({ sku, ...PRODUCTOS_DEMO[sku] });
+// Catálogo FIJO de pruebas (no depende de los precios del juego, que pueden cambiar): nombre, precio e IVA
+const FIJO = {
+    'FRU-001': ['2500.00', '0.00'], 'FRU-002': ['1800.00', '0.00'], 'FRU-003': ['2300.00', '0.00'], 'LAC-001': ['1150.00', '0.00'],
+    'LAC-002': ['2350.00', '0.00'], 'LAC-003': ['4900.00', '5.00'], 'CAR-001': ['5750.00', '5.00'], 'CAR-002': ['6400.00', '5.00'],
+    'CAR-003': ['8950.00', '5.00'], 'DES-001': ['1950.00', '5.00'], 'DES-002': ['1250.00', '5.00'], 'DES-003': ['7800.00', '5.00'],
+    'BEB-001': ['750.00', '5.00'], 'BEB-002': ['2100.00', '19.00'], 'BEB-003': ['2650.00', '5.00'], 'PAN-001': ['2200.00', '5.00'],
+    'PAN-002': ['950.00', '0.00'], 'LIM-001': ['6500.00', '19.00'], 'LIM-002': ['3400.00', '19.00'], 'HIG-001': ['3150.00', '19.00']
+};
+const resolver = (sku) => ({ sku, nombre: sku, precio_base: FIJO[sku][0], iva_pct: FIJO[sku][1] });
 let v = Venta.crear(resolver);
 ok(v.vacia() && v.total() === 0, 'venta nueva vacía');
 ok(v.cobrar(100000).motivo === 'NADA QUE COBRAR', 'no se cobra una venta vacía');

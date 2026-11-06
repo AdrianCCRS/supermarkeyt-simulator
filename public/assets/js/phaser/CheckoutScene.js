@@ -10,6 +10,10 @@
  * código de la escena es el mismo con arte real o sin él.
  */
 const CAPACIDAD_BOLSA = 20;
+// Pantalla de la caja: los textos largos se desplazan despacio y los avisos duran lo que haga falta para leerlos.
+const PAUSA_MARQUESINA = 1300;          // ms de pausa al principio y al final del recorrido
+const MS_POR_PIXEL = 40;                // velocidad de desplazamiento (unos 25 px por segundo)
+const FACTOR_AVISO = 1.4;               // los avisos duran un 40 % más de lo pedido
 // Banda: los productos (32x32) llegan por arriba y se detienen al final, uno detrás de otro.
 const VEL_BANDA = 0.04;                 // px por ms, la misma para la cinta y los productos
 const SEP_BANDA = 34;                   // separación entre productos (32 + 2)
@@ -22,7 +26,16 @@ class CheckoutScene extends Phaser.Scene {
         this.entrada = '';
         this.modo = 'CODIGO';
         this.entregando = false;   // true mientras se cierra y cambia la bolsa
+        this.cobrando = false;     // true mientras se espera la respuesta del cobrador (el teclado queda bloqueado)
+        this.dinero = null;        // billetes que paga el cliente: {cuentas: {valor: n}, suma: centavos}
+        this.cuadre = null;        // efectivo real frente al tecleado, para la auditoría
+        this.billetesObjs = [];    // sprites de los billetes en la bandeja
+        this.venta = Venta.crear((sku) => Juego.producto(sku));   // venta en curso: productos, total y cobro
         this.enBalanza = null;     // fruta que está en el plato de la balanza
+        this.compra = {};          // inventario de compra del cliente: {sku: cantidad}, la fruta en kg
+        this.jornadaJuego = Auditoria.jornada(JORNADA_CONFIG.sueldoBase);   // pérdidas, sobrecobros y puntos de la jornada
+        this.registros = [];       // lo escaneado, en orden: {sku, cantidad, sprites}; VOID deshace el último
+        this.qtyPendiente = null;  // cantidad armada con QTY para el próximo producto
         this.cola = [];            // productos en la banda, del primero (al final de la banda) al último
         this.bandaMoviendo = false;
     }
@@ -46,6 +59,7 @@ class CheckoutScene extends Phaser.Scene {
             key: 'bolsa-cerrar', frameRate: 12,
             frames: this.anims.generateFrameNumbers('bolsa-cerrar', { start: 0, end: 7 })
         });
+        this.crearAnimaciones();
         this.crearTienda();
         this.crearBanda();
         this.crearCaja();
@@ -87,6 +101,22 @@ class CheckoutScene extends Phaser.Scene {
         return i >= 0 && p.y >= this.yMetaBanda(i) - 0.5;
     }
 
+    /**
+     * Llega un cliente con su inventario de compra. En la banda hay UN producto por unidad (la fruta, uno solo:
+     * su cantidad es el peso). Ese inventario es lo que la venta tiene que igualar exactamente al cobrar.
+     */
+    nuevaCompra(compra) {
+        this.compra = Object.assign({}, compra);
+        this.registros = [];
+        this.qtyPendiente = null;
+        const skus = [];
+        Object.keys(compra).forEach((sku) => {
+            const unidades = this.esFruta(sku) ? 1 : compra[sku];
+            for (let i = 0; i < unidades; i++) { skus.push(sku); }
+        });
+        this.llegadaPedido(skus);
+    }
+
     /** Llegan productos a la banda desde arriba, en el orden de la lista (hito 2: el pedido del cliente). */
     llegadaPedido(skus) {
         skus.forEach((sku) => {
@@ -100,6 +130,25 @@ class CheckoutScene extends Phaser.Scene {
     // ------------------------------------------------------------------
     // Columna 1: tienda
     // ------------------------------------------------------------------
+    /** Animaciones de clientes (si existen sus hojas) y del recibo. */
+    crearAnimaciones() {
+        [1, 2, 3, 4].forEach((n) => {
+            const k = 'cliente-' + n + '-anim';
+            if (!this.textures.exists(k)) { return; }
+            const crear = (nombre, a, b, repetir) => this.anims.create({
+                key: 'c' + n + '-' + nombre, frameRate: 10, repeat: repetir,
+                frames: this.anims.generateFrameNumbers(k, { start: a, end: b })
+            });
+            crear('frente', 0, 5, -1);      // baja por la cola
+            crear('derecha', 6, 11, -1);    // entra de perfil
+            crear('bolsa', 12, 17, -1);     // se va con la bolsa
+            crear('dinero', 18, 21, 0);     // extiende el dinero
+            crear('coger', 22, 23, 0);      // coge la bolsa
+        });
+        this.anims.create({ key: 'recibo-imprimir', frameRate: 12, frames: this.anims.generateFrameNumbers('recibo-imprimir', { start: 0, end: 9 }) });
+        this.anims.create({ key: 'recibo-arrancar', frameRate: 12, frames: this.anims.generateFrameNumbers('recibo-arrancar', { start: 0, end: 3 }) });
+    }
+
     crearTienda() {
         this.add.tileSprite(0, 0, 160, 270, 'suelo').setOrigin(0);
         this.add.image(0, 0, 'pared').setOrigin(0);
@@ -110,24 +159,91 @@ class CheckoutScene extends Phaser.Scene {
 
         // Fila de clientes: el primero (abajo) es el que se está atendiendo
         const c0 = TIENDA.cola;
-        this.clientes = [4, 3, 2, 1].map((n, i) => {
-            const c = this.add.sprite(c0.x, c0.y + i * c0.paso, 'cliente-' + n, 0).setOrigin(0.5, 1);
-            this.tweens.add({
-                targets: c, y: c.y - 1, duration: 500 + i * 70,
-                yoyo: true, repeat: -1, ease: 'Stepped'
-            });
-            return c;
-        });
+        this.fila = [4, 3, 2, 1].map((n, i) => this.crearCliente(n, c0.x, c0.y + i * c0.paso));   // de arriba (cola) a abajo (atendido)
 
         this.crearBandaMini();
         const [cx, cy, cw, ch] = TIENDA.canal;
         this.bandaTienda = this.add.tileSprite(cx, cy, cw, ch, 'banda-mini').setOrigin(0);
         this.add.image(...TIENDA.mostrador, 'mostrador-caja').setOrigin(0);     // el canal es transparente
         this.crearMiniPuesto();
-        this.add.image(...TIENDA.cajero, 'cajero').setOrigin(0);       // mira hacia la cola (izquierda)
+        this.cajeroSprite = this.add.image(...TIENDA.cajero, 'cajero').setOrigin(0);       // mira hacia la cola (izquierda)
         this.add.image(...TIENDA.luz, 'luz-carril').setOrigin(0);
         const [lx, ly, lw, lh] = TIENDA.luzCara;
         this.add.text(lx + lw / 2, ly + lh / 2, '1', { ...FUENTE, color: '#2ce8f5' }).setOrigin(0.5);   // nº de carril
+    }
+
+    // ------------------------------------------------------------------
+    // Clientes: cola, entrada y salida
+    // ------------------------------------------------------------------
+    crearCliente(n, x, y) {
+        const o = { c: this.add.sprite(x, y, 'cliente-' + n, 0).setOrigin(0.5, 1), n, y, cara: 0 };
+        this.bob(o);
+        return o;
+    }
+
+    /** Rebote suave de 1 px mientras espera. */
+    bob(o) {
+        this.quieto(o);
+        o.bobTween = this.tweens.add({ targets: o.c, y: o.y - 1, duration: 500 + Math.random() * 200, yoyo: true, repeat: -1, ease: 'Stepped' });
+    }
+
+    quieto(o) {
+        if (o.bobTween) { o.bobTween.remove(); o.bobTween = null; }
+        o.c.y = o.y;
+    }
+
+    /** Reproduce una animación del cliente si su hoja existe. Devuelve si había animación. */
+    animar(o, tipo) {
+        const k = 'c' + o.n + '-' + tipo;
+        if (!this.anims.exists(k)) { return false; }
+        o.c.play(k);
+        return true;
+    }
+
+    /** Vuelve a la pose de pie con su expresión (0 normal · 1 esperando · 2 molesto · 3 satisfecho). */
+    pararAnim(o) {
+        o.c.anims.stop();
+        o.c.setTexture('cliente-' + o.n, o.cara);
+    }
+
+    /** Camina hasta (x, y). Con la hoja de animación anda; sin ella, se desliza. */
+    mover(o, x, y, ms, anim, fin) {
+        this.quieto(o);
+        this.animar(o, anim);
+        this.tweens.add({
+            targets: o.c, x, y, duration: ms, ease: 'Linear',
+            onComplete: () => { o.y = y; this.pararAnim(o); this.bob(o); if (fin) { fin(); } }
+        });
+    }
+
+    /** El atendido coge la bolsa y se va; la cola avanza un puesto y entra otro cliente por la izquierda. */
+    clienteSale(cara) {
+        const servido = this.fila.pop();
+        const c0 = TIENDA.cola;
+        servido.cara = cara;
+        this.quieto(servido);
+        servido.c.setTexture('cliente-' + servido.n, cara);
+        const conPose = this.anims.exists('c' + servido.n + '-coger');
+        if (conPose) { servido.c.play('c' + servido.n + '-coger'); }
+        this.time.delayedCall(conPose ? 500 : 250, () => {
+            this.animar(servido, 'bolsa');
+            this.tweens.add({ targets: servido.c, y: 270 + 48, duration: 1900, ease: 'Linear', onComplete: () => servido.c.destroy() });
+        });
+        this.time.delayedCall(900, () => {
+            this.fila.forEach((o) => this.mover(o, o.c.x, o.y + c0.paso, 700, 'frente'));
+            const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
+            this.fila.unshift(nuevo);
+            this.mover(nuevo, c0.x, c0.y, 1000, 'derecha', () => { this.finClientes = true; this.siguienteSiListo(); });
+        });
+    }
+
+    /** Llega el siguiente cliente a la banda cuando la bolsa ya se cambió y la cola terminó de avanzar. */
+    siguienteSiListo() {
+        if (!this.finBolsa || !this.finClientes) { return; }
+        this.finBolsa = false;
+        this.finClientes = false;
+        this.numCompra++;                                         // demo: el cliente trae su inventario de compra
+        this.nuevaCompra(COMPRAS_DEMO[this.numCompra % COMPRAS_DEMO.length]);
     }
 
     /** Versión pequeña de lo que se juega en las otras columnas: escáner, balanza, caja y productos de la banda. */
@@ -207,7 +323,8 @@ class CheckoutScene extends Phaser.Scene {
         this.crearBotonEntregar();
 
         // Demo: llega un pedido de muestra (en el hito 2 lo genera cada cliente)
-        this.llegadaPedido(['FRU-001', 'LAC-001', 'BEB-002', 'PAN-002', 'FRU-002']);
+        this.numCompra = 0;
+        this.nuevaCompra(COMPRAS_DEMO[0]);
     }
 
     /** ¿Es una fruta/verdura sin código de barras? Estas hay que pesarlas antes de escanearlas. */
@@ -226,9 +343,6 @@ class CheckoutScene extends Phaser.Scene {
         p.sku = sku;
         p.estado = 'banda';
         p.pesada = false;
-        p.on('pointerdown', () => {
-            if (p.estado === 'bolsa') { this.sacarDeBolsa(p); }     // un clic en la bolsa lo saca
-        });
         p.on('dragstart', () => this.empezarArrastre(p));
         p.on('drag', (_ptr, dragX, dragY) => { if (p.arrastrando) { p.x = dragX; p.y = dragY; } });
         p.on('dragend', () => this.soltar(p));
@@ -266,9 +380,12 @@ class CheckoutScene extends Phaser.Scene {
         const enBalanza = Phaser.Geom.Rectangle.ContainsPoint(this.zona('balanza'), centro);
         const fruta = this.esFruta(p.sku);
 
+        if ((enEscaner || enBalanza) && this.cobrando) { return this.rechazar(p, 'ESPERA', 'PROCESANDO'); }
         if ((enEscaner || enBalanza) && this.entregando) { return this.rechazar(p, 'ESPERA', 'BOLSA CERRANDO'); }
+        if ((enEscaner || enBalanza) && this.venta.pagada) { return this.rechazar(p, 'YA COBRADO', 'ENTREGA'); }
         if (enEscaner) {
             if (fruta) { return this.rechazar(p, 'FRUTA', 'PESA Y CODIGO'); }
+            // QTY no se limita: si cuentas más unidades de las que hay, cobras de más (el cliente protestará)
             return this.escanear(p);
         }
         if (enBalanza) {
@@ -299,12 +416,41 @@ class CheckoutScene extends Phaser.Scene {
     avisar(linea1, linea2, ms) {
         this.mostrar(linea1, linea2);
         if (this.temporizadorPantalla) { this.temporizadorPantalla.remove(); }
-        this.temporizadorPantalla = this.time.delayedCall(ms, () => this.restaurarPantalla());
+        // Dura más de lo pedido, y nunca menos de lo que tarda en desplazarse un texto largo entero.
+        const duracion = Math.max(ms * FACTOR_AVISO, this.lineaArriba.tiempoLectura, this.lineaAbajo.tiempoLectura);
+        this.temporizadorPantalla = this.time.delayedCall(duracion, () => this.restaurarPantalla());
     }
 
     restaurarPantalla() {
         if (this.entrada || this.modo === 'EFECTIVO') { this.refrescarEntrada(); }
-        else { this.mostrar('TOTAL', Money.pantalla('0.00')); }
+        else { this.pantallaReposo(); }
+    }
+
+    /** Pantalla en reposo: el total acumulado de la venta (o el cambio, si ya se cobró). */
+    pantallaReposo() {
+        if (this.venta.pagada) {
+            return this.mostrar('CAMBIO', Money.pantalla(Money.fromCents(this.venta.cambio)));
+        }
+        const t = this.venta.ticket();
+        const etiqueta = this.qtyPendiente ? 'CANTIDAD x' + this.qtyPendiente : (t.descuento ? 'TOTAL -5%' : 'TOTAL');
+        this.mostrar(etiqueta, Money.pantalla(Money.fromCents(t.total)));
+    }
+
+    /** Nombre del producto para la pantalla de la caja (si es largo, la pantalla lo desplaza). */
+    nombreCorto(sku, kg, n) {
+        const nombre = (Juego.producto(sku).nombre || sku).toUpperCase();
+        return (kg ? kg + 'KG ' : (n > 1 ? 'x' + n + ' ' : '')) + nombre;
+    }
+
+    /** Lo que queda sin cobrar en la banda o la balanza se lo lleva el cliente (será una pérdida al cierre). */
+    llevarseLoQueQueda() {
+        const resto = this.cola.concat(this.enBalanza ? [this.enBalanza] : []);
+        this.cola = [];
+        this.enBalanza = null;
+        this.pesoTexto.setText('0 kg');
+        this.miniFrutaEn(null);
+        resto.forEach((o) => { o.estado = 'moviendo'; o.disableInteractive(); });
+        this.tweens.add({ targets: resto, x: '-=40', alpha: 0, duration: 500, onComplete: () => resto.forEach((o) => o.destroy()) });
     }
 
     /** La fruta se posa en el plato de la balanza y marca su peso. Falta teclear su código para cobrarla. */
@@ -320,7 +466,7 @@ class CheckoutScene extends Phaser.Scene {
                 p.estado = 'pesada';
                 if (!p.pesada) {
                     p.pesada = true;
-                    p.kg = Phaser.Math.Between(1, 3);
+                    p.kg = this.compra[p.sku] || 1;               // lo que pesa de verdad la compra del cliente
                     this.avisar('PESADO ' + p.kg + 'KG', 'TECLEA CODIGO', 1800);
                 }
                 this.pesoTexto.setText(p.kg + ' kg');
@@ -331,6 +477,11 @@ class CheckoutScene extends Phaser.Scene {
 
     /** El producto pasa por el cristal del escáner (láser y OK) y entra en la bolsa. */
     escanear(p) {
+        this.entrada = '';                                          // un número sin confirmar con QTY no cuenta: se cobra 1
+        const n = this.qtyPendiente || 1;
+        this.qtyPendiente = null;
+        p.cantidad = n;
+        p.grupo = [p].concat(n > 1 ? this.tomarDeLaBanda(p.sku, n - 1) : []);     // las unidades que cuenta QTY
         p.estado = 'moviendo';
         const [ex, ey] = BANDA.escaner;
         this.tweens.add({
@@ -343,6 +494,14 @@ class CheckoutScene extends Phaser.Scene {
                 this.time.delayedCall(500, () => this.meterEnBolsa(p));
             }
         });
+    }
+
+    /** QTY: retira de la banda k unidades más del mismo producto (las más cercanas al escáner). Los demás avanzan solos. */
+    tomarDeLaBanda(sku, k) {
+        const elegidos = this.cola.filter((o) => o.sku === sku && o.estado === 'banda').slice(0, k);
+        this.cola = this.cola.filter((o) => !elegidos.includes(o));
+        elegidos.forEach((o) => { o.estado = 'moviendo'; });
+        return elegidos;
     }
 
     /** Vuelve al final de la banda (primer puesto de la cola); los que esperaban se echan hacia atrás. */
@@ -381,18 +540,29 @@ class CheckoutScene extends Phaser.Scene {
 
     /** El producto escaneado entra en la bolsa: sigue siendo el mismo sprite, y se puede volver a sacar. */
     meterEnBolsa(p) {
-        this.itemsBolsa.push(p);
+        const unidades = p.grupo || [p];                            // QTY: varias unidades entran juntas
+        const sku = p.skuCobrado || p.sku;                          // lo que se COBRA (puede no ser lo que es, si se tecleó otro código)
+        p.cantidad = p.kg || p.cantidad || 1;                       // la fruta cuenta por kg
+        const r = this.venta.agregar(sku, p.cantidad);
+        this.registros.push({ sku, cantidad: p.cantidad, sprites: unidades });
+        this.avisar(this.nombreCorto(sku, p.kg, p.kg ? 0 : p.cantidad), Money.pantalla(Money.fromCents(r.delta)), 1500);   // precio de lo registrado, con IVA
+        unidades.forEach((u) => this.itemsBolsa.push(u));
         this.enBolsa = this.itemsBolsa.length;
         this.reubicarBolsa();
         this.actualizarBolsa();
     }
 
-    /** Saca un producto de la bolsa y lo devuelve a la banda (se puede volver a arrastrar). */
-    sacarDeBolsa(p) {
-        this.itemsBolsa = this.itemsBolsa.filter((it) => it !== p);
+    /** VOID: anula lo último que se registró. Sus unidades vuelven a la banda y hay que escanearlas otra vez. */
+    anularUltimo() {
+        if (this.entregando) { return this.avisar('ESPERA', 'BOLSA CERRANDO', 1400); }
+        if (this.venta.pagada) { return this.avisar('YA COBRADO', 'NO SE ANULA', 1400); }
+        const r = this.registros.pop();
+        if (!r) { return this.avisar('NADA QUE', 'ANULAR', 1400); }
+        const q = this.venta.quitar(r.sku, r.cantidad);
+        this.avisar('ANULADO', '-' + Money.pantalla(Money.fromCents(q.delta)), 1500);
+        this.itemsBolsa = this.itemsBolsa.filter((it) => !r.sprites.includes(it));
         this.enBolsa = this.itemsBolsa.length;
-        p.desde = 'banda';
-        this.volverALaBanda(p);
+        r.sprites.forEach((it) => { it.grupo = null; it.cantidad = 0; it.skuCobrado = null; this.volverALaBanda(it); });
         this.reubicarBolsa();
         this.actualizarBolsa();
     }
@@ -413,8 +583,9 @@ class CheckoutScene extends Phaser.Scene {
     actualizarBolsa() {
         const extra = this.enBolsa - CAPACIDAD_BOLSA;
         this.textoExtra.setText(extra > 0 ? '+' + extra : '');
-        this.botonEntregar.setFrame(this.enBolsa > 0 ? 0 : 2);
-        this.textoEntregar.setColor(this.enBolsa > 0 ? '#ffffff' : '#181425');
+        const listo = this.enBolsa > 0 && this.venta.pagada;        // solo se entrega una venta cobrada
+        this.botonEntregar.setFrame(listo ? 0 : 2);
+        this.textoEntregar.setColor(listo ? '#ffffff' : '#181425');
     }
 
     crearBotonEntregar() {
@@ -422,10 +593,13 @@ class CheckoutScene extends Phaser.Scene {
         this.botonEntregar = this.add.sprite(x, y, 'boton-entregar', 2).setOrigin(0).setInteractive({ useHandCursor: true });
         this.textoEntregar = this.add.text(x + 48, y + 4, 'ENTREGAR', { ...FUENTE, color: '#181425' }).setOrigin(0.5, 0);
         const soltar = () => {
-            if (this.enBolsa > 0) { this.botonEntregar.setFrame(0); this.textoEntregar.y = y + 4; }
+            this.textoEntregar.y = y + 4;
+            if (!this.entregando) { this.actualizarBolsa(); }
         };
         this.botonEntregar.on('pointerdown', () => {
-            if (this.enBolsa === 0) { return; }
+            if (this.entregando) { return; }
+            if (this.enBolsa === 0) { return this.avisar('BOLSA VACIA', 'NADA QUE DAR', 1400); }
+            if (!this.venta.pagada) { return this.avisar('COBRA PRIMERO', 'PULSA PAY', 1600); }
             this.botonEntregar.setFrame(1);
             this.textoEntregar.y = y + 5;
             this.entregar();
@@ -442,6 +616,27 @@ class CheckoutScene extends Phaser.Scene {
     entregar() {
         if (this.entregando) { return; }
         this.entregando = true;
+        // Hito 2: aquí se llama a Api.checkout(venta.carrito(), efectivo) y se muestra el ticket.
+        // Auditoría: se compara lo que el cliente se lleva con lo que se cobró.
+        const liq = Auditoria.liquidar(this.compra, this.venta.carrito(), (sku) => Juego.producto(sku));
+        const res = this.jornadaJuego.registrar(liq, this.venta.total(), this.cuadre || undefined);
+        this.llevarseLoQueQueda();
+        this.arrancarRecibo();
+        this.quitarBilletes(false);
+        this.dinero = null;
+        this.cuadre = null;
+        this.finBolsa = false;
+        this.finClientes = false;
+        this.clienteSale(res.protesta ? 2 : (res.exacta ? 3 : 0));          // se va molesto, satisfecho o sin más
+        this.venta = Venta.crear((sku) => Juego.producto(sku));
+        this.modo = 'CODIGO';
+        this.entrada = '';
+        this.registros = [];
+        this.qtyPendiente = null;
+        // El tendero no sabe de las pérdidas hasta el cierre, pero un sobrecobro sí lo nota el cliente.
+        if (res.protesta) { this.avisar('CLIENTE PROTESTA', 'COBRASTE DE MAS ' + Auditoria.PUNTOS_PROTESTA + ' PTS', 2600); }
+        else if (res.exacta) { this.avisar('GRACIAS', 'VENTA EXACTA +' + Auditoria.PUNTOS_VENTA_EXACTA, 2200); }
+        else { this.avisar('GRACIAS', 'VUELVA PRONTO', 1800); }
         const items = this.itemsBolsa;
         this.itemsBolsa = [];
         this.enBolsa = 0;
@@ -460,7 +655,7 @@ class CheckoutScene extends Phaser.Scene {
             this.bolsaFrente.setVisible(true);
             this.tweens.add({
                 targets: this.bolsa, x: x0, duration: 350, ease: 'Quad.easeOut',
-                onComplete: () => { this.bolsa.clearMask(); this.entregando = false; }
+                onComplete: () => { this.bolsa.clearMask(); this.entregando = false; this.finBolsa = true; this.siguienteSiListo(); }
             });
         };
 
@@ -471,7 +666,7 @@ class CheckoutScene extends Phaser.Scene {
                 this.bolsaFrente.setVisible(false);
                 this.textoExtra.setText('');
                 if (this.faltantes.has('bolsa-cerrar')) {         // sin la animación: solo un parpadeo
-                    this.tweens.add({ targets: this.bolsa, alpha: 0, duration: 150, yoyo: true, onYoyo: () => this.bolsaFrente.setVisible(true), onComplete: () => { this.entregando = false; } });
+                    this.tweens.add({ targets: this.bolsa, alpha: 0, duration: 150, yoyo: true, onYoyo: () => this.bolsaFrente.setVisible(true), onComplete: () => { this.entregando = false; this.finBolsa = true; this.siguienteSiListo(); } });
                     return;
                 }
                 this.bolsa.setTexture('bolsa-cerrar', 0).play('bolsa-cerrar');   // 2) se cierra
@@ -504,16 +699,26 @@ class CheckoutScene extends Phaser.Scene {
         const verde = { ...FUENTE, color: '#63c74d' };
         this.lineaArriba = this.add.text(CX + px + 2, CY + py + 2, 'TOTAL', verde);
         this.lineaAbajo = this.add.text(CX + px + pw - 2, CY + py + ph - 10, Money.pantalla('0.00'), verde).setOrigin(1, 0);
+        // Los textos largos se desplazan (marquesina) y se recortan al interior de la pantalla
+        this.pantalla = { izq: CX + px + 2, der: CX + px + pw - 2, ancho: pw - 4 };
+        const mascara = this.make.graphics({ add: false }).fillRect(this.pantalla.izq, CY + py, this.pantalla.ancho, ph).createGeometryMask();
+        this.lineaArriba.setMask(mascara);
+        this.lineaAbajo.setMask(mascara);
 
         Object.entries(CAJA_TECLAS).forEach(([label, def]) => this.crearTecla(label, CX, CY, def));
 
+        // Bandeja con los billetes del cliente y recibo que sale de la impresora
+        this.add.image(...COBRO.bandeja, 'bandeja-efectivo').setOrigin(0);
+        this.recibo = this.add.sprite(...COBRO.recibo, 'recibo-imprimir', 0).setOrigin(0).setVisible(false).setDepth(5);
+
         // Libro de códigos PLU
-        this.add.image(328, 164, 'libro').setOrigin(0);
+        const [libroX, libroY] = COBRO.libro;
+        this.add.image(libroX, libroY, 'libro').setOrigin(0);
         Object.entries(PLU).forEach(([codigo, sku], i) => {
             const pagina = i < 2 ? 0 : 1;
             const fila = pagina === 0 ? i : i - 2;
             const x = 338 + pagina * 70;
-            const y = 178 + fila * 26;
+            const y = libroY + 8 + fila * 26;
             this.add.image(x, y, sku).setOrigin(0);
             this.add.text(x + 20, y + 4, codigo, FUENTE);
         });
@@ -536,65 +741,213 @@ class CheckoutScene extends Phaser.Scene {
      * CLR vuelve al estado inicial.
      */
     pulsarTecla(label) {
+        if (this.cobrando) { return; }                       // esperando al cobrador: teclado bloqueado
         if (/^\d$/.test(label)) {
+            if (this.venta.pagada) { return; }
             if (this.entrada.length < (this.modo === 'EFECTIVO' ? 7 : 4)) { this.entrada += label; }
             this.refrescarEntrada();
         } else if (label === 'PAY') {
-            this.modo = 'EFECTIVO';
-            this.entrada = '';
-            this.refrescarEntrada();
+            if (this.modo === 'EFECTIVO') { this.confirmarEfectivo(); }      // 2.ª pulsación: confirma el efectivo tecleado
+            else { this.iniciarCobro(); }                                    // 1.ª: empieza el cobro
+        } else if (label === 'QTY') {
+            this.armarCantidad();
+        } else if (label === 'VOID') {
+            this.anularUltimo();
         } else if (label === 'CLR') {
+            if (this.modo === 'EFECTIVO') { this.quitarBilletes(false); }     // cancela el cobro: el cliente guarda su dinero
             this.modo = 'CODIGO';
             this.entrada = '';
-            this.mostrar('TOTAL', Money.pantalla('0.00'));
+            this.qtyPendiente = null;
+            this.pantallaReposo();
         } else if (label === 'ENT') {
-            if (this.modo === 'EFECTIVO') {
-                this.mostrar('PAGO CON', Money.pantalla((this.entrada || '0') + '.00'));
-            } else {
-                this.registrarCodigo(this.entrada);
-            }
+            if (this.modo === 'EFECTIVO') { this.confirmarEfectivo(); }
+            else { this.registrarCodigo(this.entrada); }
             this.entrada = '';
         }
-        // VOID y QTY se conectan en el hito 2
+    }
+
+    /** QTY: el número tecleado será la cantidad del próximo producto que se escanee (hay que pasar al menos 1 por el escáner). */
+    armarCantidad() {
+        if (this.entregando) { return this.avisar('ESPERA', 'BOLSA CERRANDO', 1400); }
+        if (this.venta.pagada) { return this.avisar('YA COBRADO', 'ENTREGA', 1400); }
+        if (this.modo === 'EFECTIVO') { return; }
+        const n = parseInt(this.entrada || '0', 10);
+        this.entrada = '';
+        if (!n) { return this.avisar('TECLEA LA', 'CANTIDAD', 1200); }
+        if (n > 99) { return this.avisar('MAXIMO', '99', 1200); }
+        this.qtyPendiente = n;
+        this.avisar('CANTIDAD x' + n, 'ESCANEA UNO', 1400);
+    }
+
+    /** PAY: solo se cobra una venta con productos, ya escaneados todos, y que no esté cobrada. */
+    iniciarCobro() {
+        if (this.entregando) { return this.avisar('ESPERA', 'BOLSA CERRANDO', 1400); }
+        if (this.venta.pagada) { return this.avisar('YA COBRADO', 'ENTREGA', 1400); }
+        if (this.venta.vacia()) { return this.avisar('NADA QUE', 'COBRAR', 1400); }
+        // Se puede cobrar aunque queden productos en la banda: el cliente se los llevará sin pagar (pérdida).
+        if (this.children.list.some((o) => o.sku && o.active && (o.estado === 'arrastrando' || o.estado === 'moviendo'))) {
+            return this.avisar('ESPERA', 'UN MOMENTO', 1000);
+        }
+        // El cliente saca su dinero: el tendero tiene que leer los billetes de la bandeja y teclear la suma.
+        if (!this.dinero) { this.dinero = Cobro.generarBilletes(this.venta.total(), Math.random); }
+        this.mostrarBilletes();
+        const servido = this.fila[this.fila.length - 1];
+        if (servido && this.animar(servido, 'dinero')) {
+            this.quieto(servido);
+            servido.c.once('animationcomplete', () => { this.pararAnim(servido); this.bob(servido); });
+        }
+        this.modo = 'EFECTIVO';
+        this.entrada = '';
+        this.refrescarEntrada();
     }
 
     /**
-     * ENT en modo CODIGO: el código tiene que existir, y la fruta de la balanza tiene que ser la suya.
-     * Si todo cuadra se cobra según el peso (hoy 1 kg = 1 unidad) y la fruta entra en la bolsa.
+     * Confirma el efectivo tecleado: pide el cobro al cobrador (el simulador local o, más adelante, el backend).
+     * Mientras llega la respuesta el teclado queda bloqueado: la API no es idempotente (un doble PAY crearía dos ventas).
+     */
+    confirmarEfectivo() {
+        if (this.cobrando) { return; }
+        if (!this.entrada) { return this.avisar('ESCRIBE EL', 'EFECTIVO', 1200); }
+        const efectivo = parseInt(this.entrada, 10) * 100;
+        this.entrada = '';
+        this.cobrando = true;
+        this.mostrar('PROCESANDO', 'ESPERE...');
+        Juego.cobrar({ carrito: this.venta.carrito(), efectivo })
+            .then((r) => this.cobroOk(efectivo, r), (e) => this.cobroError(efectivo, e));
+    }
+
+    /** El cobrador confirmó el pago: la venta queda cobrada con SUS importes y sale el recibo. */
+    cobroOk(efectivo, r) {
+        this.cobrando = false;
+        this.venta.marcarCobrada({ efectivo, total: r.total, cambio: r.cambio });
+        this.cuadre = Auditoria.cuadreCaja(this.dinero ? this.dinero.suma : efectivo, efectivo, r.total);
+        this.modo = 'CODIGO';
+        this.quitarBilletes(true);
+        this.imprimirRecibo();
+        this.cajeroDaCambio();
+        this.actualizarBolsa();            // el botón ENTREGAR se activa
+        this.pantallaReposo();             // CAMBIO + importe
+    }
+
+    /** El cobrador rechazó el cobro (efectivo insuficiente, stock, jornada cerrada, sin red…): no se cobró nada. */
+    cobroError(efectivo, e) {
+        this.cobrando = false;
+        const faltan = this.venta.total() - efectivo;
+        if (e && e.status === 422 && faltan > 0) { return this.avisar('FALTAN', Money.pantalla(Money.fromCents(faltan)), 1800); }
+        this.avisar('ERROR ' + ((e && e.status) || ''), (e && e.mensaje) || 'SIN RESPUESTA', 2200);
+    }
+
+    // ------------------------------------------------------------------
+    // Billetes, recibo y cambio (animaciones de la caja)
+    // ------------------------------------------------------------------
+    /** Los billetes del cliente aparecen en los compartimentos de la bandeja (una pila por valor). */
+    mostrarBilletes() {
+        this.quitarBilletes(false);
+        const [bx, by] = COBRO.bandeja;
+        Object.keys(this.dinero.cuentas).map(Number).sort((a, b) => a - b).forEach((valor, k) => {
+            const [cx, cy, , ch] = COBRO.compartimentos[k];
+            const n = this.dinero.cuentas[valor];
+            for (let i = 0; i < n; i++) {
+                const x = bx + cx + 4;
+                const y = by + cy + ch - 16 - i * 2;                         // cada billete de la pila, 2 px más arriba
+                const img = this.add.image(x - 60, y, 'billetes', Cobro.BILLETES.indexOf(valor)).setOrigin(0).setDepth(3 + i).setAlpha(0);
+                this.billetesObjs.push(img);
+                this.tweens.add({ targets: img, x, alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
+                if (i === n - 1) {                                            // el valor, escrito en el billete de arriba
+                    const t = this.add.text(x - 60 + 16, y + 3, String(valor / 1000), { ...FUENTE, color: '#181425' }).setOrigin(0.5, 0).setDepth(10).setAlpha(0);
+                    this.billetesObjs.push(t);
+                    this.tweens.add({ targets: t, x: x + 16, alpha: 1, duration: 250, delay: k * 90 + i * 60, ease: 'Quad.easeOut' });
+                }
+            }
+        });
+    }
+
+    /** Retira los billetes: al cobrar pasan al cajón (suben y desaparecen); al cancelar, vuelven al cliente. */
+    quitarBilletes(haciaCaja) {
+        const objs = this.billetesObjs;
+        this.billetesObjs = [];
+        if (!objs.length) { return; }
+        if (!haciaCaja) { return objs.forEach((o) => o.destroy()); }
+        this.tweens.add({ targets: objs, y: '-=24', alpha: 0, duration: 350, onComplete: () => objs.forEach((o) => o.destroy()) });
+    }
+
+    imprimirRecibo() {
+        this.recibo.setTexture('recibo-imprimir', 0).setVisible(true).play('recibo-imprimir');
+    }
+
+    arrancarRecibo() {
+        if (!this.recibo.visible) { return; }
+        this.recibo.setTexture('recibo-arrancar', 0).play('recibo-arrancar');
+        this.recibo.once('animationcomplete', () => this.recibo.setVisible(false));
+    }
+
+    /** El cajero da el cambio (si existe su animación). */
+    cajeroDaCambio() {
+        if (!this.textures.exists('cajero-anim')) { return; }
+        this.cajeroSprite.setTexture('cajero-anim', 2);
+        this.time.delayedCall(450, () => this.cajeroSprite.setFrame(3));
+        this.time.delayedCall(1200, () => this.cajeroSprite.setTexture('cajero'));
+    }
+
+    /**
+     * ENT en modo CODIGO: el código tiene que existir y ser el de la fruta que está YA pesada en la balanza.
+     * Si cuadra, la fruta entra en la bolsa y se añade a la venta (la caja muestra su precio por peso).
      */
     registrarCodigo(codigo) {
         const sku = PLU[codigo];
         const fruta = this.enBalanza;
         if (this.entregando) { return this.avisar('ESPERA', 'BOLSA CERRANDO', 1400); }
+        if (this.venta.pagada) { return this.avisar('YA COBRADO', 'ENTREGA', 1400); }
         if (!sku) { return this.avisar('NO EXISTE', codigo, 1400); }
-        if (!fruta) { return this.avisar('NADA PESADO', 'PESA LA FRUTA', 1400); }
-        if (fruta.sku !== sku) { return this.avisar('CODIGO', 'NO COINCIDE', 1400); }
-
-        const unitario = Juego.precioDe(sku);
-        const total = unitario ? Money.fromCents(Money.toCents(unitario) * fruta.kg) : null;
-        this.avisar(sku + ' ' + fruta.kg + 'KG', total ? Money.pantalla(total) : 'OK', 2200);
-
+        if (!fruta || fruta.estado !== 'pesada') { return this.avisar('NADA PESADO', 'PESA LA FRUTA', 1400); }
+        // El código tecleado es el que se cobra: si no es el de esta fruta, el error es del tendero.
+        fruta.skuCobrado = sku;
         fruta.estado = 'moviendo';
-        fruta.precioLinea = total;
         this.enBalanza = null;
         this.pesoTexto.setText('0 kg');
         this.miniFrutaEn(null);
         this.time.delayedCall(350, () => this.meterEnBolsa(fruta));
     }
 
+    /** Lo que se está tecleando: un código de fruta (CODIGO) o el efectivo recibido junto al total (EFECTIVO). */
     refrescarEntrada() {
         if (this.modo === 'EFECTIVO') {
-            this.mostrar('EFECTIVO', Money.pantalla((this.entrada || '0') + '.00'));
+            const total = Money.pantalla(Money.fromCents(this.venta.total()));
+            this.mostrar('TOTAL ' + total, '>' + Money.pantalla((this.entrada || '0') + '.00'));
         } else {
-            this.mostrar('CODIGO', this.entrada);
+            this.mostrar('NUM: QTY/ENT', this.entrada);      // el número es una cantidad (QTY) o un código de fruta (ENT)
         }
     }
 
     /** Escribe en la pantalla de la caja: línea pequeña arriba y valor abajo. */
     mostrar(arriba, abajo) {
         this.actualizarMiniPantalla(arriba, abajo);
-        this.lineaArriba.setText(arriba);
-        this.lineaAbajo.setText(abajo);
+        this.escribirLinea(this.lineaArriba, arriba, false);
+        this.escribirLinea(this.lineaAbajo, abajo, true);
+    }
+
+    /**
+     * Escribe una línea de la pantalla. Si cabe, queda fija (a la izquierda, o a la derecha en la de abajo).
+     * Si no cabe, se desplaza despacio de un extremo al otro, con una pausa en cada punta, hasta leerla entera.
+     */
+    escribirLinea(obj, texto, alineadaDerecha) {
+        const p = this.pantalla;
+        if (obj.marquesina) { obj.marquesina.remove(); obj.marquesina = null; }
+        obj.setText(String(texto));
+        obj.tiempoLectura = 0;
+        if (obj.width <= p.ancho) {
+            obj.setOrigin(alineadaDerecha ? 1 : 0, 0);
+            obj.x = alineadaDerecha ? p.der : p.izq;
+            return;
+        }
+        const exceso = obj.width - p.ancho;
+        obj.setOrigin(0, 0);
+        obj.x = p.izq;
+        obj.tiempoLectura = PAUSA_MARQUESINA + exceso * MS_POR_PIXEL + PAUSA_MARQUESINA;   // una pasada completa
+        obj.marquesina = this.tweens.add({
+            targets: obj, x: p.izq - exceso, duration: exceso * MS_POR_PIXEL,
+            hold: PAUSA_MARQUESINA, repeatDelay: PAUSA_MARQUESINA, yoyo: true, repeat: -1, ease: 'Linear'
+        });
     }
 
     crearSeparadores() {
@@ -610,6 +963,7 @@ class CheckoutScene extends Phaser.Scene {
     crearPlaceholders() {
         this.faltantes.forEach((key) => {
             const a = ASSETS[key];
+            if (a.opcional) { return; }                  // animaciones opcionales: sin ellas se usan deslizamientos
             const frames = a.frames || 1;
             const g = this.make.graphics({ x: 0, y: 0, add: false });
             for (let f = 0; f < frames; f++) {
@@ -678,6 +1032,29 @@ const Placeholders = (function () {
                     g.fillStyle([C.rojo, C.azul, C.amarillo, C.verde][(y / 20) % 4]).fillRect(x + 5, y + 3, w - 10, 13);
                 }
                 return;
+            case 'bandeja-efectivo':
+                bloque(g, x, 0, w, h, C.gris5, C.gris3, C.gris4);
+                COBRO.compartimentos.forEach(([cx, cy, cw, ch]) => bloque(g, x + cx, cy, cw, ch, C.gris4));
+                return;
+            case 'billetes': {
+                const col = [C.gris1, C.madera, C.rojo, C.naranja, 0xb55088, C.verde][frame];
+                bloque(g, x, 0, 32, 14, col, C.blanco, C.gris4);
+                g.fillStyle(C.crema).fillRect(x + 8, 4, 16, 6);
+                return;
+            }
+            case 'recibo-imprimir': case 'recibo-arrancar': {
+                const imprimir = key === 'recibo-imprimir';
+                if (imprimir && frame === 0) { return; }
+                if (!imprimir && frame === 3) { return; }
+                const largo = imprimir ? Math.min(46, 6 + frame * 5) : (frame === 2 ? 30 : 46);
+                const dx = imprimir ? 0 : [0, 1, 6][frame];
+                g.fillStyle(C.contorno).fillRect(x + 8 + dx, 6, 20, largo + 2);
+                g.fillStyle(C.blanco).fillRect(x + 9 + dx, 7, 18, largo);
+                for (let k = 0; k < Math.floor(largo / 6); k++) {
+                    g.fillStyle(C.gris3).fillRect(x + 11 + dx, 10 + k * 6, 8 + ((k * 5) % 9), 1);
+                }
+                return;
+            }
             case 'mostrador':
                 bloque(g, x, 0, w, h, C.gris3, C.gris2, C.gris4);
                 return;

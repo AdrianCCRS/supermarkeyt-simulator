@@ -48,7 +48,19 @@ const ASSETS = {
     'tecla-clr':  { path: 'caja/tecla-clr.png',  w: 36, h: 12, frames: 2 },
     'tecla-ent':  { path: 'caja/tecla-ent.png',  w: 36, h: 12, frames: 2 },
     'tecla-pay':  { path: 'caja/tecla-pay.png',  w: 32, h: 12, frames: 2 },
-    libro:       { path: 'caja/libro.png',         w: 144, h: 102 }
+    libro:       { path: 'caja/libro.png',         w: 144, h: 68 },
+    // Cobro: bandeja con los billetes del cliente, y el recibo que sale de la impresora
+    'bandeja-efectivo': { path: 'caja/bandeja-efectivo.png', w: 144, h: 30 },
+    billetes:    { path: 'caja/billetes.png',      w: 32,  h: 14, frames: 6 },   // 2.000 · 5.000 · 10.000 · 20.000 · 50.000 · 100.000
+    'recibo-imprimir': { path: 'caja/recibo-imprimir.png', w: 36, h: 60, frames: 10 },
+    'recibo-arrancar': { path: 'caja/recibo-arrancar.png', w: 36, h: 60, frames: 4 },
+    // Animaciones (opcionales: si no existen, el juego se mueve con deslizamientos sencillos).
+    // Rejilla de 6 columnas x 4 filas: caminar de frente · caminar de perfil · caminar con bolsa · dar dinero y coger bolsa
+    'cliente-1-anim': { path: 'characters/cliente-1-anim.png', w: 32, h: 38, frames: 24, opcional: true },
+    'cliente-2-anim': { path: 'characters/cliente-2-anim.png', w: 32, h: 38, frames: 24, opcional: true },
+    'cliente-3-anim': { path: 'characters/cliente-3-anim.png', w: 32, h: 38, frames: 24, opcional: true },
+    'cliente-4-anim': { path: 'characters/cliente-4-anim.png', w: 32, h: 38, frames: 24, opcional: true },
+    'cajero-anim': { path: 'characters/cajero-anim.png', w: 32, h: 38, frames: 4, opcional: true }   // reposo · respira · cambio · cambio con billetes
 };
 
 // Columna de la tienda (de tienda-layout.json). Posiciones [x, y] de la esquina superior izquierda.
@@ -110,8 +122,45 @@ const PLU = {
     '4664': 'FRU-003'    // Tomates
 };
 
-// Precios de muestra (los del seed) para cuando el catálogo de la API aún no se ha cargado.
-const PRECIOS_DEMO = { 'FRU-001': '2500.00', 'FRU-002': '1800.00', 'FRU-003': '2300.00' };
+// Columna de la caja: posición de la bandeja de efectivo, del recibo y del libro (coordenadas del lienzo).
+const COBRO = {
+    bandeja: [328, 160], compartimentos: [[4, 4, 40, 22], [52, 4, 40, 22], [100, 4, 40, 22]],
+    recibo: [332, 50], libro: [328, 198]
+};
+
+// Catálogo de muestra (el del seed). Se usa mientras el catálogo de la API no esté cargado.
+const PRODUCTOS_DEMO = {
+    'FRU-001': { nombre: 'Manzanas rojas 1 kg',    precio_base: '2500.00', iva_pct: '0.00' },
+    'FRU-002': { nombre: 'Bananas 1 kg',           precio_base: '1800.00', iva_pct: '0.00' },
+    'FRU-003': { nombre: 'Tomates 1 kg',           precio_base: '2300.00', iva_pct: '0.00' },
+    'LAC-001': { nombre: 'Leche entera 1 L',       precio_base: '1150.00', iva_pct: '0.00' },
+    'LAC-002': { nombre: 'Yogur natural pack 4',   precio_base: '2350.00', iva_pct: '0.00' },
+    'LAC-003': { nombre: 'Queso manchego 250 g',   precio_base: '4900.00', iva_pct: '5.00' },
+    'CAR-001': { nombre: 'Pechuga de pollo 500 g', precio_base: '5750.00', iva_pct: '5.00' },
+    'CAR-002': { nombre: 'Carne molida 500 g',     precio_base: '6400.00', iva_pct: '5.00' },
+    'CAR-003': { nombre: 'Filete de salmon 300 g', precio_base: '8950.00', iva_pct: '5.00' },
+    'DES-001': { nombre: 'Arroz blanco 1 kg',      precio_base: '1950.00', iva_pct: '5.00' },
+    'DES-002': { nombre: 'Pasta espagueti 500 g',  precio_base: '1250.00', iva_pct: '5.00' },
+    'DES-003': { nombre: 'Aceite de oliva 1 L',    precio_base: '7800.00', iva_pct: '5.00' },
+    'BEB-001': { nombre: 'Agua mineral 1.5 L',     precio_base: '750.00',  iva_pct: '5.00' },
+    'BEB-002': { nombre: 'Refresco de cola 2 L',   precio_base: '2100.00', iva_pct: '19.00' },
+    'BEB-003': { nombre: 'Zumo de naranja 1 L',    precio_base: '2650.00', iva_pct: '5.00' },
+    'PAN-001': { nombre: 'Pan de molde 500 g',     precio_base: '2200.00', iva_pct: '5.00' },
+    'PAN-002': { nombre: 'Barra de pan',           precio_base: '950.00',  iva_pct: '0.00' },
+    'LIM-001': { nombre: 'Detergente liquido 2 L', precio_base: '6500.00', iva_pct: '19.00' },
+    'LIM-002': { nombre: 'Papel de cocina 3 rollos', precio_base: '3400.00', iva_pct: '19.00' },
+    'HIG-001': { nombre: 'Gel de ducha 750 ml',    precio_base: '3150.00', iva_pct: '19.00' }
+};
+
+// Inventario de compra de cada cliente de muestra: {sku: cantidad} (la fruta, en kg). En el hito 2 lo genera cada cliente.
+const COMPRAS_DEMO = [
+    { 'LAC-002': 6, 'LAC-001': 1, 'BEB-002': 2, 'FRU-001': 2, 'PAN-002': 1 },
+    { 'FRU-002': 1, 'DES-002': 3, 'PAN-001': 1, 'FRU-003': 2, 'BEB-001': 4 },
+    { 'CAR-001': 2, 'DES-001': 1, 'LIM-002': 5, 'FRU-001': 1 }
+];
+
+// Jornada: el tendero cobra un sueldo base del que se descuentan las pérdidas al cerrar (texto con 2 decimales, COP).
+const JORNADA_CONFIG = { sueldoBase: '60000.00' };
 
 // Paleta Endesga 32 (solo los tonos usados por los placeholders y textos)
 const COLOR = {

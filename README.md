@@ -32,6 +32,7 @@ environment variables on the host.
 
 `public/index.html` (maqueta) + `public/assets/js/{money,api,app}.js` + jQuery 3.7.1 local.
 `app.js` solo comprueba la conexión con la API; lo que falta está en su lista `TODO`.
+Lógica de la venta (precios, total, cobro) en `pricing.js` y `venta.js`; se prueba contra el `PricingService` real con `node tests/js/run.mjs`.
 Contrato de la API con ejemplos reales: [docs/API_FRONTEND.md](docs/API_FRONTEND.md).
 
 ## API

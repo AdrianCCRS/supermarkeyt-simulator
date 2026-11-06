@@ -1,0 +1,1 @@
+{"cliente_anim":{"frame":[32,38],"columnas":6,"filas":{"caminar_frente":0,"caminar_derecha":1,"caminar_frente_bolsa":2,"dar_dinero_y_coger_bolsa":3},"frames_por_fila":6,"fps":10},"cajero_anim":{"frame":[32,38],"frames":4}}

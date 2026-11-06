@@ -4,7 +4,7 @@
 |---|---|---|---|
 | `public/assets/img/icons/fru-001.png`, `fru-002`, `fru-003`, `lac-003`, `beb-002`, `beb-003`, `pan-001`, `pan-002` | Alex — *Free pixel food 16x16* (100 iconos) | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | `assets-src/Free_pixel_food_16x16.zip` (TODO: añadir URL de la página de descarga) |
 | `public/assets/img/icons/lac-001.png` | Generado con IA para este proyecto | Propio | `assets-src/supermarket_pixel_art_assets.zip` |
-| `public/assets/img/tienda/*`, `public/assets/img/characters/*`, `icons/` (los 11 productos que faltaban) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/tienda.aseprite`, `assets-src/puesto-caja.aseprite`, `assets-src/iconos-faltantes.aseprite` |
+| `public/assets/img/tienda/*`, `public/assets/img/characters/*` (incluidas las animaciones `*-anim.png`), `icons/` (los 11 productos que faltaban) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/tienda.aseprite`, `assets-src/puesto-caja.aseprite`, `assets-src/iconos-faltantes.aseprite` |
 | `public/assets/img/caja/*` (cuerpo y teclas de la caja), `public/assets/img/banda/*` | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/caja.aseprite`, `assets-src/banda.aseprite` |
 | `public/assets/fonts/PressStart2P-Regular.ttf` | The Press Start 2P Project Authors (CodeMan38) | SIL OFL 1.1 (`public/assets/fonts/OFL.txt`) | Google Fonts |
 | `public/assets/js/vendor/phaser-3.90.0.min.js` | Phaser Studio Inc. | MIT | npm `phaser@3.90.0` |

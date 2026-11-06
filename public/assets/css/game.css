@@ -1,0 +1,23 @@
+/* Capa de juego: escenario Phaser de tres columnas. */
+@font-face {
+    font-family: "Press Start 2P";
+    src: url("../fonts/PressStart2P-Regular.ttf") format("truetype");
+    font-display: block;
+}
+
+.escenario {
+    /* Cabe siempre en la ventana: el ancho sale de la altura disponible (16:9) */
+    width: min(100%, calc((100vh - 125px) * 16 / 9));
+    max-width: 1440px;
+    margin: 0 auto;
+    aspect-ratio: 16 / 9;
+    background: #181425;
+}
+#game { width: 100%; height: 100%; }
+#game canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.creditos { text-align: center; font-size: .75rem; color: var(--muted); padding: 8px; }

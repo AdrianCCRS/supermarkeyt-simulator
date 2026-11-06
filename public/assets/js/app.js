@@ -44,6 +44,7 @@ $(function () {
             .done(function (categorias, productos) {
                 state.categorias = categorias;
                 state.productos = productos;
+                Juego.setCatalogo(productos);
                 console.log('Catálogo cargado:', categorias.length, 'categorías,', productos.length, 'productos');
             })
             .fail(function (err) {
@@ -52,6 +53,7 @@ $(function () {
     }
 
     // ---- Arranque ----
+    Juego.iniciar();
     cargarJornada();
     cargarCatalogo();
 

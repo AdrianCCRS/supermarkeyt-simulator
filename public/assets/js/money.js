@@ -34,5 +34,17 @@ const Money = (function () {
         return formatter.format(toCents(text) / 100);
     }
 
-    return { toCents, fromCents, format };
+    /**
+     * Formato de la pantalla de la caja: puntos de miles y el signo detrás.
+     * "12000.00" -> "12.000$" · "1250000.50" -> "1.250.000,50$"
+     * (se hace a mano, sin Intl, para no depender del idioma del navegador).
+     */
+    function pantalla(text) {
+        const cents = toCents(text);
+        const pesos = String(Math.floor(cents / 100)).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        const dec = cents % 100;
+        return pesos + (dec ? ',' + String(dec).padStart(2, '0') : '') + '$';
+    }
+
+    return { toCents, fromCents, format, pantalla };
 })();

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Supermarket Simulator</title>
     <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/game.css">
 </head>
 <body>
     <!-- ENCABEZADO: estado de la jornada -->
@@ -20,37 +21,21 @@
     <!-- Mensajes (errores de la API, avisos) -->
     <div id="mensaje" class="mensaje" role="status" hidden></div>
 
-    <main class="layout">
-        <!-- CATÁLOGO -->
-        <section class="catalogo">
-            <nav id="categorias" class="categorias" aria-label="Categorías"></nav>
-            <div id="productos" class="productos"></div>
-        </section>
+    <!-- JUEGO: tienda · banda · caja (Phaser) -->
+    <main class="escenario"><div id="game"></div></main>
 
-        <!-- CARRITO / CAJA -->
-        <aside class="caja">
-            <h2>Carrito</h2>
-            <ul id="carrito" class="carrito"></ul>
-            <p class="total">Total estimado: <strong id="total-estimado">$ 0</strong></p>
-
-            <form id="form-cobro" autocomplete="off">
-                <label>Cliente
-                    <input id="cliente" name="cliente_nombre" maxlength="100" required>
-                </label>
-                <label>Efectivo recibido
-                    <input id="efectivo" name="efectivo_recibido" inputmode="decimal" placeholder="50000.00" required>
-                </label>
-                <button id="btn-cobrar" type="submit">Cobrar</button>
-            </form>
-        </aside>
-    </main>
+    <p class="creditos">Iconos de comida: Alex, <em>Free pixel food 16x16</em> (CC BY 4.0) · Fuente: Press Start 2P (OFL) · Ver CREDITS.md</p>
 
     <!-- TICKET (se llena con la respuesta de /api/checkout.php) -->
     <section id="ticket" class="ticket" hidden></section>
 
     <script src="assets/js/vendor/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <script src="assets/js/vendor/phaser-3.90.0.min.js"></script>
     <script src="assets/js/money.js"></script>
     <script src="assets/js/api.js"></script>
+    <script src="assets/js/phaser/assets.js"></script>
+    <script src="assets/js/phaser/CheckoutScene.js"></script>
+    <script src="assets/js/phaser/config.js"></script>
     <script src="assets/js/app.js"></script>
 </body>
 </html>

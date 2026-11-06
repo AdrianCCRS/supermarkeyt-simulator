@@ -74,3 +74,18 @@ T::test('rechaza formatos decimales inválidos', function () use ($svc) {
             fn() => $svc->calcularTicket([prod('A', $p, '0.00')], ['A' => 1]), $p);
     }
 });
+
+T::test('rechaza tickets con muchas líneas cuya suma supera el máximo', function () use ($svc) {
+    $productos = [];
+    $carrito = [];
+    for ($i = 1; $i <= 5; $i++) {
+        $productos[] = prod("P$i", '3999999999.99', '0.00', $i);
+        $carrito["P$i"] = 1;
+    }
+    T::throws(InvalidArgumentException::class, fn() => $svc->calcularTicket($productos, $carrito));
+});
+
+T::test('acepta un ticket justo en el límite de DECIMAL(12,2)', function () use ($svc) {
+    $t = $svc->calcularTicket([prod('A', '9999999999.99', '0.00')], ['A' => 1]);
+    T::same('9999999999.99', $t['total']);
+});

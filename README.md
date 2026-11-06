@@ -27,3 +27,31 @@ Copy `.env.example` to `.env` and fill in your database credentials.
 `.env` is git-ignored — never commit it. In production, set the same
 variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`) as
 environment variables on the host.
+
+## API
+
+Servidor local: `php -S localhost:8000 -t public`
+
+| Método | Endpoint | Descripción |
+| --- | --- | --- |
+| GET | `/api/productos.php` | Productos activos |
+| POST | `/api/checkout.php` | Procesa un cobro (201) |
+| GET | `/api/ventas.php?id=1` | Venta con sus detalles |
+
+Respuesta: `{"success": true, "data": ...}` o `{"success": false, "error": "..."}`.
+Códigos: 400 petición malformada, 404 no encontrado, 405 método, 409 conflicto
+de negocio (stock, jornada cerrada), 422 datos inválidos, 500 error interno.
+
+```bash
+curl -X POST localhost:8000/api/checkout.php -H 'Content-Type: application/json' \
+  -d '{"jornada_id":2,"cliente_nombre":"Cliente 1","carrito":{"FRU-001":2,"LAC-001":1},"efectivo_recibido":"50000.00"}'
+```
+
+Los precios y totales se calculan siempre en el servidor.
+
+## Pruebas
+
+`php tests/run.php` (requiere `pdo_mysql` y `mbstring`). Las pruebas de
+integración usan una base aparte (`DB_NAME_TEST`, por defecto
+`supermarket_simulator_test`; debe terminar en `_test`) que se recrea en cada
+ejecución. Las pruebas omitidas cuentan como fallo salvo con `--allow-skip`.

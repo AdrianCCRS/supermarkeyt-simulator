@@ -12,6 +12,13 @@ function testPdo(): PDO
     }
     Env::load(dirname(__DIR__) . '/.env');
     $db = Env::get('DB_NAME_TEST', 'supermarket_simulator_test');
+
+    // Seguro anti-desastres: este helper hace DROP DATABASE. Solo se permite
+    // un identificador simple que termine en _test y que no sea la BD real.
+    if (!preg_match('/^[A-Za-z0-9_]{1,50}_test$/', $db)
+        || $db === Env::get('DB_NAME', 'supermarket_simulator')) {
+        throw new Exception("DB_NAME_TEST inválido ('$db'): debe terminar en _test y ser distinta de DB_NAME");
+    }
     $opts = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC];
     $dsn = fn(string $extra) => sprintf('mysql:host=%s;port=%s%s;charset=utf8mb4',
         Env::get('DB_HOST', '127.0.0.1'), Env::get('DB_PORT', '3306'), $extra);
@@ -99,4 +106,23 @@ T::test('valida entradas: carrito vacío, nombre vacío, efectivo mal formado', 
     T::throws(InvalidArgumentException::class, fn() => $c->procesarCompra(1, 'Ana', [], '1.00'));
     T::throws(InvalidArgumentException::class, fn() => $c->procesarCompra(1, '  ', ['A-1' => 1], '5000.00'));
     T::throws(InvalidArgumentException::class, fn() => $c->procesarCompra(1, 'Ana', ['A-1' => 1], '5000'));
+});
+
+T::test('rollback revierte venta y stock cuando falla tras insertar el encabezado', function () {
+    $pdo = testPdo();
+    // Falla al registrar el detalle: ya se escribieron encabezado y descuento de stock.
+    $ventas = new class($pdo) extends VentaRepository {
+        public function crearDetalle(array $datos): int
+        {
+            throw new RuntimeException('fallo simulado');
+        }
+    };
+    $checkout = new CheckoutService($pdo, new ProductoRepository($pdo), $ventas,
+        new JornadaRepository($pdo), new PricingService());
+
+    T::throws(RuntimeException::class, fn() =>
+        $checkout->procesarCompra(1, 'Ana', ['A-1' => 2], '10000.00'));
+    T::same(0, (int) $pdo->query('SELECT COUNT(*) FROM ventas')->fetchColumn(), 'ventas');
+    T::same(10, stockOf($pdo, 1), 'stock');
+    T::same(false, $pdo->inTransaction());
 });

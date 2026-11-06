@@ -87,6 +87,26 @@ class VentaRepository{
         return $result ?: null;
     }
 
+    public function getDetallesByVentaId(int $ventaId): array{
+        $query = $this->pdo->prepare("SELECT
+                d.producto_id,
+                p.sku,
+                p.nombre,
+                d.cantidad,
+                d.precio_unitario,
+                d.iva_pct,
+                d.subtotal_linea,
+                d.iva_linea,
+                d.total_linea
+            FROM detalles_venta AS d
+            INNER JOIN productos AS p ON p.id = d.producto_id
+            WHERE d.venta_id = ?
+            ORDER BY d.id");
+
+        $query->execute([$ventaId]);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function getAll(): array{
         $query = $this->pdo->prepare("SELECT
                 v.id,

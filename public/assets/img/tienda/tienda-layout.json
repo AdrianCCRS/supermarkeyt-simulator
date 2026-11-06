@@ -1,0 +1,151 @@
+{
+ "suelo": [
+  16,
+  16
+ ],
+ "pared": [
+  0,
+  0,
+  160,
+  64
+ ],
+ "expositor": [
+  56,
+  72,
+  44,
+  60
+ ],
+ "cliente": [
+  32,
+  32,
+  4
+ ],
+ "cestas": [
+  60,
+  140,
+  28,
+  20
+ ],
+ "planta": [
+  10,
+  160,
+  16,
+  24
+ ],
+ "iconos_usados": [
+  "cake_strawberry",
+  "canned_soup",
+  "cheese_blue",
+  "cheese_gouda",
+  "eggs_brown",
+  "eggs_softboiled",
+  "eggs_white",
+  "fruit_apple",
+  "fruit_banana",
+  "fruit_lime",
+  "fruit_orange",
+  "fruit_peach",
+  "fruit_strawberry",
+  "fruit_watermelon",
+  "icecream_1scoop",
+  "icecream_2scoops",
+  "icecream_3scoops",
+  "jam_blueberry",
+  "jam_grape",
+  "jam_kiwi",
+  "jam_peach",
+  "jam_strawberry",
+  "pastry_baguette",
+  "pastry_croissant",
+  "soda_coke",
+  "soda_fanta",
+  "soda_pepsi",
+  "soda_sprite",
+  "soymilk_almond",
+  "soymilk_banana",
+  "soymilk_choco",
+  "soymilk_chocomint",
+  "soymilk_coffee",
+  "soymilk_mango",
+  "soymilk_match",
+  "soymilk_peach",
+  "soymilk_soy",
+  "soymilk_strawberry",
+  "vegetable_carrot",
+  "vegetable_corn",
+  "vegetable_tomato"
+ ],
+ "mostrador_canal": [
+  20,
+  0,
+  24,
+  88
+ ],
+ "mostrador_hueco_escaner": [
+  20,
+  88,
+  24,
+  28
+ ],
+ "mueble_trasero": [
+  130,
+  100,
+  28,
+  52
+ ],
+ "luz_carril": [
+  80,
+  36,
+  24,
+  28
+ ],
+ "mostrador_caja": [
+  60,
+  56,
+  64,
+  214
+ ],
+ "mini_escaner": [
+  80,
+  144,
+  24,
+  28,
+  2
+ ],
+ "mini_balanza": [
+  64,
+  180,
+  20,
+  18
+ ],
+ "mini_balanza_pantalla": [
+  4,
+  2,
+  12,
+  4
+ ],
+ "mini_caja": [
+  94,
+  176,
+  28,
+  28
+ ],
+ "mini_caja_pantalla": [
+  7,
+  2,
+  14,
+  5
+ ],
+ "luz_carril_cara": [
+  5,
+  6,
+  14,
+  12
+ ],
+ "cajero_izq": [
+  124,
+  148,
+  32,
+  32
+ ]
+}

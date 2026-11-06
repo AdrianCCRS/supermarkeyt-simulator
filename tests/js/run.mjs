@@ -127,6 +127,22 @@ for (let i = 0; i < 400 && todoBien; i++) {
 }
 ok(todoBien, '400 totales aleatorios: los billetes cubren el total, con ≤5 billetes y ≤3 tipos');
 ok(Cobro.generarBilletes(1139900, rnd2).suma >= 1139900 && Cobro.generarBilletes(1139900, () => 0).suma === 1200000, 'para 11.399$ lo más justo son 12.000$');
+// desglose del cambio: suma exacta, mayor a menor, el resto son monedas (< 2.000$)
+{
+    let bien = true;
+    for (let i = 0; i < 500 && bien; i++) {
+        const c = rnd(60000000);
+        const d = Cobro.desglosarCambio(c);
+        const suma = d.billetes.reduce((a, v) => a + v * 100, 0) + d.monedas;
+        const orden = d.billetes.every((v, k) => k === 0 || d.billetes[k - 1] >= v);
+        bien = suma === c && orden && d.monedas < 200000 && d.monedas >= 0;
+        if (!bien) { ok(false, 'desglose mal para ' + c + ': ' + JSON.stringify(d)); }
+    }
+    ok(bien, '500 cambios aleatorios: el desglose suma exacto, va de mayor a menor y deja < 2.000$ en monedas');
+    const e = Cobro.desglosarCambio(365000);
+    ok(JSON.stringify(e.billetes) === '[2000]' && e.monedas === 165000, 'cambio 3.650$ = un billete de 2K + 1.650$ en monedas');
+    ok(Cobro.desglosarCambio(0).billetes.length === 0 && Cobro.desglosarCambio(0).monedas === 0, 'cambio 0: nada que dar');
+}
 // cobrador local (mock de checkout.php)
 const cobrar = Cobro.local(resolver, 0);
 const exito = await cobrar({ carrito: { 'BEB-002': 1, 'FRU-001': 2 }, efectivo: 1000000 });

@@ -68,6 +68,20 @@ const Cobro = (function () {
         return nuevo;
     }
 
+    /**
+     * Reparte el cambio (centavos) en billetes, de mayor a menor. Lo que no llega a un billete de 2.000$ son monedas.
+     * Devuelve {billetes: [valor en pesos, ...] (de mayor a menor), monedas: centavos}. La suma siempre es exacta.
+     */
+    function desglosarCambio(centavos) {
+        let resto = Math.max(0, Math.round(centavos));
+        const billetes = [];
+        for (let i = BILLETES.length - 1; i >= 0; i--) {
+            const valor = BILLETES[i] * 100;
+            while (resto >= valor) { billetes.push(BILLETES[i]); resto -= valor; }
+        }
+        return { billetes, monedas: resto };
+    }
+
     /** Cobrador de pruebas: mismas reglas que checkout.php (efectivo suficiente, cambio = efectivo - total). */
     function local(resolver, latenciaMs) {
         return function (pedido) {
@@ -88,5 +102,5 @@ const Cobro = (function () {
         };
     }
 
-    return { BILLETES, generarBilletes, asegurar, local };
+    return { BILLETES, generarBilletes, asegurar, desglosarCambio, local };
 })();

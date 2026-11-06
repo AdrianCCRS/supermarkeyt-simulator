@@ -30,6 +30,8 @@ class CheckoutScene extends Phaser.Scene {
         this.dinero = null;        // billetes que paga el cliente: {cuentas: {valor: n}, suma: centavos}
         this.cuadre = null;        // efectivo real frente al tecleado, para la auditoría
         this.billetesObjs = [];    // sprites de los billetes en la bandeja
+        this.cambioObjs = [];      // billetes y monedas del cambio sobre la bandeja
+        this.dandoCambio = false;  // el cajero está sacando el cambio: aún no se puede entregar
         this.venta = Venta.crear((sku) => Juego.producto(sku));   // venta en curso: productos, total y cobro
         this.enBalanza = null;     // fruta que está en el plato de la balanza
         this.compra = {};          // inventario de compra del cliente: {sku: cantidad}, la fruta en kg
@@ -585,7 +587,7 @@ class CheckoutScene extends Phaser.Scene {
     actualizarBolsa() {
         const extra = this.enBolsa - CAPACIDAD_BOLSA;
         this.textoExtra.setText(extra > 0 ? '+' + extra : '');
-        const listo = this.enBolsa > 0 && this.venta.pagada;        // solo se entrega una venta cobrada
+        const listo = this.enBolsa > 0 && this.venta.pagada && !this.dandoCambio;        // solo se entrega una venta cobrada
         this.botonEntregar.setFrame(listo ? 0 : 2);
         this.textoEntregar.setColor(listo ? '#ffffff' : '#181425');
     }
@@ -602,6 +604,7 @@ class CheckoutScene extends Phaser.Scene {
             if (this.entregando) { return; }
             if (this.enBolsa === 0) { return this.avisar('BOLSA VACIA', 'NADA QUE DAR', 1400); }
             if (!this.venta.pagada) { return this.avisar('COBRA PRIMERO', 'PULSA PAY', 1600); }
+            if (this.dandoCambio) { return this.avisar('ESPERA', 'DANDO EL CAMBIO', 1200); }
             this.botonEntregar.setFrame(1);
             this.textoEntregar.y = y + 5;
             this.entregar();
@@ -625,6 +628,7 @@ class CheckoutScene extends Phaser.Scene {
         this.llevarseLoQueQueda();
         this.arrancarRecibo();
         this.quitarBilletes(false);
+        this.recogerCambio();
         this.dinero = null;
         this.cuadre = null;
         this.finBolsa = false;
@@ -830,8 +834,8 @@ class CheckoutScene extends Phaser.Scene {
         this.modo = 'CODIGO';
         this.quitarBilletes(true);
         this.imprimirRecibo();
-        this.cajeroDaCambio();
-        this.actualizarBolsa();            // el botón ENTREGAR se activa
+        this.cajeroDaCambio(r.cambio);
+        this.actualizarBolsa();            // ENTREGAR se activa cuando termina de salir el cambio
         this.pantallaReposo();             // CAMBIO + importe
     }
 
@@ -913,12 +917,69 @@ class CheckoutScene extends Phaser.Scene {
         this.recibo.once('animationcomplete', () => this.recibo.setVisible(false));
     }
 
-    /** El cajero da el cambio (si existe su animación). */
-    cajeroDaCambio() {
-        if (!this.textures.exists('cajero-anim')) { return; }
-        this.cajeroSprite.setTexture('cajero-anim', 2);
-        this.time.delayedCall(450, () => this.cajeroSprite.setFrame(3));
-        this.time.delayedCall(1200, () => this.cajeroSprite.setTexture('cajero'));
+    /**
+     * El cajero da el cambio SOLO (el jugador no elige billetes): el cajón lo reparte en billetes (Cobro.desglosarCambio)
+     * y lo que no llega a 2.000$ sale como un puñado de monedas. Todo cae a la bandeja de uno en uno; ENTREGAR espera al último.
+     */
+    cajeroDaCambio(cambio) {
+        if (this.textures.exists('cajero-anim')) {
+            this.cajeroSprite.setTexture('cajero-anim', 2);
+            this.time.delayedCall(450, () => this.cajeroSprite.setFrame(3));
+            this.time.delayedCall(1200, () => this.cajeroSprite.setTexture('cajero'));
+        }
+        this.recogerCambio();
+        const { billetes, monedas } = Cobro.desglosarCambio(cambio);
+        const piezas = billetes.slice(0, 8).map((v) => ({ billete: v }));            // más de 8 no cabrían: el resto es solo cantidad
+        if (monedas > 0) { piezas.push({ monedas }); }
+        if (!piezas.length) { return; }
+        this.dandoCambio = true;
+        const [bx, by] = COBRO.bandeja;
+        const [bw] = COBRO.billete;
+        const [zx, zy, zw, zh] = COBRO.zonaValor;
+        const anchoMonedas = monedas > 0 ? 22 : 0;
+        const nB = billetes.slice(0, 8).length;
+        const paso = nB > 1 ? Math.min(bw + 2, Math.floor((144 - 4 - anchoMonedas - bw) / (nB - 1))) : 0;
+        let ultimo = 0;
+        piezas.forEach((p, k) => {
+            const demora = 350 + k * 230;
+            ultimo = demora + 260;
+            const objs = [];
+            if (p.billete) {
+                const x = bx + 2 + k * paso, y = by + 8;
+                const img = this.add.image(x, y - 34, 'billetes', Cobro.BILLETES.indexOf(p.billete)).setOrigin(0).setDepth(30 - 2 * k).setAlpha(0);
+                const t = this.etiquetaBillete(String(p.billete / 1000) + 'K');
+                const ox = zx + Math.floor((zw - t.ancho) / 2), oy = zy + Math.floor((zh - 6) / 2);
+                t.setPosition(x + ox, y - 34 + oy).setDepth(31 - 2 * k).setAlpha(0);
+                objs.push(img, t);
+                this.tweens.add({ targets: img, y, alpha: 1, duration: 260, delay: demora, ease: 'Quad.easeIn' });
+                this.tweens.add({ targets: t, y: y + oy, alpha: 1, duration: 260, delay: demora, ease: 'Quad.easeIn' });
+            } else {
+                const g = this.add.graphics().setDepth(40).setAlpha(0);          // monedas: 1 a 3 según el monto
+                const n = monedas < 50000 ? 1 : (monedas < 100000 ? 2 : 3);
+                for (let i = 0; i < n; i++) {
+                    const cx = 6 + i * 6, cy = 12 - (i === 2 ? 5 : 0);
+                    g.fillStyle(COLOR.contorno).fillCircle(cx, cy, 5);
+                    g.fillStyle(COLOR.amarillo).fillCircle(cx, cy, 4);
+                    g.fillStyle(COLOR.naranja).fillRect(cx - 1, cy, 3, 3);
+                    g.fillStyle(COLOR.blanco).fillRect(cx - 2, cy - 2, 2, 1);
+                }
+                g.setPosition(bx + 144 - 24, by + 6 - 34);
+                objs.push(g);
+                this.tweens.add({ targets: g, y: by + 6, alpha: 1, duration: 260, delay: demora, ease: 'Quad.easeIn' });
+            }
+            this.cambioObjs.push(...objs);
+        });
+        this.time.delayedCall(ultimo + 120, () => { this.dandoCambio = false; this.actualizarBolsa(); });
+    }
+
+    /** El cliente coge el cambio de la bandeja (o se cancela): desaparece hacia él. */
+    recogerCambio() {
+        const objs = this.cambioObjs;
+        this.cambioObjs = [];
+        this.tweens.killTweensOf(objs);
+        if (!objs.length) { this.dandoCambio = false; return; }
+        this.dandoCambio = false;
+        this.tweens.add({ targets: objs, x: '-=40', alpha: 0, duration: 300, onComplete: () => objs.forEach((o) => o.destroy()) });
     }
 
     /**

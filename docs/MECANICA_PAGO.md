@@ -48,6 +48,12 @@ Errores posibles (misma filosofía de responsabilidad que las pérdidas):
 si la cuenta cambió, saca otros. Escanear, pesar o anular (`VOID`) con el cobro abierto **cancela el cobro** (el cliente guarda su dinero y lo vuelve a sacar al pulsar `PAY`),
 así el efectivo de la bandeja nunca se queda corto respecto a lo que se va a cobrar.
 
+### El cambio lo da el cajero solo
+El jugador no elige billetes de cambio. Al cobrar, `Cobro.desglosarCambio(cambio)` lo reparte de mayor a menor en billetes (100K … 2K);
+lo que no llega a 2.000$ sale como un puñado de monedas (1 a 3 según el monto). Caen de uno en uno del cajón a la bandeja y `ENTREGAR`
+espera al último. Como el cambio sale del efectivo que tecleó el jugador, un error se ve (billetes de más) y entra en la auditoría de caja.
+El cliente recoge el cambio al `ENTREGAR`. Se muestran como máximo 8 billetes. El importe real es siempre el del backend; la animación solo lo representa.
+
 ### Punto de conexión con el backend (lo implementa el autor)
 El juego no llama a la API. Pide el cobro a una función que se puede sustituir:
 

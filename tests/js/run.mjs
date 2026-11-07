@@ -8,11 +8,11 @@ import path from 'node:path';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ctx = vm.createContext({ Intl, console, setTimeout });
-for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'phaser/assets.js']) {
+for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'phaser/assets.js']) {
     const codigo = fs.readFileSync(path.join(raiz, 'public/assets/js', f), 'utf8').replace(/^const (\w+) =/gm, 'globalThis.$1 =');
     vm.runInContext(codigo, ctx);
 }
-const { Money, Pricing, Venta, Auditoria, Cobro, Compra, PRODUCTOS_DEMO } = ctx;
+const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, PRODUCTOS_DEMO } = ctx;
 const skus = Object.keys(PRODUCTOS_DEMO);
 
 let fallos = 0, pruebas = 0;
@@ -166,6 +166,19 @@ ok(Cobro.generarBilletes(1139900, rnd2).suma >= 1139900 && Cobro.generarBilletes
     }
     ok(bien && distintas.size > 100, '500 compras aleatorias válidas (2-5 productos, ≤12 piezas, frutas 1-3 kg) y variadas: ' + distintas.size + ' distintas');
     ok(Object.keys(Compra.generar({ skus: ['A'], esFruta, rnd: rnd2 })).length === 1 && Object.keys(Compra.generar({ skus: [], esFruta })).length === 0, 'catálogo corto o vacío no rompe');
+}
+// reloj de la jornada: 08:00-20:00 repartido en la duración real
+{
+    const r = Reloj.crear({ inicio: '08:00', fin: '20:00', duracionMs: 600000 });
+    ok(r.texto() === '08:00' && !r.terminado(), 'reloj: empieza a las 08:00');
+    r.avanzar(300000);
+    ok(r.texto() === '14:00' && Math.abs(r.progreso() - 0.5) < 1e-9, 'reloj: a la mitad son las 14:00');
+    r.avanzar(2500);
+    ok(r.texto() === '14:03', 'reloj: 2,5 s reales = 3 min de juego (' + r.texto() + ')');
+    r.avanzar(10000000);
+    ok(r.texto() === '20:00' && r.terminado(), 'reloj: no pasa de las 20:00 y avisa que terminó');
+    r.reiniciar();
+    ok(r.texto() === '08:00' && !r.terminado(), 'reloj: reiniciar vuelve a las 08:00');
 }
 // cobrador local (mock de checkout.php)
 const cobrar = Cobro.local(resolver, 0);

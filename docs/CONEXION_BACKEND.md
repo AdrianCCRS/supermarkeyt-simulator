@@ -34,6 +34,14 @@ Necesitas una jornada abierta: `cargarJornada()` ya guarda `state.jornada`. Mien
 ### 3. Resumen de jornada → cierre
 `Juego.resumenJornada()` devuelve (importes en **centavos**) el resumen de pérdidas, protestas y puntos: `{sueldo_base, sueldo, descuento, …}`. Úsalo cuando implementes el cierre (`Api.cerrarJornada`). La especificación de lo que el backend debería guardar (faltantes/sobrantes) está en `docs/CIERRE_JORNADA.md`. Hasta entonces las pérdidas viven solo en memoria del navegador.
 
+### 3b. Jornada: abrir, cerrar y estado (menú del juego)
+El menú del juego (barra superior: reloj, clientes, puntos, ventas, botón ABRIR/CERRAR, resumen de cierre) ya funciona solo con una jornada local.
+Para conectarlo a tu backend, desde `app.js`:
+- `Juego.setJornadaHooks({ abrir, cerrar })`: `abrir()` devuelve una promesa que resuelve `{id}` (p. ej. lo de `Api.abrirJornada()`); `cerrar(resumen)` devuelve una promesa (p. ej. `Api.cerrarJornada(id)`); el `resumen` va en centavos. Si rechazan con `{status, mensaje}`, el juego lo muestra en la pantalla de la caja y el botón queda para reintentar.
+- `Juego.setJornada({ id })`: una jornada que ya estaba abierta al cargar la página (lo que devuelve `Api.jornadaActual()`). Si no la hay, el juego arranca cerrado.
+Tiempo: `JORNADA_CONFIG` en `assets.js` (`inicio`, `fin`, `duracionMs`; por defecto 08:00–20:00 en 10 minutos reales). A la hora de cierre dejan de entrar clientes, se atiende al último y sale el resumen. El botón CERRAR hace lo mismo antes de hora.
+Como el menú está dentro del juego, el encabezado HTML (`#jornada-estado`, botones abrir/cerrar) queda redundante: puedes quitarlo de `index.html` cuando quieras.
+
 ### 4. Compras de los clientes (opcional)
 Por defecto salen al azar con el catálogo (`compra.js`). Para que las dicte el backend:
 ```js

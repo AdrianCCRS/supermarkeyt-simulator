@@ -40,6 +40,8 @@ class CheckoutScene extends Phaser.Scene {
         this.qtyPendiente = null;  // cantidad armada con QTY para el próximo producto
         this.cola = [];            // productos en la banda, del primero (al final de la banda) al último
         this.bandaMoviendo = false;
+        this.jornada = new ControlJornada(this);   // estado, reloj y cierre de la jornada (lo dibuja HudScene)
+        this.listo = false;
     }
 
     preload() {
@@ -56,6 +58,7 @@ class CheckoutScene extends Phaser.Scene {
     }
 
     create() {
+        this.cameras.main.setViewport(0, HUD.alto, 480, 270);     // el menú ocupa los 24 px de arriba
         this.crearPlaceholders();
         this.anims.create({
             key: 'bolsa-cerrar', frameRate: 12,
@@ -71,9 +74,20 @@ class CheckoutScene extends Phaser.Scene {
         if (this.faltantes.size) {
             console.info('[assets] usando placeholder para:', Array.from(this.faltantes).join(', '));
         }
+
+        this.listo = true;
+        this.scene.launch('HudScene');                             // menú de la jornada, encima del juego
+        const abierta = Juego.jornadaActual();                     // jornada ya abierta en el servidor (la pone el backend)
+        if (abierta) { this.jornada.entrar(abierta); } else { this.pantallaReposo(); }
+    }
+
+    /** ¿Hay un cliente en caja? (productos en la banda o en la bolsa, cobro o entrega en curso). */
+    hayClienteEnCurso() {
+        return this.cola.length > 0 || this.enBolsa > 0 || this.entregando || this.cobrando || this.venta.pagada || this.modo === 'EFECTIVO';
     }
 
     update(_t, delta) {
+        this.jornada.tick(delta);
         // Cada producto avanza hasta su sitio en la cola; la cinta solo gira mientras algo avanza.
         let avanza = false;
         this.cola.forEach((p, i) => {
@@ -243,6 +257,7 @@ class CheckoutScene extends Phaser.Scene {
         if (!this.finBolsa || !this.finClientes) { return; }
         this.finBolsa = false;
         this.finClientes = false;
+        if (!this.jornada.admiteClientes) { return this.jornada.clienteTerminado(); }     // cerrando: no entra otro cliente
         this.nuevaCompra(this.compraDelSiguiente());
     }
 
@@ -322,7 +337,6 @@ class CheckoutScene extends Phaser.Scene {
         this.textoExtra = this.add.text(bolsaX + 72, bolsaY + 38, '', { ...FUENTE, color: '#181425' }).setOrigin(0.5, 0.5).setDepth(4);
         this.crearBotonEntregar();
 
-        this.nuevaCompra(this.compraDelSiguiente());          // el primer cliente trae su compra
     }
 
     /** Compra del próximo cliente: la aleatoria del juego (Juego.compraAleatoria), que el backend puede sustituir. */
@@ -431,6 +445,7 @@ class CheckoutScene extends Phaser.Scene {
 
     /** Pantalla en reposo: el total acumulado de la venta (o el cambio, si ya se cobró). */
     pantallaReposo() {
+        if (!this.jornada.operativa) { return this.mostrar('CERRADO', 'ABRE JORNADA'); }
         if (this.venta.pagada) {
             return this.mostrar('CAMBIO', Money.pantalla(Money.fromCents(this.venta.cambio)));
         }
@@ -748,6 +763,7 @@ class CheckoutScene extends Phaser.Scene {
      * CLR vuelve al estado inicial.
      */
     pulsarTecla(label) {
+        if (!this.jornada.operativa) { return this.avisar('CERRADO', 'ABRE LA JORNADA', 1600); }
         if (this.cobrando) { return; }                       // esperando al cobrador: teclado bloqueado
         if (/^\d$/.test(label)) {
             if (this.venta.pagada) { return; }

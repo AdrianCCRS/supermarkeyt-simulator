@@ -38,3 +38,10 @@ Reglas y decisiones para dibujar assets del juego. La usa el agente `pixel-artis
 - **Cobro** (`public/assets/img/caja/`, `cobro-layout.json`): caja en (8,6) de la columna; bandeja en (8,160) con compartimentos [4,4,40,22],[52,4,40,22],[100,4,40,22]; libro 144×68 en (8,198) (sustituye al de 144×102, línea tenue de renglón a 26 px); ticket 18 px de ancho × 46 de largo, crece 8,16,24,32,40,43,46.
 - **Billetes** 38×18 (`billetes-layout.json`): zona de valor x14..31, y5..12 (18×8, un solo color), bustos 10×12 en x2..11, motivo 5×12 en x32..36. Orden 2000, 5000, 10000, 20000, 50000, 100000. Una pila de 3 billetes cabe en un compartimento de la bandeja con cada billete 2 px más arriba (3×18 → 22 px). Los bustos son siluetas simplificadas, no retratos.
 - El billete anterior (32×14) está en `assets-src/sin-usar/billetes-32x14.png`.
+
+## HUD de la jornada (`public/assets/img/hud/`, script `hud.lua`, comprobación `assets-src/scripts/chk_hud.py`)
+- Sin MCP Aseprite disponible se ejecutó con `aseprite -b --script assets-src/scripts/lua/hud.lua`. Fuente: `assets-src/hud.aseprite` (una capa por pieza, apiladas en un lienzo 480x240).
+- `hud-barra.png` 480x24: ranuras (LCD `193c3e` lisas) jornada [18,4,84,16], reloj [108,4,60,16], clientes [174,4,60,16], puntos [240,4,60,16], ventas [306,4,90,16]; zona de botón [408,4,68,16] lisa `262b44`; hueco de lámpara [6,8,8,8] `262b44`. El bisel de cada hueco queda fuera del rectángulo.
+- `hud-boton.png` 408x16: frames 68x16 (verde normal/pulsado/apagado, rojo normal/pulsado/apagado); zona lisa de texto [3,3,62,10] en cada frame. Pulsado = relieve invertido, el texto debe bajar 1 px por código.
+- `hud-lampara.png` 3 frames 8x8 (rojo, verde, ámbar); `hud-iconos.png` 4x10x10 (reloj, persona, estrella, moneda).
+- `panel-cierre.png` 224x168: marco de madera con tablero pizarra; título lisa [6,6,212,11] (banda y0..17), cuerpo liso [6,22,212,140].

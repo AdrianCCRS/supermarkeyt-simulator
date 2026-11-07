@@ -54,6 +54,13 @@ const ASSETS = {
     billetes:    { path: 'caja/billetes.png',      w: 38,  h: 18, frames: 6 },   // 2.000 · 5.000 · 10.000 · 20.000 · 50.000 · 100.000
     'recibo-imprimir': { path: 'caja/recibo-imprimir.png', w: 36, h: 60, frames: 10 },
     'recibo-arrancar': { path: 'caja/recibo-arrancar.png', w: 36, h: 60, frames: 4 },
+    // Menú de la jornada (barra superior de 24 px y panel de cierre)
+    'hud-barra': { path: 'hud/hud-barra.png', w: 480, h: 24 },
+    'hud-boton': { path: 'hud/hud-boton.png', w: 68, h: 16, frames: 6 },          // verde: normal, pulsado, desactivado · rojo: igual
+    'hud-lampara': { path: 'hud/hud-lampara.png', w: 8, h: 8, frames: 3 },        // roja (cerrada), verde (abierta), ámbar (cerrando)
+    'hud-iconos': { path: 'hud/hud-iconos.png', w: 10, h: 10, frames: 4 },        // reloj, persona, estrella, moneda
+    'panel-cierre': { path: 'hud/panel-cierre.png', w: 224, h: 168 },
+
     // Animaciones (opcionales: si no existen, el juego se mueve con deslizamientos sencillos).
     // Rejilla de 6 columnas x 4 filas: caminar de frente · caminar de perfil · caminar con bolsa · dar dinero y coger bolsa
     'cliente-1-anim': { path: 'characters/cliente-1-anim.png', w: 32, h: 38, frames: 24, opcional: true },
@@ -77,6 +84,14 @@ const TIENDA = {
     mueble: [130, 110],                                       // detrás del cajero
     planta: [136, 74], cestas: [128, 232],
     expositor: [6, 214]
+};
+
+// Menú de la jornada: la barra ocupa los 24 px de ARRIBA del lienzo (el juego se dibuja debajo, desde y = 24).
+const HUD = {
+    alto: 24,
+    ranuras: { jornada: [18, 4, 84, 16], reloj: [108, 4, 60, 16], clientes: [174, 4, 60, 16], puntos: [240, 4, 60, 16], ventas: [306, 4, 90, 16] },
+    boton: [408, 4], lampara: [6, 8],
+    panel: [128, 75]                                       // esquina del panel de cierre (224 x 168), centrado en el área de juego
 };
 
 // Columna central (de banda-layout.json). Coordenadas relativas a la columna (x0 = 160).
@@ -269,7 +284,11 @@ const COMPRAS_DEMO = [
 ];
 
 // Jornada: el tendero cobra un sueldo base del que se descuentan las pérdidas al cerrar (texto con 2 decimales, COP).
-const JORNADA_CONFIG = { sueldoBase: '200000.00' };
+const JORNADA_CONFIG = {
+    sueldoBase: '200000.00',
+    inicio: '08:00', fin: '20:00',       // horario de la tienda (hora de juego)
+    duracionMs: 600000                   // lo que dura la jornada en tiempo real (10 min): 1 min real = 1 h 12 min de juego
+};
 
 // Paleta Endesga 32 (solo los tonos usados por los placeholders y textos)
 const COLOR = {

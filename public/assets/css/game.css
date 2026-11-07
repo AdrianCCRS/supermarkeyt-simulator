@@ -6,11 +6,11 @@
 }
 
 .escenario {
-    /* Cabe siempre en la ventana: el ancho sale de la altura disponible (16:9) */
-    width: min(100%, calc((100vh - 125px) * 16 / 9));
+    /* Cabe siempre en la ventana: el ancho sale de la altura disponible (480 x 294) */
+    width: min(100%, calc((100vh - 125px) * 480 / 294));
     max-width: 1440px;
     margin: 0 auto;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 480 / 294;
     background: #181425;
 }
 #game { width: 100%; height: 100%; }

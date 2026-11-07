@@ -34,6 +34,27 @@ const Juego = (function () {
         return Compra.generar({ skus, esFruta });
     }
 
+    // Jornada: la abre y la cierra el backend. Por defecto (sin backend) el juego abre y cierra por su cuenta:
+    //   Juego.setJornadaHooks({
+    //       abrir:  () => Api.abrirJornada(),                       // promesa -> {id}   (rechaza {status, mensaje})
+    //       cerrar: (resumen) => Api.cerrarJornada(jornadaId)       // promesa; resumen = Juego.resumenJornada() (centavos)
+    //   });
+    //   Juego.setJornada({ id })   // una jornada que ya estaba abierta al cargar la página (Api.jornadaActual)
+    let hooksJornada = {};
+    let jornadaActual = null;
+    let contadorLocal = 0;
+    function setJornadaHooks(h) { hooksJornada = h || {}; }
+    function abrirJornada() {
+        return Promise.resolve(hooksJornada.abrir ? hooksJornada.abrir() : { id: ++contadorLocal });
+    }
+    function cerrarJornada(resumen) {
+        return Promise.resolve(hooksJornada.cerrar ? hooksJornada.cerrar(resumen) : {});
+    }
+    function setJornada(j) {
+        jornadaActual = j || null;
+        if (game) { game.scene.getScene('CheckoutScene').jornada.sincronizar(jornadaActual); }
+    }
+
     function producto(sku) {
         const p = catalogo.find((x) => x.sku === sku);
         return p || Object.assign({ sku }, PRODUCTOS_DEMO[sku]);
@@ -46,12 +67,12 @@ const Juego = (function () {
                 type: Phaser.AUTO,
                 parent: 'game',
                 width: 480,
-                height: 270,
+                height: 270 + HUD.alto,
                 pixelArt: true,        // nearest-neighbor y sin antialiasing
                 roundPixels: true,
                 backgroundColor: '#181425',
                 scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-                scene: [CheckoutScene]
+                scene: [CheckoutScene, HudScene]
             });
         };
         document.fonts.load('8px "Press Start 2P"').then(crear, crear);
@@ -66,5 +87,5 @@ const Juego = (function () {
         return game.scene.getScene('CheckoutScene').jornadaJuego.resumen();
     }
 
-    return { iniciar, juego: () => game, setCatalogo, setGeneradorCompras, compraAleatoria, producto, resumenJornada, cobrar, setCobrador };
+    return { iniciar, juego: () => game, setCatalogo, setGeneradorCompras, setJornadaHooks, setJornada, jornadaActual: () => jornadaActual, abrirJornada, cerrarJornada, compraAleatoria, producto, resumenJornada, cobrar, setCobrador };
 })();

@@ -41,7 +41,7 @@ const Api = (function () {
         categorias:     () => request('GET', 'categorias.php'),
         jornadaActual:  () => request('GET', 'jornada_actual.php'),
         abrirJornada:   () => request('POST', 'jornada_abrir.php'),
-        cerrarJornada:  (jornadaId) => request('POST', 'jornada_cerrar.php', { jornada_id: jornadaId }),
+        cerrarJornada:  (jornadaId, faltantes, sobrantes) => request('POST', 'jornada_cerrar.php', { jornada_id: jornadaId, faltantes: faltantes, sobrantes: sobrantes }),
         venta:          (id) => request('GET', 'ventas.php?id=' + encodeURIComponent(id)),
         ventasDeJornada: (jornadaId) => request('GET', 'ventas.php?jornada_id=' + encodeURIComponent(jornadaId)),
         cancelarVenta:  (ventaId) => request('POST', 'venta_cancelar.php', { venta_id: ventaId }),

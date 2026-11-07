@@ -27,6 +27,8 @@ $(function () {
                 $('#jornada-estado').text('Jornada #' + jornada.id + ' abierta');
                 $('#btn-abrir-jornada').prop('hidden', true);
                 $('#btn-cerrar-jornada').prop('hidden', false);
+
+                Juego.setJornada(jornada);
             })
             .fail(function (err) {
                 state.jornada = null;
@@ -44,16 +46,32 @@ $(function () {
             .done(function (categorias, productos) {
                 state.categorias = categorias;
                 state.productos = productos;
-                Juego.setCatalogo(productos);
-                console.log('Catálogo cargado:', categorias.length, 'categorías,', productos.length, 'productos');
+                const filtrados = productos.filter((p) => p.stock > 0); // No mostrar productos sin stock
+                Juego.setCatalogo(filtrados);
+                Juego.iniciar();
             })
             .fail(function (err) {
                 mostrarMensaje(err.mensaje, true);
             });
     }
 
+    // Ganchos de la jornada: el juego llama a estas funciones al pulsar ABRIR / CERRAR (se registran UNA vez, aquí).
+    // Cada una debe DEVOLVER la promesa, y el .done guarda/limpia state.jornada.
+    Juego.setJornadaHooks({
+        abrir: function () {
+            return Api.abrirJornada().done(function (jornada) {
+                state.jornada = jornada;
+            });
+        },
+        cerrar: function (resumen) {
+            // resumen.faltantes / resumen.sobrantes: {sku: cantidad} calculados por el juego
+            return Api.cerrarJornada(state.jornada.id, resumen.faltantes, resumen.sobrantes).done(function () {
+                state.jornada = null;
+            });
+        }
+    });
+
     // ---- Arranque ----
-    Juego.iniciar();
     cargarJornada();
     cargarCatalogo();
 

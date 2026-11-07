@@ -38,8 +38,9 @@ class JornadaService
     /**
      * Cierra la jornada. Bloquea su fila, igual que el checkout, así que un
      * cobro en curso termina antes del cierre y ninguno entra después.
+     * $faltantes / $sobrantes ({sku: cantidad}) ajustan el stock en la misma transacción.
      */
-    public function cerrar(int $id): array
+    public function cerrar(int $id, array $faltantes = [], array $sobrantes = []): array
     {
         $this->pdo->beginTransaction();
 
@@ -53,7 +54,7 @@ class JornadaService
                 throw new RuntimeException('La jornada ya está cerrada');
             }
 
-            $this->jornadas->cerrar($id);
+            $this->jornadas->cerrar($id, $faltantes, $sobrantes);
             $this->pdo->commit();
         } catch (Throwable $e) {
             if ($this->pdo->inTransaction()) {

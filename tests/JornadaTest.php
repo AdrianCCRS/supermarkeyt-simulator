@@ -101,3 +101,50 @@ T::test('API: cerrar devuelve resumen; 409, 404, 422 y 400 en los errores', func
     [$s] = http('POST', '/api/jornada_cerrar.php', '[]');
     T::same(400, $s, 'cuerpo');
 });
+
+// ---- Cierre con faltantes y sobrantes (ajuste de stock) ----
+function stockDe(PDO $pdo, string $sku): int
+{
+    return (int) $pdo->query("SELECT stock FROM productos WHERE sku = '$sku'")->fetchColumn();
+}
+
+T::test('cerrar descuenta los faltantes y repone los sobrantes del stock', function () {
+    $pdo = testPdo();
+    makeJornadas($pdo)->cerrar(1, ['A-1' => 2], ['B-2' => 1]);
+    T::same(8, stockDe($pdo, 'A-1'), 'faltante descontado');
+    T::same(4, stockDe($pdo, 'B-2'), 'sobrante repuesto');
+});
+
+T::test('los faltantes nunca dejan el stock por debajo de 0', function () {
+    $pdo = testPdo();
+    $j = makeJornadas($pdo)->cerrar(1, ['B-2' => 99]);
+    T::same('cerrada', $j['estado']);
+    T::same(0, stockDe($pdo, 'B-2'));
+});
+
+T::test('un SKU desconocido o una cantidad inválida cancelan TODO el cierre', function () {
+    $pdo = testPdo();
+    $svc = makeJornadas($pdo);
+    T::throws(InvalidArgumentException::class, fn() => $svc->cerrar(1, ['A-1' => 2, 'NO-EXISTE' => 1]), 'sku');
+    T::throws(InvalidArgumentException::class, fn() => $svc->cerrar(1, ['A-1' => 0]), 'cero');
+    T::throws(InvalidArgumentException::class, fn() => $svc->cerrar(1, [], ['A-1' => '2']), 'texto');
+    T::same(10, stockDe($pdo, 'A-1'), 'el stock no cambió');
+    T::same('abierta', $svc->actual()['estado'], 'la jornada sigue abierta');
+});
+
+T::test('API: cerrar con faltantes/sobrantes ajusta el stock; datos mal formados dan 422', function () {
+    $pdo = testPdo();
+    [$s] = http('POST', '/api/jornada_cerrar.php', '{"jornada_id":1,"faltantes":"x"}');
+    T::same(422, $s, 'faltantes no es objeto');
+    [$s] = http('POST', '/api/jornada_cerrar.php', '{"jornada_id":1,"faltantes":{"A-1":0}}');
+    T::same(422, $s, 'cantidad cero');
+    [$s] = http('POST', '/api/jornada_cerrar.php', '{"jornada_id":1,"sobrantes":{"A-1":"2"}}');
+    T::same(422, $s, 'cantidad texto');
+    [$s] = http('POST', '/api/jornada_cerrar.php', '{"jornada_id":1,"faltantes":{"ZZZ":1}}');
+    T::same(422, $s, 'sku desconocido');
+    T::same(10, stockDe($pdo, 'A-1'), 'nada cambió con los errores');
+    [$s] = http('POST', '/api/jornada_cerrar.php', '{"jornada_id":1,"faltantes":{"A-1":3},"sobrantes":{"B-2":2}}');
+    T::same(200, $s, 'cierre correcto');
+    T::same(7, stockDe($pdo, 'A-1'));
+    T::same(5, stockDe($pdo, 'B-2'));
+});

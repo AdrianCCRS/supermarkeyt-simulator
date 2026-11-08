@@ -51,3 +51,7 @@ Reglas y decisiones para dibujar assets del juego. La usa el agente `pixel-artis
 - Tiles: `toldo` 32x20 (periodo 16 en x, sin contorno lateral), `ladrillo` 16x16 (x e y), `acera` 32x16 (periodo 16 en x), `mini-suelo` 16x16 (x e y).
 - Zonas lisas: cartel [8,12,176,24]; fachadas: friso [8,9,96,12] y letrero colgante [80,51,18,6].
 - Las nubes usan contorno `181425` como el resto de reglas.
+
+## Logo «Tiendas D2» (`public/assets/img/entorno/`, script `logo_d2.lua`, comprobación `assets-src/scripts/chk_logo.py`)
+- Parodia de una marca real; única pieza con texto dibujado a mano (fuente 7 letras propia, 9 px de alto). Ejecutado con `aseprite -b --script`. Fuente `assets-src/logo-d2.aseprite` (una capa por pieza, hoja 200x84). Previews x6 en `assets-src/previews/logo-d2*-x6.png`.
+- `logo-d2.png` 64x80, `logo-d2-mini.png` 32x40 (sin «Tiendas», sin carita), `logo-d2-horizontal.png` 96x24 (sin carita). Detalle propio: carita sonriente bajo el 2 (solo en la grande). Sin zonas lisas reservadas para texto del juego.

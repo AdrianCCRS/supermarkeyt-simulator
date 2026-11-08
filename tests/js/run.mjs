@@ -8,11 +8,11 @@ import path from 'node:path';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ctx = vm.createContext({ Intl, console, setTimeout });
-for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'paciencia.js', 'nombres.js', 'phaser/assets.js']) {
+for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'paciencia.js', 'perfil.js', 'nombres.js', 'phaser/assets.js']) {
     const codigo = fs.readFileSync(path.join(raiz, 'public/assets/js', f), 'utf8').replace(/^const (\w+) =/gm, 'globalThis.$1 =');
     vm.runInContext(codigo, ctx);
 }
-const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Paciencia, Nombres, PRODUCTOS_DEMO } = ctx;
+const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Paciencia, Perfil, Nombres, PRODUCTOS_DEMO } = ctx;
 const skus = Object.keys(PRODUCTOS_DEMO);
 
 let fallos = 0, pruebas = 0;
@@ -255,6 +255,27 @@ console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
     const j = Auditoria.jornada('200000.00'); j.abandono(); j.abandono();
     const r = j.resumen();
     ok(r.abandonos === 2 && r.clientes === 2 && r.puntos === 2 * Auditoria.PUNTOS_ABANDONO && r.perdida === 0, 'el abandono resta puntos y no es pérdida');
+}
+
+// Progreso del jugador (localStorage simulado)
+{
+    const mem = {}; const almacen = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = v; } };
+    const resumen = (o) => Object.assign({ puntos: 100, sueldo: 18000000, clientes: 5, exactas: 2, abandonos: 0, cobrado: 5000000 }, o);
+    let p = Perfil.crear(almacen);
+    ok(p.datos().jornadas === 0, 'perfil nuevo vacío');
+    let r = p.registrarJornada(resumen());
+    ok(r.primera && r.recordPuntos && r.recordSueldo, 'la primera jornada marca récords');
+    r = p.registrarJornada(resumen({ puntos: 50, sueldo: 19000000 }));
+    ok(!r.primera && !r.recordPuntos && r.recordSueldo, 'récord solo de lo que se supera');
+    ok(p.datos().jornadas === 2 && p.datos().puntos === 150 && p.datos().mejorPuntos === 100 && p.datos().clientes === 10 && p.datos().ventas === 10000000, 'acumula jornadas, puntos, clientes y ventas');
+    p = Perfil.crear(almacen);                                                   // «recarga»: lee lo guardado
+    ok(p.datos().jornadas === 2 && p.datos().mejorSueldo === 19000000, 'el progreso sobrevive a recargar');
+    mem['d2-perfil'] = '{basura';
+    ok(Perfil.crear(almacen).datos().jornadas === 0, 'datos dañados: se empieza de cero sin romper');
+    mem['d2-perfil'] = JSON.stringify({ jornadas: 'x', puntos: 5 });
+    ok(Perfil.crear(almacen).datos().jornadas === 0 && Perfil.crear(almacen).datos().puntos === 5, 'campos inválidos se ignoran');
+    ok(Perfil.crear({ getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } }).registrarJornada(resumen()).primera, 'sin almacenamiento sigue funcionando');
+    p.reiniciar(); ok(p.datos().jornadas === 0, 'reiniciar borra el progreso');
 }
 
 console.log(fallos ? '\n' + fallos + ' FALLOS de ' + pruebas : '\nTodo correcto (' + pruebas + ' comprobaciones)');

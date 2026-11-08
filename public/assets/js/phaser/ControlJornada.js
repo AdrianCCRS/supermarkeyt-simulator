@@ -29,6 +29,7 @@ class ControlJornada {
         this.id = jornada && jornada.id !== undefined ? jornada.id : null;
         this.reloj.reiniciar();
         this.resumen = null;
+        this.logro = null;
         this.estado = 'ABIERTA';
         Sonido.tocar('abrir');
         Sonido.musica(true);
@@ -104,6 +105,7 @@ class ControlJornada {
             this.ocupado = false;
             this.resumen = resumen;
             this.borrar();
+            this.logro = Perfil.registrarJornada(resumen);       // el progreso del jugador, guardado en su navegador
             Sonido.musica(false);
             Sonido.tocar('cerrar');
             this.estado = 'RESUMEN';

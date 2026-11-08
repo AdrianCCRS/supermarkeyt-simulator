@@ -96,7 +96,14 @@ class HudScene extends Phaser.Scene {
 
         const mostrar = j.estado === 'RESUMEN' && !!j.resumen;
         if (mostrar !== this.panel.visible) { this.panel.setVisible(mostrar); }
-        if (mostrar) { this.llenarPanel(j.resumen); }
+        if (mostrar) { this.llenarPanel(j.resumen); this.poner(this.pie, this.textoPie(j.logro), j.logro && (j.logro.recordPuntos || j.logro.recordSueldo) ? TXT_BIEN : '#8b9bb4'); }
+    }
+
+    /** Línea de abajo del panel: marcas nuevas del jugador, o la invitación a abrir otra jornada. */
+    textoPie(logro) {
+        if (logro && logro.recordSueldo && !logro.primera) { return 'NUEVO RECORD DE SUELDO!'; }
+        if (logro && logro.recordPuntos && !logro.primera) { return 'NUEVO RECORD DE PUNTOS!'; }
+        return 'PULSA ABRIR PARA OTRA';
     }
 
     llenarPanel(res) {

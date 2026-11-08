@@ -11,6 +11,7 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 - **Responsabilidad:** si un cliente se lleva algo sin cobrar, o das de más, es pérdida y se descuenta del sueldo base al cerrar. Cobrar de más hace que el cliente proteste (−50 puntos); una venta exacta suma 100.
 - **Clientes:** entran cuando abres la jornada, con un nombre aleatorio sobre la cabeza (ese nombre viaja al backend en cada venta), y se van cuando la cierras.
 - **Paciencia:** el cliente atendido tiene una barrita sobre la cabeza que se vacía mientras espera (más compra, más aguante). Si se agota se va enojado: no se cobra, resta 50 puntos y no cuenta como pérdida porque no se llevó nada.
+- **Progreso del jugador:** sin cuentas: se guarda en el navegador (localStorage), como los juegos flash de antes. Acumula jornadas, clientes, puntos, ventas y mejores marcas, con aviso de récord al cerrar y un botón para borrarlo. Si se borran los datos del navegador, empieza de cero.
 - **Sonido:** efectos y musiquita de 8 bits sintetizados con WebAudio (sin archivos de audio). Botón «SONIDO» o tecla `M` para silenciar; se recuerda entre visitas.
 - **Jornada:** reloj de 08:00 a 20:00 (10 minutos reales), botón ABRIR/CERRAR, y pantalla de cierre con el resumen.
 - **Catálogo:** 108 productos con nombres colombianos, precios en COP y un icono de 16×16 cada uno.
@@ -41,7 +42,7 @@ supermarket-simulator/
 |---|---|
 | `app.js` | Conecta la API con el juego: catálogo, jornada (abrir/cerrar) y cobro |
 | `api.js` | Cliente de la API (promesas de jQuery) |
-| `money.js`, `pricing.js`, `venta.js`, `auditoria.js`, `cobro.js`, `compra.js`, `reloj.js`, `paciencia.js`, `nombres.js` | Lógica pura del juego, sin Phaser (con pruebas) |
+| `money.js`, `pricing.js`, `venta.js`, `auditoria.js`, `cobro.js`, `compra.js`, `reloj.js`, `paciencia.js`, `perfil.js`, `nombres.js` | Lógica pura del juego, sin Phaser (con pruebas) |
 | `phaser/` | Escenas del juego: `CheckoutScene` (caja), `HudScene` (menú), `ControlJornada`, `config.js` (`Juego`), `assets.js` |
 | `sonido.js` | Efectos y música con WebAudio (`Sonido.tocar`, `Sonido.musica`) |
 | `pantalla.js` | Modo pantalla grande |
@@ -103,7 +104,7 @@ Las tarifas de IVA (0, 5 y 19 %) son **ficticias**, solo para la simulación.
 ## Pruebas
 
 ```bash
-node tests/js/run.mjs     # 365 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
+node tests/js/run.mjs     # 376 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
 php tests/run.php         # 61 pruebas; requiere pdo_mysql y mbstring
 ```
 
@@ -144,4 +145,4 @@ ALTER TABLE jornadas
 
 ## Pendiente
 
-Puntos y sueldo por jornada (tabla de jugador) y otros medios de pago.
+Otros medios de pago.

@@ -204,6 +204,16 @@ body {
 @keyframes pasos { from { background-position-x: 0; } to { background-position-x: calc(-192px * var(--u)); } }
 
 /* ---- Créditos ---- */
+.perfil {
+    margin: 0; padding: 8px 12px; width: 100%; box-sizing: border-box; background: var(--contorno);
+    font: 8px/1.6 "Press Start 2P", system-ui, sans-serif; text-align: center;
+    color: var(--crema);
+}
+.perfil button {
+    margin-left: 8px; padding: 3px 6px; font: 7px "Press Start 2P", system-ui, sans-serif;
+    color: var(--contorno); background: var(--crema); border: 2px solid var(--contorno); cursor: pointer;
+}
+.perfil button:hover { background: var(--arena); }
 .creditos {
     margin: 0;
     padding: 10px 12px 14px;
@@ -241,7 +251,7 @@ body {
 /* Modo pantalla grande: sin decoración, el juego ocupa toda la ventana */
 body.grande { background-image: none; background-color: var(--contorno); height: 100vh; overflow: hidden; justify-content: center; }
 body.grande .cielo, body.grande .cartel, body.grande .banderin, body.grande .toldo, body.grande .acera,
-body.grande .creditos, body.grande .local { display: none; }
+body.grande .creditos, body.grande .perfil, body.grande .local { display: none; }
 body.grande .calle { flex: 0 0 auto; padding: 0; align-items: center; }
 body.grande { --extra: 24px; }
 body.grande .escenario { border-width: 4px; box-shadow: none; outline-width: 2px; max-width: none; }

@@ -11,9 +11,11 @@ const Paciencia = (function () {
         return base + porUnidad * Math.min(Math.max(0, unidades), tope);
     }
 
-    function crear(duracionMs) {
-        let t = 0;
+    /** transcurrido: milisegundos ya gastados (para recuperar al cliente tras recargar la página). */
+    function crear(duracionMs, transcurrido) {
+        let t = Math.min(duracionMs, Math.max(0, Number(transcurrido) || 0));
         return {
+            tiempo() { return t; },
             avanzar(ms) { t = Math.min(duracionMs, t + Math.max(0, ms)); },
             agotada() { return t >= duracionMs; },
             /** Lo que le queda: de 1 (llena) a 0 (agotada). */

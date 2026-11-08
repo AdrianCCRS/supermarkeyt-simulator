@@ -38,6 +38,7 @@ class ControlJornada {
         this.escena.jornadaJuego = Auditoria.jornada(JORNADA_CONFIG.sueldoBase, guardado && guardado.acum);
         this.escena.pantallaReposo();
         // entran los clientes; cuando el primero llega a la caja, empieza su compra
+        if (guardado && guardado.clientes && guardado.clientes.fila.length) { return this.escena.restaurarClientes(guardado.clientes); }
         this.escena.llenarFila(() => this.escena.nuevaCompra(this.escena.compraDelSiguiente()));
     }
 
@@ -54,7 +55,7 @@ class ControlJornada {
         } catch (e) { return null; }
     }
     guardar() {
-        try { sessionStorage.setItem('d2-progreso', JSON.stringify({ id: this.id, t: this.reloj.tiempo(), acum: this.escena.jornadaJuego.exportar() })); } catch (e) { /* sin almacenamiento: no se guarda */ }
+        try { sessionStorage.setItem('d2-progreso', JSON.stringify({ id: this.id, t: this.reloj.tiempo(), acum: this.escena.jornadaJuego.exportar(), clientes: this.escena.estadoClientes() })); } catch (e) { /* sin almacenamiento: no se guarda */ }
     }
     borrar() {
         try { sessionStorage.removeItem('d2-progreso'); } catch (e) { /* nada */ }

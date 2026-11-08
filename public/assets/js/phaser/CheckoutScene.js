@@ -191,7 +191,7 @@ class CheckoutScene extends Phaser.Scene {
      * Llega un cliente con su inventario de compra. En la banda hay UN producto por unidad (la fruta, uno solo:
      * su cantidad es el peso). Ese inventario es lo que la venta tiene que igualar exactamente al cobrar.
      */
-    nuevaCompra(compra) {
+    nuevaCompra(compra, pacienciaGastada) {
         this.cajeroAnimar('saludar');                                 // llega un cliente a la caja
         this.compra = Object.assign({}, compra);
         this.registros = [];
@@ -201,7 +201,7 @@ class CheckoutScene extends Phaser.Scene {
             const unidades = this.esFruta(sku) ? 1 : compra[sku];
             for (let i = 0; i < unidades; i++) { skus.push(sku); }
         });
-        this.paciencia = Paciencia.crear(Paciencia.duracion(skus.length, JORNADA_CONFIG));
+        this.paciencia = Paciencia.crear(Paciencia.duracion(skus.length, JORNADA_CONFIG), pacienciaGastada);
         this.llegadaPedido(skus);
     }
 
@@ -321,6 +321,32 @@ class CheckoutScene extends Phaser.Scene {
                 });
             });
         }
+    }
+
+    /** Los clientes de la fila (de arriba abajo; el último es el atendido) y la compra en curso, para guardarlos y recuperarlos al recargar. */
+    estadoClientes() {
+        return {
+            fila: this.fila.map((o) => ({ n: o.n, nombre: o.nombre })),
+            compra: this.paciencia ? this.compra : null,
+            paciencia: this.paciencia ? this.paciencia.tiempo() : 0
+        };
+    }
+
+    /**
+     * Pone de nuevo a los clientes guardados en su sitio de la fila, sin que vuelvan a entrar caminando. El atendido
+     * recupera su compra (la banda se llena otra vez: lo que ya había escaneado no se guarda) y la paciencia que le quedaba.
+     */
+    restaurarClientes(g) {
+        const c0 = TIENDA.cola;
+        const desde = 4 - g.fila.length;                           // los que faltan entrarán por arriba
+        this.fila = g.fila.map((d, i) => {
+            const o = this.crearCliente(d.n, c0.x, c0.y + (desde + i) * c0.paso);
+            o.nombre = d.nombre;
+            return o;
+        });
+        this.refrescarEtiqueta();
+        this.nuevaCompra(g.compra && Object.keys(g.compra).length ? g.compra : this.compraDelSiguiente(), g.compra ? g.paciencia : 0);
+        if (desde > 0 && this.jornada.admiteClientes) { this.llenarFila(null); }
     }
 
     /** Cierra la tienda: los clientes que seguían en la fila se van hacia abajo, uno tras otro. */

@@ -142,9 +142,10 @@ SKUS.forEach((sku) => {
 // La cantidad que se envía a la API es el peso en kg (entero), porque el
 // backend vende estos productos por unidades de 1 kg.
 const PLU = {
-    '4016': 'FRU-001',   // Manzanas rojas
-    '4011': 'FRU-002',   // Bananas
-    '4664': 'FRU-003'    // Tomates
+    '4011': 'FRU-002',   // Banano (amarillo)
+    '4016': 'FRU-001',   // Manzana roja
+    '4012': 'FRU-012',   // Naranja
+    '4048': 'FRU-011'    // Limon tahiti (verde)
 };
 
 // Columna de la caja: posición de la bandeja de efectivo, del recibo y del libro (coordenadas del lienzo).
@@ -168,7 +169,7 @@ const GLIFOS_BILLETE = {
 const PRODUCTOS_DEMO = {   // GENERADO por tools/generar_catalogo.py
     'FRU-001': { nombre: 'Manzana roja 1 kg', precio_base: '8500.00', iva_pct: '0.00' },
     'FRU-002': { nombre: 'Banano 1 kg', precio_base: '3800.00', iva_pct: '0.00' },
-    'FRU-003': { nombre: 'Tomate chonto 1 kg', precio_base: '4500.00', iva_pct: '0.00' },
+    'FRU-003': { nombre: 'Tomate chonto bolsa 1 kg', precio_base: '4500.00', iva_pct: '0.00' },
     'LAC-001': { nombre: 'Leche entera 1 L', precio_base: '4600.00', iva_pct: '0.00' },
     'LAC-002': { nombre: 'Yogur natural pack x4', precio_base: '9800.00', iva_pct: '0.00' },
     'LAC-003': { nombre: 'Queso campesino 250 g', precio_base: '8900.00', iva_pct: '5.00' },
@@ -193,8 +194,8 @@ const PRODUCTOS_DEMO = {   // GENERADO por tools/generar_catalogo.py
     'FRU-008': { nombre: 'Uvas verdes 500 g', precio_base: '12500.00', iva_pct: '0.00' },
     'FRU-009': { nombre: 'Kiwi bandeja x4', precio_base: '7900.00', iva_pct: '0.00' },
     'FRU-010': { nombre: 'Limon amarillo bolsa 500 g', precio_base: '3900.00', iva_pct: '0.00' },
-    'FRU-011': { nombre: 'Limon tahiti bolsa 500 g', precio_base: '3500.00', iva_pct: '0.00' },
-    'FRU-012': { nombre: 'Naranja bolsa 2 kg', precio_base: '6900.00', iva_pct: '0.00' },
+    'FRU-011': { nombre: 'Limon tahiti 1 kg', precio_base: '3900.00', iva_pct: '0.00' },
+    'FRU-012': { nombre: 'Naranja 1 kg', precio_base: '3500.00', iva_pct: '0.00' },
     'FRU-013': { nombre: 'Naranja en gajos bandeja', precio_base: '5900.00', iva_pct: '0.00' },
     'FRU-014': { nombre: 'Durazno bandeja x4', precio_base: '8900.00', iva_pct: '0.00' },
     'FRU-015': { nombre: 'Fresas 500 g', precio_base: '9500.00', iva_pct: '0.00' },

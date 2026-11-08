@@ -8,11 +8,11 @@ import path from 'node:path';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ctx = vm.createContext({ Intl, console, setTimeout });
-for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'phaser/assets.js']) {
+for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'nombres.js', 'phaser/assets.js']) {
     const codigo = fs.readFileSync(path.join(raiz, 'public/assets/js', f), 'utf8').replace(/^const (\w+) =/gm, 'globalThis.$1 =');
     vm.runInContext(codigo, ctx);
 }
-const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, PRODUCTOS_DEMO } = ctx;
+const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Nombres, PRODUCTOS_DEMO } = ctx;
 const skus = Object.keys(PRODUCTOS_DEMO);
 
 let fallos = 0, pruebas = 0;
@@ -179,6 +179,24 @@ ok(Cobro.generarBilletes(1139900, rnd2).suma >= 1139900 && Cobro.generarBilletes
     ok(r.texto() === '20:00' && r.terminado(), 'reloj: no pasa de las 20:00 y avisa que terminó');
     r.reiniciar();
     ok(r.texto() === '08:00' && !r.terminado(), 'reloj: reiniciar vuelve a las 08:00');
+}
+// nombres aleatorios de clientes
+{
+    const vistos = new Set();
+    let bien = true;
+    for (let i = 0; i < 500; i++) {
+        const n = Nombres.generar(rnd2);
+        vistos.add(n.completo);
+        bien = bien && /^[A-Za-z]+ [A-Za-z]+$/.test(n.completo) && n.completo.startsWith(n.nombre + ' ') && n.completo.length <= 100 && n.nombre.length <= 10;
+    }
+    ok(bien && vistos.size > 300, '500 nombres de cliente válidos (nombre + apellido, <= 100 caracteres) y variados: ' + vistos.size + ' distintos');
+    ok(Nombres.generar(() => 0).completo === 'Camila Rodriguez', 'nombres: determinista con un generador fijo');
+}
+// PLU: cuatro frutas distintas, códigos únicos y todos son productos del catálogo
+{
+    const codigos = Object.keys(ctx.PLU), skusPlu = Object.values(ctx.PLU);
+    ok(codigos.length === 4 && new Set(skusPlu).size === 4 && skusPlu.every((s) => PRODUCTOS_DEMO[s]), 'libro PLU: 4 frutas distintas del catálogo');
+    ok(codigos.every((c) => /^\d{4}$/.test(c)), 'libro PLU: códigos de 4 cifras');
 }
 // cobrador local (mock de checkout.php)
 const cobrar = Cobro.local(resolver, 0);

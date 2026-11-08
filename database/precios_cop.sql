@@ -31,8 +31,8 @@ UPDATE productos SET precio_base = 12900.00, iva_pct = 0.00 WHERE sku = 'FRU-007
 UPDATE productos SET precio_base = 12500.00, iva_pct = 0.00 WHERE sku = 'FRU-008';
 UPDATE productos SET precio_base = 7900.00, iva_pct = 0.00 WHERE sku = 'FRU-009';
 UPDATE productos SET precio_base = 3900.00, iva_pct = 0.00 WHERE sku = 'FRU-010';
-UPDATE productos SET precio_base = 3500.00, iva_pct = 0.00 WHERE sku = 'FRU-011';
-UPDATE productos SET precio_base = 6900.00, iva_pct = 0.00 WHERE sku = 'FRU-012';
+UPDATE productos SET precio_base = 3900.00, iva_pct = 0.00 WHERE sku = 'FRU-011';
+UPDATE productos SET precio_base = 3500.00, iva_pct = 0.00 WHERE sku = 'FRU-012';
 UPDATE productos SET precio_base = 5900.00, iva_pct = 0.00 WHERE sku = 'FRU-013';
 UPDATE productos SET precio_base = 8900.00, iva_pct = 0.00 WHERE sku = 'FRU-014';
 UPDATE productos SET precio_base = 9500.00, iva_pct = 0.00 WHERE sku = 'FRU-015';

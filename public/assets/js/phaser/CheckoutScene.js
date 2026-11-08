@@ -172,9 +172,8 @@ class CheckoutScene extends Phaser.Scene {
         this.add.image(...TIENDA.planta, 'planta').setOrigin(0);
         this.add.image(...TIENDA.mueble, 'mueble-trasero').setOrigin(0);
 
-        // Fila de clientes: el primero (abajo) es el que se está atendiendo
-        const c0 = TIENDA.cola;
-        this.fila = [4, 3, 2, 1].map((n, i) => this.crearCliente(n, c0.x, c0.y + i * c0.paso));   // de arriba (cola) a abajo (atendido)
+        // Fila de clientes (de arriba, la cola, a abajo, el atendido): empieza vacía; los clientes entran al abrir la jornada
+        this.fila = [];
 
         this.crearBandaMini();
         const [cx, cy, cw, ch] = TIENDA.canal;
@@ -191,9 +190,63 @@ class CheckoutScene extends Phaser.Scene {
     // Clientes: cola, entrada y salida
     // ------------------------------------------------------------------
     crearCliente(n, x, y) {
-        const o = { c: this.add.sprite(x, y, 'cliente-' + n, 0).setOrigin(0.5, 1), n, y, cara: 0 };
+        const o = { c: this.add.sprite(x, y, 'cliente-' + n, 0).setOrigin(0.5, 1), n, y, cara: 0, nombre: Nombres.generar(), tag: null };
         this.bob(o);
         return o;
+    }
+
+    /** Nombre completo del cliente que se está atendiendo (el de abajo de la fila), para el cobro. */
+    nombreClienteActual() {
+        const o = this.fila[this.fila.length - 1];
+        return o ? o.nombre.completo : 'Cliente';
+    }
+
+    /** Etiqueta con el nombre del cliente atendido, sobre su cabeza (solo el primer nombre). */
+    refrescarEtiqueta() {
+        this.fila.forEach((o, i) => {
+            const atendido = i === this.fila.length - 1;
+            if (!atendido && o.tag) { o.tag.destroy(); o.tag = null; }
+        });
+        const o = this.fila[this.fila.length - 1];
+        if (o && !o.tag && !o.saliendo && !o.enMarcha) {
+            o.tag = this.add.text(o.c.x, o.y - 44, o.nombre.nombre, { ...FUENTE, color: '#ffffff', stroke: '#181425', strokeThickness: 3 })
+                .setOrigin(0.5, 1).setDepth(6);
+            o.tag.x = Math.max(o.c.x, o.tag.width / 2 + 2);          // los nombres largos no se salen por la izquierda
+        }
+    }
+
+    /** Llegan clientes por la izquierda hasta llenar la fila (4). alPrimero se llama cuando el primero llega a la caja. */
+    llenarFila(alPrimero) {
+        const c0 = TIENDA.cola;
+        const huecos = 4 - this.fila.length;
+        for (let k = 0; k < huecos; k++) {
+            this.time.delayedCall(k * 1100, () => {
+                const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
+                const puesto = 3 - this.fila.length;                         // 3 = el de abajo (atendido), 0 = el de arriba
+                this.fila.unshift(nuevo);
+                this.mover(nuevo, c0.x, c0.y, 900, 'derecha', () => {
+                    this.mover(nuevo, c0.x, c0.y + puesto * c0.paso, 500 * puesto + 1, 'frente', () => {
+                        if (k === 0 && alPrimero) { alPrimero(); }
+                    });
+                });
+            });
+        }
+    }
+
+    /** Cierra la tienda: los clientes que seguían en la fila se van hacia abajo, uno tras otro. */
+    despedirFila() {
+        const fila = this.fila;
+        this.fila = [];
+        fila.forEach((o, i) => {
+            this.tweens.killTweensOf(o.c);
+            this.quieto(o);
+            o.saliendo = true;
+            if (o.tag) { o.tag.destroy(); o.tag = null; }
+            this.time.delayedCall(i * 300, () => {
+                this.animar(o, 'frente');
+                this.tweens.add({ targets: o.c, y: 270 + 48, duration: 1900, ease: 'Linear', onComplete: () => o.c.destroy() });
+            });
+        });
     }
 
     /** Rebote suave de 1 px mientras espera. */
@@ -223,11 +276,13 @@ class CheckoutScene extends Phaser.Scene {
 
     /** Camina hasta (x, y). Con la hoja de animación anda; sin ella, se desliza. */
     mover(o, x, y, ms, anim, fin) {
+        if (o.tag) { o.tag.destroy(); o.tag = null; }                  // el nombre reaparece al llegar
+        o.enMarcha = true;
         this.quieto(o);
         this.animar(o, anim);
         this.tweens.add({
             targets: o.c, x, y, duration: ms, ease: 'Linear',
-            onComplete: () => { o.y = y; this.pararAnim(o); this.bob(o); if (fin) { fin(); } }
+            onComplete: () => { o.enMarcha = false; o.y = y; this.pararAnim(o); this.bob(o); this.refrescarEtiqueta(); if (fin) { fin(); } }
         });
     }
 
@@ -235,6 +290,8 @@ class CheckoutScene extends Phaser.Scene {
     clienteSale(cara) {
         const servido = this.fila.pop();
         const c0 = TIENDA.cola;
+        servido.saliendo = true;
+        if (servido.tag) { servido.tag.destroy(); servido.tag = null; }
         servido.cara = cara;
         this.quieto(servido);
         servido.c.setTexture('cliente-' + servido.n, cara);
@@ -246,9 +303,13 @@ class CheckoutScene extends Phaser.Scene {
         });
         this.time.delayedCall(900, () => {
             this.fila.forEach((o) => this.mover(o, o.c.x, o.y + c0.paso, 700, 'frente'));
-            const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
-            this.fila.unshift(nuevo);
-            this.mover(nuevo, c0.x, c0.y, 1000, 'derecha', () => { this.finClientes = true; this.siguienteSiListo(); });
+            if (this.jornada.admiteClientes) {
+                const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
+                this.fila.unshift(nuevo);
+                this.mover(nuevo, c0.x, c0.y, 1000, 'derecha', () => { this.finClientes = true; this.siguienteSiListo(); });
+            } else {                                                   // cerrando: no entra nadie más, la fila solo avanza
+                this.time.delayedCall(800, () => { this.finClientes = true; this.siguienteSiListo(); });
+            }
         });
     }
 
@@ -839,7 +900,7 @@ class CheckoutScene extends Phaser.Scene {
         }
         this.cobrando = true;
         this.mostrar('PROCESANDO', 'ESPERE...');
-        Juego.cobrar({ carrito: this.venta.carrito(), efectivo })
+        Juego.cobrar({ carrito: this.venta.carrito(), efectivo, cliente: this.nombreClienteActual() })
             .then((r) => this.cobroOk(efectivo, r), (e) => this.cobroError(efectivo, e));
     }
 

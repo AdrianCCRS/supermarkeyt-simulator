@@ -23,7 +23,7 @@ Juego.setCobrador(({ carrito, efectivo }) =>
     Api.checkout(state.jornada.id, 'Cliente', carrito, Money.fromCents(efectivo))
         .then((v) => ({ total: Money.toCents(v.total), cambio: Money.toCents(v.cambio) })));
 ```
-- Entrada: `carrito` = `{sku: cantidad}` (fruta en kg) y `efectivo` en **centavos** → `Api.checkout` lo quiere en texto `"50000.00"` (`Money.fromCents`).
+- Entrada: `carrito` = `{sku: cantidad}` (fruta en kg), `efectivo` en **centavos** y `cliente` (nombre aleatorio del cliente simulado, p. ej. «Camila Rojas»; úsalo como `cliente_nombre`) → `Api.checkout` lo quiere en texto `"50000.00"` (`Money.fromCents`).
 - Salida: promesa que resuelve `{total, cambio}` en **centavos** (`Money.toCents`), o rechaza con `{status, mensaje}` (lo que ya rechaza `Api`).
 - El juego reacciona solo: `422` → «FALTAN $x» y se puede reintentar; `409`/otro → «ERROR» y no se cobra.
 - Mientras la petición está en curso el teclado se bloquea (checkout no es idempotente).
@@ -51,7 +51,7 @@ Se llama de forma **síncrona** cada vez que llega un cliente: precarga las comp
 
 ## Catálogo en la base de datos
 Los 108 productos (con su `imagen_url` = `/assets/img/icons/<sku>.png`) se cargan con `database/productos_juego.sql` (no destructivo) y los precios en pesos de los 20 primeros con `database/precios_cop.sql`. Se regeneran con `python3 tools/generar_catalogo.py`.
-Solo manzana, banano y tomate se pesan (PLU); el resto de frutas y verduras se venden empacadas con código de barras.
+Solo manzana, banano, naranja y limón tahití se pesan (PLU, libro de 4 códigos); el resto de frutas y verduras se venden empacadas con código de barras.
 **PHP:** usa el de XAMPP/LAMPP (`/opt/lampp/bin/php -S localhost:8124 -t public`): el del sistema no trae `pdo_mysql`.
 
 ## Qué probar al conectar

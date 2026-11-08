@@ -17,10 +17,12 @@
     --gris: #8b9bb4;
     --u: 2;                          /* escala de los PNG decorativos */
     --alto-cielo: 96px;              /* franja de cielo (el cartel cuelga encima) */
-    --alto-toldo: 40px;              /* toldo.png 20 px x2 */
+    --alto-toldo: 40px;              /* toldo.png 20 px x2 (--ut) */
     --alto-acera: 112px;             /* acera + clientes que pasean */
     --uf: 2;                         /* escala de las fachadas laterales */
     --uc: 2;                         /* escala del cartel del título */
+    --ut: 2;                         /* escala del toldo (como el de las tiendas laterales) */
+    --ul: 3;                         /* escala del ladrillo de la pared */
     --extra: 350px;                  /* alto que ocupa todo lo que NO es el juego (lo usa game.css) */
 }
 
@@ -37,7 +39,7 @@ body {
     color: var(--crema);
     background-color: var(--madera-osc);
     background-image: url("../img/entorno/ladrillo.png");          /* pared de ladrillo */
-    background-size: calc(16px * var(--u));
+    background-size: calc(16px * var(--ul));
     position: relative;
     overflow-x: hidden;
 }
@@ -118,7 +120,7 @@ body {
     margin-top: var(--alto-cielo);                                  /* justo debajo de la franja de cielo */
     background-color: var(--rojo);
     background-image: url("../img/entorno/toldo.png");
-    background-size: calc(32px * var(--u)) var(--alto-toldo);
+    background-size: calc(32px * var(--ut)) var(--alto-toldo);
     background-repeat: repeat-x;
     image-rendering: pixelated;
     filter: drop-shadow(0 6px 0 rgba(24, 20, 37, .55));
@@ -214,8 +216,8 @@ body {
 
 /* Decoración a escala x1 salvo en monitores muy altos: así el juego gana espacio */
 @media (max-height: 1199px) {
-    :root { --u: 1; --alto-cielo: 56px; --alto-toldo: 20px; --alto-acera: 56px; --extra: 205px; }
-    .calle { padding-top: 26px; }
+    :root { --u: 1; --alto-cielo: 56px; --alto-acera: 56px; --extra: 215px; }
+    .calle { padding-top: 12px; }
     .paseante { bottom: 10px; }
     .nube { transform: scale(.5); transform-origin: 0 0; }
     .creditos { padding: 6px 12px 8px; }

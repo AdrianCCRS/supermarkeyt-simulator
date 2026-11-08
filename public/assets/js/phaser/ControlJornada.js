@@ -31,8 +31,9 @@ class ControlJornada {
         this.resumen = null;
         this.estado = 'ABIERTA';
         this.escena.jornadaJuego = Auditoria.jornada(JORNADA_CONFIG.sueldoBase);
-        this.escena.nuevaCompra(this.escena.compraDelSiguiente());
         this.escena.pantallaReposo();
+        // entran los clientes; cuando el primero llega a la caja, empieza su compra
+        this.escena.llenarFila(() => this.escena.nuevaCompra(this.escena.compraDelSiguiente()));
     }
 
     /** Una jornada ya abierta en el servidor (Juego.setJornada). No hace nada si ya se está jugando. */
@@ -81,6 +82,7 @@ class ControlJornada {
             this.ocupado = false;
             this.resumen = resumen;
             this.estado = 'RESUMEN';
+            this.escena.despedirFila();                 // los clientes que quedaban en la cola se van
             this.escena.pantallaReposo();
         }, (e) => { this.ocupado = false; this.error(e); });      // el botón CERRAR queda para reintentar
         return true;

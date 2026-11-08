@@ -22,8 +22,8 @@ NUEVOS = [
     ('FRU-008', 'frutas-verduras/fruit_greengrape', 'Uvas verdes 500 g', 1, 6500, 0),
     ('FRU-009', 'frutas-verduras/fruit_kiwi', 'Kiwi bandeja x4', 1, 5200, 0),
     ('FRU-010', 'frutas-verduras/fruit_lemon', 'Limon amarillo bolsa 500 g', 1, 2400, 0),
-    ('FRU-011', 'frutas-verduras/fruit_lime', 'Limon tahiti bolsa 500 g', 1, 2200, 0),
-    ('FRU-012', 'frutas-verduras/fruit_orange', 'Naranja bolsa 2 kg', 1, 4500, 0),
+    ('FRU-011', 'frutas-verduras/fruit_lime', 'Limon tahiti 1 kg', 1, 3900, 0),
+    ('FRU-012', 'frutas-verduras/fruit_orange', 'Naranja 1 kg', 1, 3500, 0),
     ('FRU-013', 'frutas-verduras/fruit_orange_slice', 'Naranja en gajos bandeja', 1, 3600, 0),
     ('FRU-014', 'frutas-verduras/fruit_peach', 'Durazno bandeja x4', 1, 5400, 0),
     ('FRU-015', 'frutas-verduras/fruit_strawberry', 'Fresas 500 g', 1, 6900, 0),
@@ -117,7 +117,7 @@ PRECIOS = {
     'BEB-001': 3500, 'BEB-002': 2800, 'BEB-003': 6500, 'PAN-001': 6800, 'PAN-002': 3200,
     'LIM-001': 18900, 'LIM-002': 6500, 'HIG-001': 21900,
     'FRU-004': 5200, 'FRU-005': 6500, 'FRU-006': 14900, 'FRU-007': 12900, 'FRU-008': 12500, 'FRU-009': 7900,
-    'FRU-010': 3900, 'FRU-011': 3500, 'FRU-012': 6900, 'FRU-013': 5900, 'FRU-014': 8900, 'FRU-015': 9500,
+    'FRU-010': 3900, 'FRU-011': 3900, 'FRU-012': 3500, 'FRU-013': 5900, 'FRU-014': 8900, 'FRU-015': 9500,
     'FRU-016': 14900, 'FRU-017': 6900, 'FRU-018': 4900, 'FRU-019': 5900, 'FRU-020': 5900, 'FRU-021': 3200,
     'FRU-022': 5500, 'FRU-023': 3500, 'FRU-024': 4500, 'FRU-025': 3900, 'FRU-026': 3800, 'FRU-027': 3500,
     'FRU-028': 3900, 'FRU-029': 6900, 'FRU-030': 3500,
@@ -134,6 +134,8 @@ PRECIOS = {
     'HEL-001': 4500, 'HEL-002': 4500, 'HEL-003': 4500,
     'HEL-004': 2500, 'HEL-005': 2500, 'HEL-006': 2500, 'HEL-007': 2500, 'HEL-008': 2500,
 }
+# Nombres que sustituyen a los del seed para los 20 productos base (las frutas que se pesan son las del libro PLU)
+NOMBRES = {'FRU-003': 'Tomate chonto bolsa 1 kg'}
 CAT_NUEVA = (9, 'Helados', 'Helados y paletas.')
 q = lambda s: s.replace("'", "''")
 
@@ -142,7 +144,7 @@ seed = open(P('database', 'seed.sql')).read()
 cabecera, resto = seed.split('INSERT INTO productos', 1)
 bloque, cola = resto.split('INSERT INTO jornadas', 1)
 base = re.findall(r"\((\d+), '([A-Z]{3}-\d{3})', '([^']*)', (\d), ([\d.]+), ([\d.]+), (\d+), '[^']*', TRUE\)", bloque)
-base = [(int(i), s, n, int(c), f'{PRECIOS[s]}.00', iva, int(st)) for i, s, n, c, pr, iva, st in base if int(i) <= 20]
+base = [(int(i), s, NOMBRES.get(s, n), int(c), f'{PRECIOS[s]}.00', iva, int(st)) for i, s, n, c, pr, iva, st in base if int(i) <= 20]
 assert len(base) == 20, len(base)
 
 # --- 2) iconos ---

@@ -62,13 +62,13 @@ $(function () {
         }
     });
 
-    // Cobro: el juego pasa {carrito, efectivo (centavos)} y espera {total, cambio} en centavos. Se registra UNA vez.
-    function cobrar({carrito, efectivo}) {
+    // Cobro: el juego pasa {carrito, efectivo (centavos), cliente (nombre del cliente simulado)} y espera {total, cambio} en centavos. Se registra UNA vez.
+    function cobrar({carrito, efectivo, cliente}) {
         if (!state.jornada) {
             return $.Deferred().reject({status: 409, mensaje: 'No hay jornada abierta'}).promise();
         }
         const efectivoEnMonedas = Money.fromCents(efectivo);
-        return Api.checkout(state.jornada.id, 'Cliente', carrito, efectivoEnMonedas).then((v) => ({total: Money.toCents(v.total), cambio: Money.toCents(v.cambio)}));
+        return Api.checkout(state.jornada.id, cliente || 'Cliente', carrito, efectivoEnMonedas).then((v) => ({total: Money.toCents(v.total), cambio: Money.toCents(v.cambio)}));
     }
     Juego.setCobrador(cobrar);
 

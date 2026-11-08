@@ -6,9 +6,10 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 
 ## Qué hace el juego
 
-- **Caja:** arrastra los productos de la banda al escáner; la fruta se pesa y se cobra tecleando su código PLU (4011 banano, 4016 manzana, 4664 tomate). `QTY` arma cantidades y `VOID` anula el último producto.
+- **Caja:** arrastra los productos de la banda al escáner; la fruta se pesa y se cobra tecleando su código PLU (4011 banano, 4016 manzana, 4012 naranja, 4048 limón). `QTY` arma cantidades y `VOID` anula el último producto.
 - **Cobro en efectivo:** `PAY`, lees los billetes del cliente en la bandeja y tecleas la suma; el backend valida el cobro y la caja da el cambio sola (billetes y monedas).
 - **Responsabilidad:** si un cliente se lleva algo sin cobrar, o das de más, es pérdida y se descuenta del sueldo base al cerrar. Cobrar de más hace que el cliente proteste (−50 puntos); una venta exacta suma 100.
+- **Clientes:** entran cuando abres la jornada, con un nombre aleatorio sobre la cabeza (ese nombre viaja al backend en cada venta), y se van cuando la cierras.
 - **Jornada:** reloj de 08:00 a 20:00 (10 minutos reales), botón ABRIR/CERRAR, y pantalla de cierre con el resumen.
 - **Catálogo:** 108 productos con nombres colombianos, precios en COP y un icono de 16×16 cada uno.
 - **Pantalla grande:** botón o tecla `F`.
@@ -38,7 +39,7 @@ supermarket-simulator/
 |---|---|
 | `app.js` | Conecta la API con el juego: catálogo, jornada (abrir/cerrar) y cobro |
 | `api.js` | Cliente de la API (promesas de jQuery) |
-| `money.js`, `pricing.js`, `venta.js`, `auditoria.js`, `cobro.js`, `compra.js`, `reloj.js` | Lógica pura del juego, sin Phaser (con pruebas) |
+| `money.js`, `pricing.js`, `venta.js`, `auditoria.js`, `cobro.js`, `compra.js`, `reloj.js`, `nombres.js` | Lógica pura del juego, sin Phaser (con pruebas) |
 | `phaser/` | Escenas del juego: `CheckoutScene` (caja), `HudScene` (menú), `ControlJornada`, `config.js` (`Juego`), `assets.js` |
 | `pantalla.js` | Modo pantalla grande |
 
@@ -99,7 +100,7 @@ Las tarifas de IVA (0, 5 y 19 %) son **ficticias**, solo para la simulación.
 ## Pruebas
 
 ```bash
-node tests/js/run.mjs     # 349 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
+node tests/js/run.mjs     # 353 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
 php tests/run.php         # 61 pruebas; requiere pdo_mysql y mbstring
 ```
 

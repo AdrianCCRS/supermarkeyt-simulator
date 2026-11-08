@@ -55,3 +55,7 @@ Reglas y decisiones para dibujar assets del juego. La usa el agente `pixel-artis
 ## Logo «Tiendas D2» (`public/assets/img/entorno/`, script `logo_d2.lua`, comprobación `assets-src/scripts/chk_logo.py`)
 - Parodia de una marca real; única pieza con texto dibujado a mano (fuente 7 letras propia, 9 px de alto). Ejecutado con `aseprite -b --script`. Fuente `assets-src/logo-d2.aseprite` (una capa por pieza, hoja 200x84). Previews x6 en `assets-src/previews/logo-d2*-x6.png`.
 - `logo-d2.png` 64x80, `logo-d2-mini.png` 32x40 (sin «Tiendas», sin carita), `logo-d2-horizontal.png` 96x24 (sin carita). Detalle propio: carita sonriente bajo el 2 (solo en la grande). Sin zonas lisas reservadas para texto del juego.
+
+## Tendero «Tiendas D2» (script `cajero_d2.lua`, comprobación `assets-src/scripts/chk_cajero_d2.py`)
+- Sustituye al cajero verde: polo rojo (`e43b44`/`a22633`/`f6757a`), pelo con tupe `733e39`/`3e2731`/`262b44`, barba corta, cordón `fee761`, credencial blanca 3x4 en (13,22), parche D2 4x4 en (17,21), pantalón `3a4466`/`262b44`, zapatos `3e2731`. Originales verdes en `assets-src/originales-cajero/`. Fuente `assets-src/cajero-d2.aseprite`; `animaciones-personajes.aseprite` (capa cajero) NO se actualizó.
+- Respiración (frame 2): sube/baja cabeza y hombros (filas 0-19 +1 px, se descarta la fila 20); el pecho y los brazos no se mueven. Contorno vs frame 1: -2, +2 (frame 4 suma los billetes, +16 como el original).

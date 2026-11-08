@@ -87,6 +87,20 @@ body {
 }
 @keyframes balanceo { 0%, 100% { transform: rotate(-.6deg); } 50% { transform: rotate(.6deg); } }
 
+/* ---- Banderines con el logo, a cada lado del cartel ---- */
+.banderin {
+    position: absolute; z-index: 4; top: 0;
+    width: calc(32px * var(--uc)); height: calc(40px * var(--uc));
+    image-rendering: pixelated;
+    filter: drop-shadow(0 5px 0 rgba(24, 20, 37, .45));
+    animation: balanceo 7s ease-in-out infinite;
+    transform-origin: 50% 0;
+    display: none;
+}
+.banderin-izq { left: calc(50% - 96px * var(--uc) - 56px * var(--uc)); }
+.banderin-der { left: calc(50% + 96px * var(--uc) + 24px * var(--uc)); animation-delay: -3s; }
+@media (min-width: 900px) { .banderin { display: block; } }
+
 /* ---- Toldo de la tienda ---- */
 .toldo {
     position: relative;
@@ -214,13 +228,13 @@ body {
 
 /* Modo pantalla grande: sin decoración, el juego ocupa toda la ventana */
 body.grande { background-image: none; background-color: var(--contorno); height: 100vh; overflow: hidden; justify-content: center; }
-body.grande .cielo, body.grande .cartel, body.grande .toldo, body.grande .acera,
+body.grande .cielo, body.grande .cartel, body.grande .banderin, body.grande .toldo, body.grande .acera,
 body.grande .creditos, body.grande .local { display: none; }
 body.grande .calle { flex: 0 0 auto; padding: 0; align-items: center; }
 body.grande { --extra: 24px; }
 body.grande .escenario { border-width: 4px; box-shadow: none; outline-width: 2px; max-width: none; }
 
 @media (prefers-reduced-motion: reduce) {
-    .nube, .cartel, .paseante { animation: none; }
+    .nube, .cartel, .banderin, .paseante { animation: none; }
     .paseante { left: 20%; }
 }

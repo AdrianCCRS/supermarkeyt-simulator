@@ -68,6 +68,8 @@ const ASSETS = {
     'cliente-3-anim': { path: 'characters/cliente-3-anim.png', w: 32, h: 38, frames: 24, opcional: true },
     'cliente-4-anim': { path: 'characters/cliente-4-anim.png', w: 32, h: 38, frames: 24, opcional: true },
     'cajero-anim': { path: 'characters/cajero-anim.png', w: 32, h: 38, frames: 4, opcional: true },  // reposo · respira · cambio · cambio con billetes
+    // Protesta de los clientes: hoja 6 x 4 (una fila por cliente 1-4, 6 frames de frente)
+    'clientes-protesta': { path: 'characters/clientes-protesta.png', w: 32, h: 38, frames: 24, opcional: true },
     // Hoja 6 x 5: filas reposo (6) · saludar (6) · teclear (4) · celebrar (6) · molesto (4)
     'cajero-extra': { path: 'characters/cajero-extra.png', w: 32, h: 38, frames: 30, opcional: true }
 };

@@ -66,3 +66,8 @@ Reglas y decisiones para dibujar assets del juego. La usa el agente `pixel-artis
 - El sprite ocupa las 38 filas (tupe en y=0): no se puede subir el cuerpo. El salto se hace recogiendo las piernas (filas de pantalón quitadas): pies en y=36, 35, 36 (frames 2-4 de celebrar); agachado = torso 1 px abajo y 1 fila menos de pantalón (pies en 37). La respiración solo baja (0/+1), no sube.
 - El brazo adelantado ya llega a x=0, así que "avanzar hacia la caja" en teclear es estirar/recoger (mano x=1..0) y bajar 1 px (pulsar).
 - Contorno: salto >3 px en el saludo (levantar brazo: +15/-13) y celebrar (puños arriba: ±48..52) por cambio de pose; el resto ≤4.
+
+## Protesta de los clientes (script `protesta.lua`, comprobación `assets-src/scripts/chk_protesta.py`, GIFs `gif_protesta.py`)
+- `public/assets/img/characters/clientes-protesta.png` 192x152 (6 col x 4 filas de 32x38; fila = cliente 1..4) + `clientes-protesta-layout.json` ([{fila,cliente,frames}]). Fuente `assets-src/clientes-protesta.aseprite` (1 capa, 24 frames, etiquetas cliente-1..4). Previews x6 en `assets-src/previews/cliente-N-protesta-x6.gif`.
+- Frame 1 == frame 0 de `cliente-N.png` (comprobado). Frames 2-5: cabeza «molesto» (cejas en V, mejillas rojas) + boca (abierta roja / dientes apretados), brazos doblados con puños arriba (fila superior del puño 12 o 15; 17 en el frame 6), cabeza inclinada cortando las filas 0-9 ±1 px, pisotón: pie izq. sube 1 px (frame 2), der. (frame 4); frames 3 y 5 = impacto (cuerpo -1 px abajo, pantalón 1 fila menos). Símbolo de enfado rojo 5x5 en (0,0) en frames 2-5. Cliente 4: brazos 1 px más afuera por el pelo ancho.
+- Pies en y=37 salvo el pie levantado (36).

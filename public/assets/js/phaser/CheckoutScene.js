@@ -164,6 +164,12 @@ class CheckoutScene extends Phaser.Scene {
             crear('dinero', 18, 21, 0);     // extiende el dinero
             crear('coger', 22, 23, 0);      // coge la bolsa
         });
+        if (this.textures.exists('clientes-protesta')) {              // el cliente protesta: una fila de 6 frames por cliente
+            [1, 2, 3, 4].forEach((n) => this.anims.create({
+                key: 'c' + n + '-protesta', frameRate: 10, repeat: 1,
+                frames: this.anims.generateFrameNumbers('clientes-protesta', { start: (n - 1) * 6, end: (n - 1) * 6 + 5 })
+            }));
+        }
         if (this.textures.exists('cajero-extra')) {                   // animaciones del tendero (fila * 6 + columna)
             const f = (a, b) => this.anims.generateFrameNumbers('cajero-extra', { start: a, end: b });
             this.anims.create({ key: 'cajero-reposo', frames: f(0, 5), frameRate: 3, repeat: -1 });
@@ -308,14 +314,25 @@ class CheckoutScene extends Phaser.Scene {
         if (servido.tag) { servido.tag.destroy(); servido.tag = null; }
         servido.cara = cara;
         this.quieto(servido);
-        servido.c.setTexture('cliente-' + servido.n, cara);
-        const conPose = this.anims.exists('c' + servido.n + '-coger');
-        if (conPose) { servido.c.play('c' + servido.n + '-coger'); }
-        this.time.delayedCall(conPose ? 500 : 250, () => {
-            this.animar(servido, 'bolsa');
-            this.tweens.add({ targets: servido.c, y: 270 + 48, duration: 1900, ease: 'Linear', onComplete: () => servido.c.destroy() });
+        // Si protesta (cara 2) y existe su animación: primero se enfada, con un globito, y luego coge la bolsa y se va.
+        const protesta = cara === 2 && this.anims.exists('c' + servido.n + '-protesta');
+        const espera = protesta ? 1300 : 0;
+        if (protesta) {
+            servido.c.play('c' + servido.n + '-protesta');
+            this.globoProtesta(servido);
+        } else {
+            servido.c.setTexture('cliente-' + servido.n, cara);
+        }
+        this.time.delayedCall(espera, () => {
+            servido.c.setTexture('cliente-' + servido.n, cara);
+            const conPose = this.anims.exists('c' + servido.n + '-coger');
+            if (conPose) { servido.c.play('c' + servido.n + '-coger'); }
+            this.time.delayedCall(conPose ? 500 : 250, () => {
+                this.animar(servido, 'bolsa');
+                this.tweens.add({ targets: servido.c, y: 270 + 48, duration: 1900, ease: 'Linear', onComplete: () => servido.c.destroy() });
+            });
         });
-        this.time.delayedCall(900, () => {
+        this.time.delayedCall(900 + espera, () => {
             this.fila.forEach((o) => this.mover(o, o.c.x, o.y + c0.paso, 700, 'frente'));
             if (this.jornada.admiteClientes) {
                 const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
@@ -325,6 +342,16 @@ class CheckoutScene extends Phaser.Scene {
                 this.time.delayedCall(800, () => { this.finClientes = true; this.siguienteSiListo(); });
             }
         });
+    }
+
+    /** Globito rojo con un grito sobre la cabeza del cliente que protesta (desaparece solo). */
+    globoProtesta(o) {
+        const gritos = ['OIGA!', 'ABUSO!', 'ASI NO!', 'NO, NO!'];
+        const t = this.add.text(o.c.x, o.y - 44, Phaser.Utils.Array.GetRandom(gritos), { ...FUENTE, color: '#e43b44', stroke: '#ffffff', strokeThickness: 4 })
+            .setOrigin(0.5, 1).setDepth(7);
+        t.x = Math.max(o.c.x, t.width / 2 + 2);
+        this.tweens.add({ targets: t, y: t.y - 4, duration: 160, yoyo: true, repeat: 3, ease: 'Stepped' });
+        this.time.delayedCall(1250, () => this.tweens.add({ targets: t, alpha: 0, duration: 150, onComplete: () => t.destroy() }));
     }
 
     /** Llega el siguiente cliente a la banda cuando la bolsa ya se cambió y la cola terminó de avanzar. */

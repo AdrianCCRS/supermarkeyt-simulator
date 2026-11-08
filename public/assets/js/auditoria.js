@@ -52,9 +52,11 @@ const Auditoria = (function () {
     }
 
     /** Acumulado de la jornada. sueldoBase: texto con 2 decimales ("60000.00"). */
-    function jornada(sueldoBase) {
+    function jornada(sueldoBase, inicial) {
         const base = Money.toCents(sueldoBase);
         const acum = { clientes: 0, exactas: 0, protestas: 0, cobrado: 0, perdida: 0, perdida_caja: 0, sobrecobro: 0, puntos: 0, faltantes: {}, sobrantes: {} };
+
+        if (inicial) { Object.keys(acum).forEach((k) => { if (inicial[k] !== undefined) { acum[k] = typeof acum[k] === 'object' ? Object.assign({}, inicial[k]) : Number(inicial[k]) || 0; } }); }
 
         function sumar(destino, mapa) { Object.keys(mapa).forEach((s) => { destino[s] = (destino[s] || 0) + mapa[s]; }); }
 
@@ -74,6 +76,10 @@ const Auditoria = (function () {
                 if (exacta) { acum.exactas++; acum.puntos += PUNTOS_VENTA_EXACTA; }
                 if (protesta) { acum.protestas++; acum.puntos += PUNTOS_PROTESTA; }
                 return { exacta, protesta };
+            },
+            /** Copia del acumulado, para guardarlo y recuperarlo con jornada(sueldoBase, copia). */
+            exportar() {
+                return Object.assign({}, acum, { faltantes: Object.assign({}, acum.faltantes), sobrantes: Object.assign({}, acum.sobrantes) });
             },
             /** Resumen para el cierre: el sueldo del tendero es el base menos las pérdidas (nunca baja de 0). */
             resumen() {

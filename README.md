@@ -100,7 +100,7 @@ Las tarifas de IVA (0, 5 y 19 %) son **ficticias**, solo para la simulación.
 ## Pruebas
 
 ```bash
-node tests/js/run.mjs     # 353 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
+node tests/js/run.mjs     # 357 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
 php tests/run.php         # 61 pruebas; requiere pdo_mysql y mbstring
 ```
 
@@ -141,5 +141,4 @@ ALTER TABLE jornadas
 
 ## Pendiente
 
-Puntos y sueldo por jornada (tabla de jugador), paciencia del cliente, sonido, otros medios de pago, y que el juego recupere su
-acumulado si se recarga la página a mitad de jornada.
+Puntos y sueldo por jornada (tabla de jugador), paciencia del cliente, sonido, otros medios de pago.

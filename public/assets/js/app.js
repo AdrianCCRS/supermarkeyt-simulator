@@ -73,7 +73,10 @@ $(function () {
     Juego.setCobrador(cobrar);
 
     // ---- Arranque ----
-    cargarJornada();
-    cargarCatalogo();
-    Juego.iniciar();  // carga phaser y arranca el juego (phaser/config.js)
+    // El juego arranca cuando ya llegaron (o fallaron) la jornada y el catálogo: así el primer cliente usa el catálogo real
+    // y una jornada abierta antes de recargar se recupera.
+    const terminada = (promesa) => { const d = $.Deferred(); promesa.always(d.resolve); return d.promise(); };
+    $.when(terminada(cargarJornada()), terminada(cargarCatalogo())).then(function () {
+        Juego.iniciar();  // carga phaser y arranca el juego (phaser/config.js)
+    });
 });

@@ -17,6 +17,9 @@ const Reloj = (function () {
         return {
             avanzar(ms) { t = Math.min(duracion, t + Math.max(0, ms)); },
             reiniciar() { t = 0; },
+            /** Milisegundos transcurridos (para guardar y recuperar la jornada). */
+            tiempo() { return t; },
+            fijar(ms) { t = Math.min(duracion, Math.max(0, Number(ms) || 0)); },
             terminado() { return t >= duracion; },
             progreso() { return t / duracion; },
             /** Minutos desde las 00:00 (de la hora de juego). */

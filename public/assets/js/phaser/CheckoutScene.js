@@ -80,7 +80,7 @@ class CheckoutScene extends Phaser.Scene {
         this.listo = true;
         this.scene.launch('HudScene');                             // menú de la jornada, encima del juego
         const abierta = Juego.jornadaActual();                     // jornada ya abierta en el servidor (la pone el backend)
-        if (abierta) { this.jornada.entrar(abierta); } else { this.pantallaReposo(); }
+        if (abierta) { this.jornada.entrar(abierta, true); } else { this.pantallaReposo(); }
     }
 
     /** ¿Hay un cliente en caja? (productos en la banda o en la bolsa, cobro o entrega en curso). */
@@ -744,6 +744,7 @@ class CheckoutScene extends Phaser.Scene {
         // Auditoría: se compara lo que el cliente se lleva con lo que se cobró.
         const liq = Auditoria.liquidar(this.compra, this.venta.carrito(), (sku) => Juego.producto(sku));
         const res = this.jornadaJuego.registrar(liq, this.venta.total(), this.cuadre || undefined);
+        this.jornada.guardar();
         if (res.exacta) { this.cajeroAnimar('celebrar'); }                  // venta exacta: celebra
         else if (res.protesta) { this.cajeroAnimar('molesto'); }            // el cliente protesta: se molesta
         this.llevarseLoQueQueda();

@@ -224,5 +224,17 @@ for (let i = 0; i < 300; i++) {                                                 
 ok(alcanzan, '300 cambios de cuenta seguidos: los billetes siempre cubren el total');
 console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
 
+// Recuperar la jornada tras recargar: exportar() y jornada(sueldo, copia)
+{
+    const a = Auditoria.jornada('200000.00');
+    a.registrar({ faltantes: { 'LAC-002': 1 }, sobrantes: {}, perdida: 5000, sobrecobro: 0, exacta: false }, 12000);
+    const b = Auditoria.jornada('200000.00', JSON.parse(JSON.stringify(a.exportar())));
+    ok(JSON.stringify(b.resumen()) === JSON.stringify(a.resumen()), 'la jornada recuperada tiene el mismo resumen');
+    b.registrar({ faltantes: { 'LAC-002': 1 }, sobrantes: {}, perdida: 5000, sobrecobro: 0, exacta: false }, 0);
+    ok(b.resumen().faltantes['LAC-002'] === 2 && a.resumen().faltantes['LAC-002'] === 1, 'la copia no comparte estado con la original');
+    const r = Reloj.crear({}); r.fijar(300000);
+    ok(r.tiempo() === 300000 && r.texto() === '14:00', 'el reloj recupera su tiempo');
+}
+
 console.log(fallos ? '\n' + fallos + ' FALLOS de ' + pruebas : '\nTodo correcto (' + pruebas + ' comprobaciones)');
 process.exit(fallos ? 1 : 0);

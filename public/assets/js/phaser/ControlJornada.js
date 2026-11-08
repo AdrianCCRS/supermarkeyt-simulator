@@ -25,12 +25,15 @@ class ControlJornada {
     get operativa() { return this.estado === 'ABIERTA' || this.estado === 'CIERRE'; }
 
     /** Empieza una jornada: reloj a las 08:00, acumulados a cero y llega el primer cliente. */
-    entrar(jornada) {
+    entrar(jornada, recuperar) {
         this.id = jornada && jornada.id !== undefined ? jornada.id : null;
         this.reloj.reiniciar();
         this.resumen = null;
         this.estado = 'ABIERTA';
-        this.escena.jornadaJuego = Auditoria.jornada(JORNADA_CONFIG.sueldoBase);
+        const guardado = recuperar ? this.leer() : null;          // la página se recargó a mitad de jornada
+        if (!guardado) { this.borrar(); }
+        if (guardado) { this.reloj.fijar(guardado.t); }
+        this.escena.jornadaJuego = Auditoria.jornada(JORNADA_CONFIG.sueldoBase, guardado && guardado.acum);
         this.escena.pantallaReposo();
         // entran los clientes; cuando el primero llega a la caja, empieza su compra
         this.escena.llenarFila(() => this.escena.nuevaCompra(this.escena.compraDelSiguiente()));
@@ -38,7 +41,21 @@ class ControlJornada {
 
     /** Una jornada ya abierta en el servidor (Juego.setJornada). No hace nada si ya se está jugando. */
     sincronizar(jornada) {
-        if (jornada && !this.operativa && !this.ocupado && this.escena.listo) { this.entrar(jornada); }
+        if (jornada && !this.operativa && !this.ocupado && this.escena.listo) { this.entrar(jornada, true); }
+    }
+
+    // Progreso en sessionStorage (sobrevive a recargar la página, no a cerrar la pestaña). Solo vale para la jornada con ese id.
+    leer() {
+        try {
+            const g = JSON.parse(sessionStorage.getItem('d2-progreso'));
+            return g && g.id === this.id ? g : null;
+        } catch (e) { return null; }
+    }
+    guardar() {
+        try { sessionStorage.setItem('d2-progreso', JSON.stringify({ id: this.id, t: this.reloj.tiempo(), acum: this.escena.jornadaJuego.exportar() })); } catch (e) { /* sin almacenamiento: no se guarda */ }
+    }
+    borrar() {
+        try { sessionStorage.removeItem('d2-progreso'); } catch (e) { /* nada */ }
     }
 
     /** Botón de la barra: ABRIR (cerrada / resumen) o CERRAR (abierta / cierre). */
@@ -62,6 +79,8 @@ class ControlJornada {
     tick(ms) {
         if (this.estado !== 'ABIERTA') { return; }
         this.reloj.avanzar(ms);
+        this.sinGuardar = (this.sinGuardar || 0) + ms;
+        if (this.sinGuardar >= 2000) { this.sinGuardar = 0; this.guardar(); }
         if (this.reloj.terminado()) {
             this.estado = 'CIERRE';
             this.escena.avisar('HORA DE CERRAR', 'ATIENDE AL ULTIMO', 2200);
@@ -81,6 +100,7 @@ class ControlJornada {
         Juego.cerrarJornada(resumen).then(() => {
             this.ocupado = false;
             this.resumen = resumen;
+            this.borrar();
             this.estado = 'RESUMEN';
             this.escena.despedirFila();                 // los clientes que quedaban en la cola se van
             this.escena.pantallaReposo();

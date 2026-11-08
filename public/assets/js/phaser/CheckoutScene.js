@@ -844,16 +844,18 @@ class CheckoutScene extends Phaser.Scene {
         this.libroPagina = 0;
         this.libroObjs = [];
         this.libroTotal = Math.ceil(Object.keys(PLU).length / PLU_POR_PAGINA);
-        this.libroNumero = this.add.text(libroX + 101, libroY + 51, '', { ...FUENTE, color: COLOR.tinta }).setOrigin(0.5, 0).setDepth(2);
-        const flecha = (x, texto, delta) => {
-            const t = this.add.text(x, libroY + 51, texto, { ...FUENTE, color: COLOR.tinta }).setOrigin(0.5, 0).setDepth(2)
-                .setInteractive({ useHandCursor: true, hitArea: new Phaser.Geom.Rectangle(-7, -4, 22, 16), hitAreaCallback: Phaser.Geom.Rectangle.Contains });
-            t.on('pointerover', () => t.setColor('#e43b44'));
-            t.on('pointerout', () => t.setColor(COLOR.tinta));
-            t.on('pointerdown', () => this.cambiarPaginaLibro(delta));
-            return t;
+        this.add.image(libroX + 91, libroY + 51, 'libro-numero').setOrigin(0).setDepth(1);
+        this.libroNumero = this.add.text(libroX + 106, libroY + 53, '', { ...FUENTE, color: '#ead4aa' }).setOrigin(0.5, 0).setDepth(2);
+        const flecha = (x, base, delta) => {      // base: 0 = izquierda, 3 = derecha (normal · resaltada · pulsada)
+            const s = this.add.sprite(x, libroY + 51, 'libro-flechas', base).setOrigin(0).setDepth(2)
+                .setInteractive({ useHandCursor: true });
+            s.on('pointerover', () => s.setFrame(base + 1));
+            s.on('pointerout', () => s.setFrame(base));
+            s.on('pointerdown', () => { s.setFrame(base + 2); this.cambiarPaginaLibro(delta); });
+            s.on('pointerup', () => s.setFrame(base + 1));
+            return s;
         };
-        this.libroFlechas = [flecha(libroX + 82, '<', -1), flecha(libroX + 120, '>', 1)]       // abajo en la página derecha: < 1/3 >;
+        this.libroFlechas = [flecha(libroX + 77, 0, -1), flecha(libroX + 122, 3, 1)];     // abajo en la página derecha: [<] 1/3 [>]
         this.input.keyboard.on('keydown-LEFT', () => this.cambiarPaginaLibro(-1));      // también con las flechas del teclado
         this.input.keyboard.on('keydown-RIGHT', () => this.cambiarPaginaLibro(1));
         this.mostrarPaginaLibro();

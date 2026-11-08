@@ -49,6 +49,8 @@ const ASSETS = {
     'tecla-ent':  { path: 'caja/tecla-ent.png',  w: 36, h: 12, frames: 2 },
     'tecla-pay':  { path: 'caja/tecla-pay.png',  w: 32, h: 12, frames: 2 },
     libro:       { path: 'caja/libro.png',         w: 144, h: 68 },
+    'libro-flechas': { path: 'caja/libro-flechas.png', w: 12, h: 12, frames: 6 },   // izq: normal · resaltada · pulsada, der: igual
+    'libro-numero':  { path: 'caja/libro-numero.png',  w: 30, h: 12 },
     // Cobro: bandeja con los billetes del cliente, y el recibo que sale de la impresora
     'bandeja-efectivo': { path: 'caja/bandeja-efectivo.png', w: 144, h: 30 },
     billetes:    { path: 'caja/billetes.png',      w: 38,  h: 18, frames: 6 },   // 2.000 · 5.000 · 10.000 · 20.000 · 50.000 · 100.000

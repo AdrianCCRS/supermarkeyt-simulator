@@ -1,0 +1,20 @@
+{
+  "flechas": {
+    "hoja": "libro-flechas.png",
+    "tamano_frame": [12, 12],
+    "frames": [
+      {"frame": 0, "nombre": "izquierda"},
+      {"frame": 1, "nombre": "izquierda-resaltada"},
+      {"frame": 2, "nombre": "izquierda-pulsada"},
+      {"frame": 3, "nombre": "derecha"},
+      {"frame": 4, "nombre": "derecha-resaltada"},
+      {"frame": 5, "nombre": "derecha-pulsada"}
+    ],
+    "nota": "normal y resaltada ocupan x0..10, y0..10 del frame (la fila/columna 11 es transparente); pulsada ocupa x1..11, y1..11 (hundida 1 px abajo-derecha)."
+  },
+  "placa": {
+    "archivo": "libro-numero.png",
+    "tamano": [30, 12],
+    "zona_lisa": {"x": 2, "y": 2, "w": 26, "h": 8, "color": "193c3e"}
+  }
+}

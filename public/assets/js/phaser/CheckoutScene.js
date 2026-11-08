@@ -18,6 +18,8 @@ const FACTOR_AVISO = 1.4;               // los avisos duran un 40 % más de lo p
 const VEL_BANDA = 0.04;                 // px por ms, la misma para la cinta y los productos
 const SEP_BANDA = 34;                   // separación entre productos (32 + 2)
 const Y_FIN_BANDA = 118 - 32;           // y del producto que está al final de la banda
+// Prioridad de las animaciones del tendero: una más importante no se interrumpe por una menor.
+const PRIO_CAJERO = { reposo: 0, teclear: 1, saludar: 2, celebrar: 3, molesto: 3 };
 const FUENTE = { fontFamily: '"Press Start 2P"', fontSize: '8px', color: COLOR.tinta };
 
 class CheckoutScene extends Phaser.Scene {
@@ -122,6 +124,7 @@ class CheckoutScene extends Phaser.Scene {
      * su cantidad es el peso). Ese inventario es lo que la venta tiene que igualar exactamente al cobrar.
      */
     nuevaCompra(compra) {
+        this.cajeroAnimar('saludar');                                 // llega un cliente a la caja
         this.compra = Object.assign({}, compra);
         this.registros = [];
         this.qtyPendiente = null;
@@ -161,6 +164,14 @@ class CheckoutScene extends Phaser.Scene {
             crear('dinero', 18, 21, 0);     // extiende el dinero
             crear('coger', 22, 23, 0);      // coge la bolsa
         });
+        if (this.textures.exists('cajero-extra')) {                   // animaciones del tendero (fila * 6 + columna)
+            const f = (a, b) => this.anims.generateFrameNumbers('cajero-extra', { start: a, end: b });
+            this.anims.create({ key: 'cajero-reposo', frames: f(0, 5), frameRate: 3, repeat: -1 });
+            this.anims.create({ key: 'cajero-saludar', frames: f(6, 11), frameRate: 8 });
+            this.anims.create({ key: 'cajero-teclear', frames: f(12, 15), frameRate: 14 });
+            this.anims.create({ key: 'cajero-celebrar', frames: f(18, 23), frameRate: 9 });
+            this.anims.create({ key: 'cajero-molesto', frames: f(24, 27), frameRate: 6, repeat: 1 });
+        }
         this.anims.create({ key: 'recibo-imprimir', frameRate: 12, frames: this.anims.generateFrameNumbers('recibo-imprimir', { start: 0, end: 9 }) });
         this.anims.create({ key: 'recibo-arrancar', frameRate: 12, frames: this.anims.generateFrameNumbers('recibo-arrancar', { start: 0, end: 3 }) });
     }
@@ -180,7 +191,10 @@ class CheckoutScene extends Phaser.Scene {
         this.bandaTienda = this.add.tileSprite(cx, cy, cw, ch, 'banda-mini').setOrigin(0);
         this.add.image(...TIENDA.mostrador, 'mostrador-caja').setOrigin(0);     // el canal es transparente
         this.crearMiniPuesto();
-        this.cajeroSprite = this.add.image(...TIENDA.cajero, 'cajero').setOrigin(0);       // mira hacia la cola (izquierda)
+        this.cajeroSprite = this.add.sprite(...TIENDA.cajero, 'cajero').setOrigin(0);       // mira hacia la cola (izquierda)
+        this.cajeroActual = 'reposo';
+        this.cajeroOcupado = false;                                                          // true mientras da el cambio
+        this.cajeroReposo();
         this.add.image(...TIENDA.luz, 'luz-carril').setOrigin(0);
         const [lx, ly, lw, lh] = TIENDA.luzCara;
         this.add.text(lx + lw / 2, ly + lh / 2, '1', { ...FUENTE, color: '#2ce8f5' }).setOrigin(0.5);   // nº de carril
@@ -556,6 +570,7 @@ class CheckoutScene extends Phaser.Scene {
 
     /** El producto pasa por el cristal del escáner (láser y OK) y entra en la bolsa. */
     escanear(p) {
+        this.cajeroAnimar('teclear');
         this.entrada = '';                                          // un número sin confirmar con QTY no cuenta: se cobra 1
         const n = this.qtyPendiente || 1;
         this.qtyPendiente = null;
@@ -702,6 +717,8 @@ class CheckoutScene extends Phaser.Scene {
         // Auditoría: se compara lo que el cliente se lleva con lo que se cobró.
         const liq = Auditoria.liquidar(this.compra, this.venta.carrito(), (sku) => Juego.producto(sku));
         const res = this.jornadaJuego.registrar(liq, this.venta.total(), this.cuadre || undefined);
+        if (res.exacta) { this.cajeroAnimar('celebrar'); }                  // venta exacta: celebra
+        else if (res.protesta) { this.cajeroAnimar('molesto'); }            // el cliente protesta: se molesta
         this.llevarseLoQueQueda();
         this.arrancarRecibo();
         this.quitarBilletes(false);
@@ -825,6 +842,7 @@ class CheckoutScene extends Phaser.Scene {
      */
     pulsarTecla(label) {
         if (!this.jornada.operativa) { return this.avisar('CERRADO', 'ABRE LA JORNADA', 1600); }
+        this.cajeroAnimar('teclear');
         if (this.cobrando) { return; }                       // esperando al cobrador: teclado bloqueado
         if (/^\d$/.test(label)) {
             if (this.venta.pagada) { return; }
@@ -995,16 +1013,35 @@ class CheckoutScene extends Phaser.Scene {
         this.recibo.once('animationcomplete', () => this.recibo.setVisible(false));
     }
 
+    /** El tendero vuelve a su pose de espera (con respiración y parpadeo si existe la hoja de animaciones). */
+    cajeroReposo() {
+        this.cajeroActual = 'reposo';
+        if (this.anims.exists('cajero-reposo')) { this.cajeroSprite.play('cajero-reposo'); }
+        else { this.cajeroSprite.setTexture('cajero'); }
+    }
+
+    /** Anima al tendero (saludar, teclear, celebrar, molesto) y al terminar vuelve al reposo. Respeta las prioridades. */
+    cajeroAnimar(nombre) {
+        if (!this.anims.exists('cajero-' + nombre) || this.cajeroOcupado) { return; }
+        const actual = this.cajeroActual;
+        if (actual !== 'reposo' && PRIO_CAJERO[actual] > PRIO_CAJERO[nombre] && this.cajeroSprite.anims.isPlaying) { return; }
+        this.cajeroActual = nombre;
+        this.cajeroSprite.play('cajero-' + nombre);
+        this.cajeroSprite.once('animationcomplete', () => { if (this.cajeroActual === nombre && !this.cajeroOcupado) { this.cajeroReposo(); } });
+    }
+
     /**
      * El cajero da el cambio SOLO (el jugador no elige billetes): el cajón lo reparte en billetes (Cobro.desglosarCambio)
      * y lo que no llega a 2.000$ sale como un puñado de monedas. Todo cae a la bandeja de uno en uno; ENTREGAR espera al último.
      */
     cajeroDaCambio(cambio) {
+        this.cajeroOcupado = true;
+        this.cajeroSprite.anims.stop();
         if (this.textures.exists('cajero-anim')) {
             this.cajeroSprite.setTexture('cajero-anim', 2);
             this.time.delayedCall(450, () => this.cajeroSprite.setFrame(3));
-            this.time.delayedCall(1200, () => this.cajeroSprite.setTexture('cajero'));
         }
+        this.time.delayedCall(1200, () => { this.cajeroOcupado = false; this.cajeroReposo(); });
         this.recogerCambio();
         const { billetes, monedas } = Cobro.desglosarCambio(cambio);
         const piezas = billetes.slice(0, 8).map((v) => ({ billete: v }));            // más de 8 no cabrían: el resto es solo cantidad

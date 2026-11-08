@@ -1,0 +1,7 @@
+[
+  {"fila": 0, "nombre": "reposo", "frames": 6},
+  {"fila": 1, "nombre": "saludar", "frames": 6},
+  {"fila": 2, "nombre": "teclear", "frames": 4},
+  {"fila": 3, "nombre": "celebrar", "frames": 6},
+  {"fila": 4, "nombre": "molesto", "frames": 4}
+]

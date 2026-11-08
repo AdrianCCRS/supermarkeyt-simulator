@@ -59,3 +59,10 @@ Reglas y decisiones para dibujar assets del juego. La usa el agente `pixel-artis
 ## Tendero «Tiendas D2» (script `cajero_d2.lua`, comprobación `assets-src/scripts/chk_cajero_d2.py`)
 - Sustituye al cajero verde: polo rojo (`e43b44`/`a22633`/`f6757a`), pelo con tupe `733e39`/`3e2731`/`262b44`, barba corta, cordón `fee761`, credencial blanca 3x4 en (13,22), parche D2 4x4 en (17,21), pantalón `3a4466`/`262b44`, zapatos `3e2731`. Originales verdes en `assets-src/originales-cajero/`. Fuente `assets-src/cajero-d2.aseprite`; `animaciones-personajes.aseprite` (capa cajero) NO se actualizó.
 - Respiración (frame 2): sube/baja cabeza y hombros (filas 0-19 +1 px, se descarta la fila 20); el pecho y los brazos no se mueven. Contorno vs frame 1: -2, +2 (frame 4 suma los billetes, +16 como el original).
+
+## Tendero D2: hoja de animaciones extra (script `cajero_extra.lua`, comprobación `assets-src/scripts/chk_cajero_extra.py`, GIFs `gif_cajero_extra.py`)
+- `public/assets/img/characters/cajero-extra.png` 192x190 (6 col x 5 filas de 32x38) + `cajero-extra-layout.json` ([{fila,nombre,frames}]). Fuente `assets-src/cajero-extra.aseprite` (1 capa, 26 frames, etiquetas reposo/saludar/teclear/celebrar/molesto). Previews x6 en `assets-src/previews/cajero-extra-*-x6.gif`.
+- Filas: 0 reposo (6), 1 saludar (6), 2 teclear (4, cols 4-5 vacías), 3 celebrar (6), 4 molesto (4, cols 4-5 vacías). Frame 1 de reposo == `cajero-izq.png`.
+- El sprite ocupa las 38 filas (tupe en y=0): no se puede subir el cuerpo. El salto se hace recogiendo las piernas (filas de pantalón quitadas): pies en y=36, 35, 36 (frames 2-4 de celebrar); agachado = torso 1 px abajo y 1 fila menos de pantalón (pies en 37). La respiración solo baja (0/+1), no sube.
+- El brazo adelantado ya llega a x=0, así que "avanzar hacia la caja" en teclear es estirar/recoger (mano x=1..0) y bajar 1 px (pulsar).
+- Contorno: salto >3 px en el saludo (levantar brazo: +15/-13) y celebrar (puños arriba: ±48..52) por cambio de pose; el resto ≤4.

@@ -163,6 +163,42 @@ if "(9, 'Helados'" not in cab:
     cab = cab.replace("(8, 'Higiene personal', 'Productos de cuidado e higiene personal.');",
                       "(8, 'Higiene personal', 'Productos de cuidado e higiene personal.'),\n    (9, 'Helados', 'Helados y paletas.');")
     cab = cab.replace('INSERT INTO productos\n', 'INSERT INTO productos\n')
+# --- 3b) historial del seed: jornadas CERRADAS y ventas recalculadas con los precios actuales (reglas de PricingService) ---
+def mitad_arriba(num, den):          # redondeo half-up con enteros (centavos)
+    return (2 * num + den) // (2 * den)
+
+filas_v = re.findall(r"\((\d+), '(V-\d+)', '([^']*)', [\d.]+, [\d.]+, [\d.]+, [\d.]+,\s*[\d.]+, [\d.]+, '([^']*)', '(\w+)', (\d+)\)", cola)
+filas_d = re.findall(r"\((\d+), (\d+), (\d+), [\d.]+, [\d.]+, [\d.]+, [\d.]+, [\d.]+\)", cola.split('INSERT INTO detalles_venta')[1])
+por_id = {i: (sku, float(pr), float(iva)) for i, sku, n, c, pr, iva, st in todos}
+dec = lambda c: f"{c // 100}.{c % 100:02d}"
+ventas_sql, detalles_sql = [], []
+for vid, numero, cliente, fecha, estado, jor in filas_v:
+    sub = ivat = bruto = 0
+    lineas = []
+    for v, prod, cant in filas_d:
+        if v != vid:
+            continue
+        sku, precio, iva = por_id[int(prod)]
+        sl = int(round(precio * 100)) * int(cant)
+        il = mitad_arriba(sl * int(round(iva * 100)), 10000)
+        sub += sl; ivat += il; bruto += sl + il
+        lineas.append((vid, prod, cant, dec(int(round(precio * 100))), f"{iva:.2f}", dec(sl), dec(il), dec(sl + il)))
+    desc = mitad_arriba(bruto * 5, 100) if bruto >= 10000000 else 0
+    total = bruto - desc
+    if estado == 'completada':
+        efectivo = ((total + 99999) // 100000) * 100000 if total > 500000 else ((total + 49999) // 50000) * 50000
+        if efectivo == total: efectivo += 50000
+        cambio = efectivo - total
+    else:
+        efectivo = cambio = 0
+    ventas_sql.append(f"    ({vid}, '{numero}', '{q(cliente)}', {dec(sub)}, {dec(ivat)}, {dec(desc)}, {dec(total)},\n     {dec(efectivo)}, {dec(cambio)}, '{fecha}', '{estado}', {jor})")
+    detalles_sql += [f"    ({', '.join(l)})" for l in lineas]
+antes_j, resto_j = cola.split('INSERT INTO ventas', 1)
+# (cola empieza justo después de "INSERT INTO jornadas")
+antes_j = re.sub(r"\A \(id, fecha_inicio, fecha_fin, estado\) VALUES\n.*?;",
+    " (id, fecha_inicio, fecha_fin, estado) VALUES\n    (1, '2026-11-03 08:00:00', '2026-11-03 20:00:00', 'cerrada'),\n    (2, '2026-11-05 08:00:00', '2026-11-05 20:00:00', 'cerrada');", antes_j, count=1, flags=re.S)
+cola = antes_j + "INSERT INTO ventas\n    (id, numero_venta, cliente_nombre, subtotal, iva_total, descuento_total, total,\n     efectivo_recibido, cambio, fecha_hora, estado, jornada_id)\nVALUES\n" + ",\n".join(ventas_sql) + ";\n\nINSERT INTO detalles_venta\n    (venta_id, producto_id, cantidad, precio_unitario, iva_pct, subtotal_linea, iva_linea, total_linea)\nVALUES\n" + ",\n".join(detalles_sql) + ";\n"
+
 open(P('database', 'seed.sql'), 'w').write(cab + 'INSERT INTO productos' + bloque.split('VALUES', 1)[0] + 'VALUES\n' + filas + 'INSERT INTO jornadas' + cola)
 
 # --- 4) productos_juego.sql (no destructivo) ---

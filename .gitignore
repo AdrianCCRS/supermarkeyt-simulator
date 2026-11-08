@@ -13,3 +13,11 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+
+# Herramientas de asistentes y temporales
+.claude/
+.codex/
+assets-src/scripts/out/
+
+# Documento de trabajo (no es código)
+Guia_Supermarket_Simulator_PHP_jQuery.docx

@@ -6,6 +6,10 @@
 | `public/assets/img/icons/lac-001.png` | Generado con IA para este proyecto | Propio | `assets-src/supermarket_pixel_art_assets.zip` |
 | `public/assets/img/tienda/*`, `public/assets/img/characters/*` (incluidas las animaciones `*-anim.png`), `icons/` (los 11 productos que faltaban) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/tienda.aseprite`, `assets-src/puesto-caja.aseprite`, `assets-src/iconos-faltantes.aseprite` |
 | `public/assets/img/caja/*` (cuerpo y teclas de la caja), `public/assets/img/banda/*` | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/caja.aseprite`, `assets-src/banda.aseprite` |
+| `public/assets/img/hud/*` (barra de jornada, botones, lámpara, iconos, panel de cierre) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/hud.aseprite` |
+| `public/assets/img/entorno/*` (cielo, nubes, cartel, toldo, ladrillo, acera, fachadas) y `favicon.png` / `public/favicon.ico` | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/entorno.aseprite` |
+| `public/assets/img/entorno/logo-d2*.png` («Tiendas D2») | Diseñado con IA + Aseprite. **Parodia** sin fines comerciales de una marca existente; no es la marca original | Propio | `assets-src/logo-d2.aseprite` |
+| `public/assets/img/characters/cajero-izq.png`, `cajero-anim.png` (tendero con uniforme D2) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/cajero-d2.aseprite` (originales en `assets-src/originales-cajero/`) |
 | `public/assets/fonts/PressStart2P-Regular.ttf` | The Press Start 2P Project Authors (CodeMan38) | SIL OFL 1.1 (`public/assets/fonts/OFL.txt`) | Google Fonts |
 | `public/assets/js/vendor/phaser-3.90.0.min.js` | Phaser Studio Inc. | MIT | npm `phaser@3.90.0` |
 | `public/assets/js/vendor/jquery-3.7.1.min.js` | OpenJS Foundation | MIT | code.jquery.com |

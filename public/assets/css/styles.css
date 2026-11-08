@@ -184,13 +184,37 @@ body {
     background: var(--contorno);
 }
 
-/* Ventanas bajas: la decoración se reduce a la mitad para que el juego gane espacio */
-@media (max-height: 820px) {
-    :root { --u: 1; --alto-cielo: 56px; --alto-toldo: 20px; --alto-acera: 64px; --extra: 215px; }
+/* Decoración a escala x1 salvo en monitores muy altos: así el juego gana espacio */
+@media (max-height: 1199px) {
+    :root { --u: 1; --alto-cielo: 56px; --alto-toldo: 20px; --alto-acera: 56px; --extra: 190px; }
     .cartel h1 { font-size: 8px; padding-top: 3px; }
-    .paseante { bottom: 12px; }
+    .calle { padding-top: 8px; }
+    .paseante { bottom: 10px; }
     .nube { transform: scale(.5); transform-origin: 0 0; }
+    .creditos { padding: 6px 12px 8px; }
 }
+
+/* ---- Botón de pantalla grande ---- */
+.btn-pantalla {
+    position: fixed; right: 10px; bottom: 10px; z-index: 15;
+    padding: 8px 10px;
+    font: 8px "Press Start 2P", system-ui, sans-serif;
+    color: var(--contorno);
+    background: var(--crema);
+    border: 3px solid var(--contorno);
+    box-shadow: 3px 3px 0 var(--contorno);
+    cursor: pointer;
+}
+.btn-pantalla:hover { background: var(--arena); }
+.btn-pantalla:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--contorno); }
+
+/* Modo pantalla grande: sin decoración, el juego ocupa toda la ventana */
+body.grande { background-image: none; background-color: var(--contorno); height: 100vh; overflow: hidden; justify-content: center; }
+body.grande .cielo, body.grande .cartel, body.grande .toldo, body.grande .acera,
+body.grande .creditos, body.grande .local { display: none; }
+body.grande .calle { flex: 0 0 auto; padding: 0; align-items: center; }
+body.grande { --extra: 24px; }
+body.grande .escenario { border-width: 4px; box-shadow: none; outline-width: 2px; max-width: none; }
 
 @media (prefers-reduced-motion: reduce) {
     .nube, .cartel, .paseante { animation: none; }

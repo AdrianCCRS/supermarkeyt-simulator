@@ -7,7 +7,7 @@
 
 .escenario {
     /* Cabe siempre en la ventana: el ancho sale del alto disponible (--extra es lo que ocupa la decoración) */
-    width: min(100%, calc((100vh - var(--extra)) * 480 / 294), 1280px);
+    width: min(100%, calc((100vh - var(--extra)) * 480 / 294), 2000px);
     min-width: 320px;
     aspect-ratio: 480 / 294;
     margin: 0;

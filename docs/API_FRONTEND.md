@@ -60,7 +60,12 @@ Error típico: `409 {"success":false,"error":"Stock insuficiente para: FRU-001"}
 ⚠ **No es idempotente:** deshabilita el botón mientras la petición está en curso o se creará una venta por clic.
 
 ### `POST jornada_abrir.php` → 201 (409 si ya hay una abierta)
-### `POST jornada_cerrar.php` `{"jornada_id":2}` → jornada cerrada con su resumen
+### `POST jornada_cerrar.php` → jornada cerrada con su resumen
+```json
+{"jornada_id": 2, "faltantes": {"LAC-001": 1}, "sobrantes": {"LAC-002": 3}, "perdida": "7100.00", "sobrecobro": "0.00"}
+```
+Solo `jornada_id` es obligatorio. `faltantes` descuenta unidades del stock (mínimo 0) y `sobrantes` las repone (máximo 1.000.000); ambos son `{sku: cantidad entera >= 1}`.
+`perdida` y `sobrecobro` son importes en texto (hasta 2 decimales) y quedan guardados en la jornada (`perdida_total`, `sobrecobro_total`). Datos mal formados → 422 y no se cierra nada.
 ### `POST venta_cancelar.php` `{"venta_id":9}` → venta cancelada (devuelve el stock; solo si la jornada sigue abierta)
 ### `POST producto_reponer.php` `{"sku":"FRU-001","cantidad":20}` → `{"sku","nombre","stock"}`
 ### `POST producto_estado.php` `{"sku":"FRU-001","activo":false}` → `{"sku","nombre","activo"}`

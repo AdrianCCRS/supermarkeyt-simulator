@@ -8,7 +8,9 @@ class JornadaRepository {
                 j.id,
                 j.fecha_inicio,
                 j.fecha_fin,
-                j.estado
+                j.estado,
+                j.perdida_total,
+                j.sobrecobro_total
             FROM jornadas AS j
             WHERE j.id = ?");
 
@@ -20,7 +22,7 @@ class JornadaRepository {
     public function findAbierta(): ?array
     {
         $query = $this->pdo->query(
-            "SELECT id, fecha_inicio, fecha_fin, estado
+            "SELECT id, fecha_inicio, fecha_fin, estado, perdida_total, sobrecobro_total
             FROM jornadas
             WHERE estado = 'abierta'
             LIMIT 1"
@@ -40,31 +42,43 @@ class JornadaRepository {
     }
 
     /**
-     * Cierra la jornada y ajusta el stock con lo que el juego detectó (se llama dentro de la transacción del servicio):
-     *   $faltantes  {sku: cantidad} unidades que salieron sin cobrarse  -> se descuentan del stock
-     *   $sobrantes  {sku: cantidad} unidades cobradas de más            -> se reponen al stock
+     * Cierra la jornada, ajusta el stock con lo que el juego detectó y guarda las pérdidas y sobrecobros
+     * (se llama dentro de la transacción del servicio):
+     *   $faltantes  {sku: cantidad} unidades que salieron sin cobrarse  -> se descuentan del stock (mínimo 0)
+     *   $sobrantes  {sku: cantidad} unidades cobradas de más            -> se reponen al stock (máximo $maxStock)
+     *   $perdida / $sobrecobro      importes en texto con 2 decimales ("7100.00")
      */
-    public function cerrar(int $id, array $faltantes = [], array $sobrantes = []): void
-    {
-        $this->ajustarStock($faltantes, -1, 'faltantes');
-        $this->ajustarStock($sobrantes, 1, 'sobrantes');
+    public function cerrar(
+        int $id,
+        array $faltantes = [],
+        array $sobrantes = [],
+        string $perdida = '0.00',
+        string $sobrecobro = '0.00',
+        int $maxStock = ProductoService::MAX_STOCK
+    ): void {
+        $this->ajustarStock($faltantes, -1, 'faltantes', $maxStock);
+        $this->ajustarStock($sobrantes, 1, 'sobrantes', $maxStock);
 
         $query = $this->pdo->prepare(
             "UPDATE jornadas
-            SET estado = 'cerrada', fecha_fin = CURRENT_TIMESTAMP
+            SET estado = 'cerrada', fecha_fin = CURRENT_TIMESTAMP,
+                perdida_total = ?, sobrecobro_total = ?
             WHERE id = ? AND estado = 'abierta'"
         );
-        $query->execute([$id]);
+        $query->execute([$perdida, $sobrecobro, $id]);
     }
 
-    /** Suma ($signo = 1) o resta ($signo = -1) unidades al stock. Valida SKU y cantidades; el stock nunca baja de 0. */
-    private function ajustarStock(array $mapa, int $signo, string $tipo): void
+    /**
+     * Suma ($signo = 1) o resta ($signo = -1) unidades al stock. Valida SKU y cantidades.
+     * El stock nunca baja de 0 ni sube de $maxStock (se recorta en vez de fallar, para no bloquear el cierre).
+     */
+    private function ajustarStock(array $mapa, int $signo, string $tipo, int $maxStock): void
     {
         $existe = $this->pdo->prepare("SELECT 1 FROM productos WHERE sku = ?");
         $ajusta = $this->pdo->prepare(
             $signo < 0
                 ? "UPDATE productos SET stock = GREATEST(stock - ?, 0) WHERE sku = ?"
-                : "UPDATE productos SET stock = stock + ? WHERE sku = ?"
+                : "UPDATE productos SET stock = LEAST(stock + ?, $maxStock) WHERE sku = ?"
         );
 
         foreach ($mapa as $sku => $cantidad) {
@@ -106,7 +120,9 @@ class JornadaRepository {
                 id,
                 fecha_inicio,
                 fecha_fin,
-                estado
+                estado,
+                perdida_total,
+                sobrecobro_total
             FROM jornadas
             WHERE id = ?
             FOR UPDATE"

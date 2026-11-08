@@ -14,7 +14,7 @@ Por cada cliente atendido compara lo que **se lleva** (su inventario de compra, 
 | venta exacta | ni faltantes ni sobrantes | +100 pts |
 
 Los importes se valoran como los cobraría la caja (precio base × cantidad + IVA de la línea).
-Sueldo del tendero = `sueldoBase` − pérdidas, con mínimo 0. El sueldo base está en `JORNADA_CONFIG` (`phaser/assets.js`, 60.000 COP).
+Sueldo del tendero = `sueldoBase` − pérdidas, con mínimo 0. El sueldo base está en `JORNADA_CONFIG` (`phaser/assets.js`, 200.000 COP).
 
 ### Cómo leerlo para el cierre (jQuery)
 
@@ -47,6 +47,6 @@ y el stock de la base de datos queda MÁS ALTO que el real. Propuesta:
 
 Lo que NO hay que cambiar: `checkout.php` sigue recibiendo solo lo cobrado.
 
-## Pendiente del lado del juego
-- Mostrar el resumen en una pantalla de cierre (hoy solo está disponible vía `Juego.resumenJornada()`).
-- El juego no guarda nada entre recargas: la jornada vive en memoria hasta que el backend la persista.
+## Estado
+Hecho: pantalla de cierre en el juego, ajuste de stock (faltantes/sobrantes) y guardado de `perdida_total` y `sobrecobro_total` en la jornada.
+Pendiente: puntos y sueldo por jornada (tabla de jugador) y que el juego recupere su acumulado si se recarga la página a mitad de jornada.

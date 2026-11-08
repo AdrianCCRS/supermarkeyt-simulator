@@ -41,7 +41,17 @@ const Api = (function () {
         categorias:     () => request('GET', 'categorias.php'),
         jornadaActual:  () => request('GET', 'jornada_actual.php'),
         abrirJornada:   () => request('POST', 'jornada_abrir.php'),
-        cerrarJornada:  (jornadaId, faltantes, sobrantes) => request('POST', 'jornada_cerrar.php', { jornada_id: jornadaId, faltantes: faltantes, sobrantes: sobrantes }),
+        /**
+         * faltantes / sobrantes: {sku: cantidad} que ajustan el stock. perdida / sobrecobro: importes en TEXTO ("7100.00").
+         * Todo menos el id es opcional.
+         */
+        cerrarJornada:  (jornadaId, faltantes, sobrantes, perdida, sobrecobro) => request('POST', 'jornada_cerrar.php', {
+            jornada_id: jornadaId,
+            faltantes: faltantes,
+            sobrantes: sobrantes,
+            perdida: perdida,
+            sobrecobro: sobrecobro
+        }),
         venta:          (id) => request('GET', 'ventas.php?id=' + encodeURIComponent(id)),
         ventasDeJornada: (jornadaId) => request('GET', 'ventas.php?jornada_id=' + encodeURIComponent(jornadaId)),
         cancelarVenta:  (ventaId) => request('POST', 'venta_cancelar.php', { venta_id: ventaId }),

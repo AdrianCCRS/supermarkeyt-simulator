@@ -148,3 +148,42 @@ T::test('API: cerrar con faltantes/sobrantes ajusta el stock; datos mal formados
     T::same(7, stockDe($pdo, 'A-1'));
     T::same(5, stockDe($pdo, 'B-2'));
 });
+
+// ---- Pérdidas, sobrecobros y tope de stock en el cierre ----
+T::test('cerrar guarda la pérdida y el sobrecobro en la jornada', function () {
+    $pdo = testPdo();
+    $j = makeJornadas($pdo)->cerrar(1, [], [], '7100.00', '1250.50');
+    T::same('7100.00', $j['perdida_total']);
+    T::same('1250.50', $j['sobrecobro_total']);
+    $fila = $pdo->query("SELECT perdida_total, sobrecobro_total FROM jornadas WHERE id = 1")->fetch(PDO::FETCH_ASSOC);
+    T::same('7100.00', $fila['perdida_total'], 'guardada en la BD');
+    T::same('1250.50', $fila['sobrecobro_total']);
+});
+
+T::test('sin importes, la jornada se cierra con 0.00', function () {
+    $pdo = testPdo();
+    $j = makeJornadas($pdo)->cerrar(1);
+    T::same('0.00', $j['perdida_total']);
+    T::same('0.00', $j['sobrecobro_total']);
+});
+
+T::test('los sobrantes no pasan del tope de stock (se recorta, el cierre no falla)', function () {
+    $pdo = testPdo();
+    $pdo->exec("UPDATE productos SET stock = " . (ProductoService::MAX_STOCK - 1) . " WHERE sku = 'A-1'");
+    $j = makeJornadas($pdo)->cerrar(1, [], ['A-1' => 50]);
+    T::same('cerrada', $j['estado']);
+    T::same(ProductoService::MAX_STOCK, stockDe($pdo, 'A-1'), 'recortado al máximo');
+});
+
+T::test('API: importes del cierre se validan (422) y se guardan', function () {
+    $pdo = testPdo();
+    foreach (['"perdida":7100', '"perdida":"abc"', '"sobrecobro":"-5.00"', '"perdida":"1.234"'] as $malo) {
+        [$s] = http('POST', '/api/jornada_cerrar.php', '{"jornada_id":1,' . $malo . '}');
+        T::same(422, $s, $malo);
+    }
+    T::same('abierta', $pdo->query("SELECT estado FROM jornadas WHERE id = 1")->fetchColumn(), 'sigue abierta tras los errores');
+    [$s, , $j] = http('POST', '/api/jornada_cerrar.php', '{"jornada_id":1,"perdida":"5000","sobrecobro":"120.5"}');
+    T::same(200, $s);
+    T::same('5000.00', $j['data']['perdida_total']);
+    T::same('120.50', $j['data']['sobrecobro_total']);
+});

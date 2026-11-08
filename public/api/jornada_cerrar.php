@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../src/bootstrap.php';
 
-// POST /api/jornada_cerrar.php {"jornada_id": 2, "faltantes": {"LAC-001": 1}, "sobrantes": {"LAC-002": 3}}
-// -> jornada cerrada con su resumen. "faltantes" y "sobrantes" son opcionales ({sku: cantidad entera >= 1}).
+// POST /api/jornada_cerrar.php
+//   {"jornada_id": 2, "faltantes": {"LAC-001": 1}, "sobrantes": {"LAC-002": 3}, "perdida": "7100.00", "sobrecobro": "0.00"}
+// -> jornada cerrada con su resumen. Todo menos jornada_id es opcional:
+//   faltantes / sobrantes: {sku: cantidad entera >= 1} (ajustan el stock)
+//   perdida / sobrecobro: importes en texto con hasta 2 decimales (se guardan en la jornada)
 
 /** Valida un mapa {sku: cantidad}; null equivale a vacío. */
 function mapaDeCantidades(mixed $valor, string $campo): array
@@ -24,6 +27,18 @@ function mapaDeCantidades(mixed $valor, string $campo): array
     return $valor;
 }
 
+/** Valida un importe en texto ("7100" o "7100.50"); null equivale a "0.00". Devuelve siempre con 2 decimales. */
+function importeTexto(mixed $valor, string $campo): string
+{
+    if ($valor === null) {
+        return '0.00';
+    }
+    if (!is_string($valor) || !preg_match('/^\d{1,10}(\.\d{1,2})?$/', $valor)) {
+        throw new ApiException(422, "$campo debe ser un importe en texto, por ejemplo \"7100.00\"");
+    }
+    return number_format((float) $valor, 2, '.', '');
+}
+
 Api::handle('POST', function (): array {
     $body = Api::jsonBody();
     $id = $body['jornada_id'] ?? null;
@@ -33,6 +48,8 @@ Api::handle('POST', function (): array {
     }
     $faltantes = mapaDeCantidades($body['faltantes'] ?? null, 'faltantes');
     $sobrantes = mapaDeCantidades($body['sobrantes'] ?? null, 'sobrantes');
+    $perdida = importeTexto($body['perdida'] ?? null, 'perdida');
+    $sobrecobro = importeTexto($body['sobrecobro'] ?? null, 'sobrecobro');
 
     $pdo = Database::connection();
     $repo = new JornadaRepository($pdo);
@@ -41,5 +58,5 @@ Api::handle('POST', function (): array {
         throw new ApiException(404, 'Jornada no encontrada');
     }
 
-    return (new JornadaService($pdo, $repo))->cerrar($id, $faltantes, $sobrantes);
+    return (new JornadaService($pdo, $repo))->cerrar($id, $faltantes, $sobrantes, $perdida, $sobrecobro);
 });

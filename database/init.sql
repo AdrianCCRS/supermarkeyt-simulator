@@ -34,6 +34,8 @@ CREATE TABLE jornadas (
     -- incluso con peticiones simultáneas.
     abierta_unica TINYINT
         GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED,
+    perdida_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (perdida_total >= 0),
+    sobrecobro_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (sobrecobro_total >= 0),
     UNIQUE KEY uq_jornada_abierta (abierta_unica)
 );
 

@@ -76,29 +76,38 @@ body {
     transform-origin: 50% 0;
     filter: drop-shadow(0 5px 0 rgba(24, 20, 37, .45));
 }
-.cartel h1 {
-    margin: 0;
-    padding-top: 6px;
-    font-size: calc(7.5px * var(--uc));
-    line-height: 1.35;
+.cartel h1 {                      /* el texto ocupa justo la zona lisa del cartel (x8 y12, 176 x 24 px del PNG), centrado */
+    position: absolute;
+    left: calc(8px * var(--uc)); top: calc(12px * var(--uc));
+    width: calc(176px * var(--uc)); height: calc(24px * var(--uc));
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: calc(7px * var(--uc));
+    line-height: 1.55;
     text-align: center;
-    color: var(--contorno);
-    text-shadow: 1px 1px 0 var(--arena);
+    white-space: nowrap;
+    --borde: var(--contorno);
+    text-shadow: 1px 0 0 var(--borde), -1px 0 0 var(--borde), 0 1px 0 var(--borde), 0 -1px 0 var(--borde),
+                 1px 1px 0 var(--borde), -1px -1px 0 var(--borde), 1px -1px 0 var(--borde), -1px 1px 0 var(--borde),
+                 2px 2px 0 var(--borde);
 }
+.cartel .blanco { color: #fff; }
+.cartel .amarillo { color: #fee761; }
+.cartel .rojo { color: var(--rojo); }
 @keyframes balanceo { 0%, 100% { transform: rotate(-.6deg); } 50% { transform: rotate(.6deg); } }
 
 /* ---- Banderines con el logo, a cada lado del cartel ---- */
 .banderin {
     position: absolute; z-index: 4; top: 0;
-    width: calc(32px * var(--uc)); height: calc(40px * var(--uc));
+    width: 64px; height: 80px;                       /* logo-d2.png a escala x1: igual de alto que el cartel */
     image-rendering: pixelated;
     filter: drop-shadow(0 5px 0 rgba(24, 20, 37, .45));
     animation: balanceo 7s ease-in-out infinite;
     transform-origin: 50% 0;
     display: none;
 }
-.banderin-izq { left: calc(50% - 96px * var(--uc) - 56px * var(--uc)); }
-.banderin-der { left: calc(50% + 96px * var(--uc) + 24px * var(--uc)); animation-delay: -3s; }
+.banderin-izq { left: calc(50% - 96px * var(--uc) - 24px - 64px); }
+.banderin-der { left: calc(50% + 96px * var(--uc) + 24px); animation-delay: -3s; }
 @media (min-width: 900px) { .banderin { display: block; } }
 
 /* ---- Toldo de la tienda ---- */

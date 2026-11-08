@@ -195,7 +195,8 @@ ok(Cobro.generarBilletes(1139900, rnd2).suma >= 1139900 && Cobro.generarBilletes
 // PLU: cuatro frutas distintas, códigos únicos y todos son productos del catálogo
 {
     const codigos = Object.keys(ctx.PLU), skusPlu = Object.values(ctx.PLU);
-    ok(codigos.length === 4 && new Set(skusPlu).size === 4 && skusPlu.every((s) => PRODUCTOS_DEMO[s]), 'libro PLU: 4 frutas distintas del catálogo');
+    ok(codigos.length === 12 && new Set(skusPlu).size === 12 && skusPlu.every((s) => PRODUCTOS_DEMO[s]), 'libro PLU: 12 productos distintos del catálogo (3 páginas de 4)');
+    ok(ctx.PLU_POR_PAGINA === 4 && codigos.length % ctx.PLU_POR_PAGINA === 0, 'libro PLU: páginas completas');
     ok(codigos.every((c) => /^\d{4}$/.test(c)), 'libro PLU: códigos de 4 cifras');
 }
 // cobrador local (mock de checkout.php)

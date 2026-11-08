@@ -51,7 +51,7 @@ Se llama de forma **síncrona** cada vez que llega un cliente: precarga las comp
 
 ## Catálogo en la base de datos
 Los 108 productos (con su `imagen_url` = `/assets/img/icons/<sku>.png`) se cargan con `database/productos_juego.sql` (no destructivo) y los precios en pesos de los 20 primeros con `database/precios_cop.sql`. Se regeneran con `python3 tools/generar_catalogo.py`.
-Solo manzana, banano, naranja y limón tahití se pesan (PLU, libro de 4 códigos); el resto de frutas y verduras se venden empacadas con código de barras.
+Se pesan 12 productos (PLU, libro de 3 páginas de 4): banano, naranja, manzana, uvas moradas, patilla, limón tahití, pepino, papa pastusa, pimentón rojo, cebolla cabezona, zanahoria y fresas; el resto de frutas y verduras se venden empacadas con código de barras.
 **PHP:** usa el de XAMPP/LAMPP (`/opt/lampp/bin/php -S localhost:8124 -t public`): el del sistema no trae `pdo_mysql`.
 
 ## Qué probar al conectar

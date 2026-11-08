@@ -838,17 +838,49 @@ class CheckoutScene extends Phaser.Scene {
         this.add.image(...COBRO.bandeja, 'bandeja-efectivo').setOrigin(0);
         this.recibo = this.add.sprite(...COBRO.recibo, 'recibo-imprimir', 0).setOrigin(0).setVisible(false).setDepth(5);
 
-        // Libro de códigos PLU
+        // Libro de códigos PLU, con páginas: 4 productos por página (2 en cada mitad del libro), ordenados por código
         const [libroX, libroY] = COBRO.libro;
         this.add.image(libroX, libroY, 'libro').setOrigin(0);
-        Object.entries(PLU).forEach(([codigo, sku], i) => {
-            const pagina = i < 2 ? 0 : 1;
-            const fila = pagina === 0 ? i : i - 2;
-            const x = 338 + pagina * 70;
-            const y = libroY + 8 + fila * 26;
-            this.add.image(x, y, sku).setOrigin(0);
-            this.add.text(x + 20, y + 4, codigo, FUENTE);
+        this.libroPagina = 0;
+        this.libroObjs = [];
+        this.libroTotal = Math.ceil(Object.keys(PLU).length / PLU_POR_PAGINA);
+        this.libroNumero = this.add.text(libroX + 101, libroY + 51, '', { ...FUENTE, color: COLOR.tinta }).setOrigin(0.5, 0).setDepth(2);
+        const flecha = (x, texto, delta) => {
+            const t = this.add.text(x, libroY + 51, texto, { ...FUENTE, color: COLOR.tinta }).setOrigin(0.5, 0).setDepth(2)
+                .setInteractive({ useHandCursor: true, hitArea: new Phaser.Geom.Rectangle(-7, -4, 22, 16), hitAreaCallback: Phaser.Geom.Rectangle.Contains });
+            t.on('pointerover', () => t.setColor('#e43b44'));
+            t.on('pointerout', () => t.setColor(COLOR.tinta));
+            t.on('pointerdown', () => this.cambiarPaginaLibro(delta));
+            return t;
+        };
+        this.libroFlechas = [flecha(libroX + 82, '<', -1), flecha(libroX + 120, '>', 1)]       // abajo en la página derecha: < 1/3 >;
+        this.input.keyboard.on('keydown-LEFT', () => this.cambiarPaginaLibro(-1));      // también con las flechas del teclado
+        this.input.keyboard.on('keydown-RIGHT', () => this.cambiarPaginaLibro(1));
+        this.mostrarPaginaLibro();
+    }
+
+    /** Pasa de página (da la vuelta: de la última a la primera y al revés). */
+    cambiarPaginaLibro(delta) {
+        if (!this.libroTotal) { return; }
+        this.libroPagina = (this.libroPagina + delta + this.libroTotal) % this.libroTotal;
+        this.mostrarPaginaLibro();
+    }
+
+    /** Dibuja los 4 productos de la página actual: icono y código (izquierda: los 2 primeros, derecha: los 2 siguientes). */
+    mostrarPaginaLibro() {
+        this.libroObjs.forEach((o) => o.destroy());
+        this.libroObjs = [];
+        const [, libroY] = COBRO.libro;
+        const entradas = Object.entries(PLU).slice(this.libroPagina * PLU_POR_PAGINA, (this.libroPagina + 1) * PLU_POR_PAGINA);
+        entradas.forEach(([codigo, sku], i) => {
+            const mitad = i < 2 ? 0 : 1;
+            const fila = i % 2;
+            const x = 338 + mitad * 70;
+            const y = libroY + 6 + fila * 26;
+            this.libroObjs.push(this.add.image(x, y, sku).setOrigin(0).setDepth(2));
+            this.libroObjs.push(this.add.text(x + 20, y + 4, codigo, FUENTE).setDepth(2));
         });
+        this.libroNumero.setText((this.libroPagina + 1) + '/' + this.libroTotal);
     }
 
     /** Tecla con sprite de 2 frames (normal · pulsada) y el rótulo escrito con la fuente del juego. */

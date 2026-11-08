@@ -6,7 +6,7 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 
 ## Qué hace el juego
 
-- **Caja:** arrastra los productos de la banda al escáner; la fruta se pesa y se cobra tecleando su código PLU (4011 banano, 4016 manzana, 4012 naranja, 4048 limón). `QTY` arma cantidades y `VOID` anula el último producto.
+- **Caja:** arrastra los productos de la banda al escáner; la fruta y verdura se pesa y se cobra tecleando su código PLU, que buscas en el libro de la caja (12 productos en 3 páginas; flechas `<` `>` o las teclas ← →). `QTY` arma cantidades y `VOID` anula el último producto.
 - **Cobro en efectivo:** `PAY`, lees los billetes del cliente en la bandeja y tecleas la suma; el backend valida el cobro y la caja da el cambio sola (billetes y monedas).
 - **Responsabilidad:** si un cliente se lleva algo sin cobrar, o das de más, es pérdida y se descuenta del sueldo base al cerrar. Cobrar de más hace que el cliente proteste (−50 puntos); una venta exacta suma 100.
 - **Clientes:** entran cuando abres la jornada, con un nombre aleatorio sobre la cabeza (ese nombre viaja al backend en cada venta), y se van cuando la cierras.

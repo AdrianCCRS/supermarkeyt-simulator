@@ -146,11 +146,20 @@ SKUS.forEach((sku) => {
 // La cantidad que se envía a la API es el peso en kg (entero), porque el
 // backend vende estos productos por unidades de 1 kg.
 const PLU = {
-    '4011': 'FRU-002',   // Banano (amarillo)
-    '4016': 'FRU-001',   // Manzana roja
+    '4011': 'FRU-002',   // Banano
     '4012': 'FRU-012',   // Naranja
-    '4048': 'FRU-011'    // Limon tahiti (verde)
+    '4016': 'FRU-001',   // Manzana roja
+    '4023': 'FRU-007',   // Uvas moradas
+    '4032': 'FRU-016',   // Patilla
+    '4048': 'FRU-011',   // Limon tahiti
+    '4062': 'FRU-023',   // Pepino cohombro
+    '4072': 'FRU-029',   // Papa pastusa
+    '4088': 'FRU-019',   // Pimenton rojo
+    '4093': 'FRU-028',   // Cebolla cabezona
+    '4094': 'FRU-021',   // Zanahoria
+    '4430': 'FRU-015'    // Fresas
 };
+const PLU_POR_PAGINA = 4;    // el libro enseña 4 productos por página (2 + 2); las flechas pasan de página
 
 // Columna de la caja: posición de la bandeja de efectivo, del recibo y del libro (coordenadas del lienzo).
 const COBRO = {
@@ -194,7 +203,7 @@ const PRODUCTOS_DEMO = {   // GENERADO por tools/generar_catalogo.py
     'FRU-004': { nombre: 'Manzana en tajadas bolsa', precio_base: '5200.00', iva_pct: '0.00' },
     'FRU-005': { nombre: 'Mora de castilla 250 g', precio_base: '6500.00', iva_pct: '0.00' },
     'FRU-006': { nombre: 'Cerezas 250 g', precio_base: '14900.00', iva_pct: '0.00' },
-    'FRU-007': { nombre: 'Uvas moradas 500 g', precio_base: '12900.00', iva_pct: '0.00' },
+    'FRU-007': { nombre: 'Uvas moradas 1 kg', precio_base: '24000.00', iva_pct: '0.00' },
     'FRU-008': { nombre: 'Uvas verdes 500 g', precio_base: '12500.00', iva_pct: '0.00' },
     'FRU-009': { nombre: 'Kiwi bandeja x4', precio_base: '7900.00', iva_pct: '0.00' },
     'FRU-010': { nombre: 'Limon amarillo bolsa 500 g', precio_base: '3900.00', iva_pct: '0.00' },
@@ -202,21 +211,21 @@ const PRODUCTOS_DEMO = {   // GENERADO por tools/generar_catalogo.py
     'FRU-012': { nombre: 'Naranja 1 kg', precio_base: '3500.00', iva_pct: '0.00' },
     'FRU-013': { nombre: 'Naranja en gajos bandeja', precio_base: '5900.00', iva_pct: '0.00' },
     'FRU-014': { nombre: 'Durazno bandeja x4', precio_base: '8900.00', iva_pct: '0.00' },
-    'FRU-015': { nombre: 'Fresas 500 g', precio_base: '9500.00', iva_pct: '0.00' },
-    'FRU-016': { nombre: 'Patilla entera', precio_base: '14900.00', iva_pct: '0.00' },
+    'FRU-015': { nombre: 'Fresas 1 kg', precio_base: '18000.00', iva_pct: '0.00' },
+    'FRU-016': { nombre: 'Patilla 1 kg', precio_base: '2500.00', iva_pct: '0.00' },
     'FRU-017': { nombre: 'Patilla picada bandeja', precio_base: '6900.00', iva_pct: '0.00' },
     'FRU-018': { nombre: 'Pimenton verde bolsa x3', precio_base: '4900.00', iva_pct: '0.00' },
-    'FRU-019': { nombre: 'Pimenton rojo bolsa x3', precio_base: '5900.00', iva_pct: '0.00' },
+    'FRU-019': { nombre: 'Pimenton rojo 1 kg', precio_base: '9500.00', iva_pct: '0.00' },
     'FRU-020': { nombre: 'Pimenton amarillo bolsa x3', precio_base: '5900.00', iva_pct: '0.00' },
-    'FRU-021': { nombre: 'Zanahoria bolsa 1 kg', precio_base: '3200.00', iva_pct: '0.00' },
+    'FRU-021': { nombre: 'Zanahoria 1 kg', precio_base: '3200.00', iva_pct: '0.00' },
     'FRU-022': { nombre: 'Mazorca bandeja x2', precio_base: '5500.00', iva_pct: '0.00' },
-    'FRU-023': { nombre: 'Pepino cohombro bolsa x3', precio_base: '3500.00', iva_pct: '0.00' },
+    'FRU-023': { nombre: 'Pepino cohombro 1 kg', precio_base: '3800.00', iva_pct: '0.00' },
     'FRU-024': { nombre: 'Berenjena bandeja x2', precio_base: '4500.00', iva_pct: '0.00' },
     'FRU-025': { nombre: 'Ajo cabeza malla x3', precio_base: '3900.00', iva_pct: '0.00' },
     'FRU-026': { nombre: 'Jengibre 250 g', precio_base: '3800.00', iva_pct: '0.00' },
     'FRU-027': { nombre: 'Aji jalapeno 200 g', precio_base: '3500.00', iva_pct: '0.00' },
-    'FRU-028': { nombre: 'Cebolla cabezona bolsa 1 kg', precio_base: '3900.00', iva_pct: '0.00' },
-    'FRU-029': { nombre: 'Papa pastusa bolsa 2 kg', precio_base: '6900.00', iva_pct: '0.00' },
+    'FRU-028': { nombre: 'Cebolla cabezona 1 kg', precio_base: '3900.00', iva_pct: '0.00' },
+    'FRU-029': { nombre: 'Papa pastusa 1 kg', precio_base: '3500.00', iva_pct: '0.00' },
     'FRU-030': { nombre: 'Ahuyama porcion 1 kg', precio_base: '3500.00', iva_pct: '0.00' },
     'LAC-004': { nombre: 'Queso azul 150 g', precio_base: '16900.00', iva_pct: '5.00' },
     'LAC-005': { nombre: 'Queso camembert 125 g', precio_base: '14500.00', iva_pct: '5.00' },

@@ -1,4 +1,4 @@
-/* Capa de juego: escenario Phaser de tres columnas. */
+/* Capa de juego: el escenario Phaser (480 x 294: barra de jornada + tres columnas), enmarcado como el escaparate de la tienda. */
 @font-face {
     font-family: "Press Start 2P";
     src: url("../fonts/PressStart2P-Regular.ttf") format("truetype");
@@ -6,12 +6,16 @@
 }
 
 .escenario {
-    /* Cabe siempre en la ventana: el ancho sale de la altura disponible (480 x 294) */
-    width: min(100%, calc((100vh - 125px) * 480 / 294));
-    max-width: 1440px;
-    margin: 0 auto;
+    /* Cabe siempre en la ventana: el ancho sale del alto disponible (--extra es lo que ocupa la decoración) */
+    width: min(100%, calc((100vh - var(--extra)) * 480 / 294), 1280px);
+    min-width: 320px;
     aspect-ratio: 480 / 294;
+    margin: 0;
     background: #181425;
+    /* marco de madera tipo escaparate */
+    border: 8px solid var(--madera-osc);
+    outline: 4px solid var(--contorno);
+    box-shadow: 0 0 0 4px var(--contorno), 0 10px 0 4px var(--madera-osc), 0 14px 0 4px var(--contorno);
 }
 #game { width: 100%; height: 100%; }
 #game canvas {
@@ -19,5 +23,3 @@
     image-rendering: pixelated;
     image-rendering: crisp-edges;
 }
-
-.creditos { text-align: center; font-size: .75rem; color: var(--muted); padding: 8px; }

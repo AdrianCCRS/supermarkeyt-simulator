@@ -1,104 +1,198 @@
+/*
+ * Página que rodea al juego: una calle comercial en pixel art (cielo, cartel, toldo, locales y acera).
+ * Todo el arte sale de assets/img/entorno/ y se escala en enteros (x2) con image-rendering: pixelated.
+ * Paleta Endesga 32, la misma del juego.
+ */
 :root {
-    --bg: #f4f5f7;
-    --card: #ffffff;
-    --ink: #1d2433;
-    --muted: #6b7280;
-    --accent: #1f7a4d;
-    --danger: #b3261e;
-    --line: #e3e6eb;
+    --contorno: #181425;
+    --madera: #b86f50;
+    --madera-osc: #733e39;
+    --crema: #ead4aa;
+    --arena: #e4a672;
+    --rojo: #e43b44;
+    --rojo-osc: #a22633;
+    --verde: #63c74d;
+    --azul: #0099db;
+    --cian: #2ce8f5;
+    --gris: #8b9bb4;
+    --u: 2;                          /* escala de los PNG decorativos */
+    --alto-cielo: 96px;              /* franja de cielo (el cartel cuelga encima) */
+    --alto-toldo: 40px;              /* toldo.png 20 px x2 */
+    --alto-acera: 112px;             /* acera + clientes que pasean */
+    --extra: 350px;                  /* alto que ocupa todo lo que NO es el juego (lo usa game.css) */
 }
 
 * { box-sizing: border-box; }
-
-body {
-    margin: 0;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
-}
-
-.topbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    background: var(--accent);
-    color: #fff;
-}
-.topbar h1 { margin: 0; font-size: 1.2rem; }
-.jornada { display: flex; gap: 10px; align-items: center; }
-
-button {
-    padding: 8px 14px;
-    border: 0;
-    border-radius: 6px;
-    background: var(--accent);
-    color: #fff;
-    font: inherit;
-    cursor: pointer;
-}
-.topbar button { background: #fff; color: var(--accent); }
-button:disabled { opacity: .5; cursor: not-allowed; }
 [hidden] { display: none !important; }
 
-.mensaje {
-    margin: 12px 20px 0;
-    padding: 10px 14px;
-    border-radius: 6px;
-    background: #e8f3ec;
+html { image-rendering: pixelated; }
+body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: "Press Start 2P", system-ui, sans-serif;
+    color: var(--crema);
+    background-color: var(--madera-osc);
+    background-image: url("../img/entorno/ladrillo.png");          /* pared de ladrillo */
+    background-size: calc(16px * var(--u));
+    position: relative;
+    overflow-x: hidden;
 }
-.mensaje.error { background: #fbe9e7; color: var(--danger); }
 
-.layout {
-    display: grid;
-    grid-template-columns: 1fr 340px;
-    gap: 20px;
-    padding: 20px;
+/* ---- Cielo y nubes ---- */
+.cielo {
+    position: absolute; left: 0; right: 0; top: 0;
+    height: var(--alto-cielo);
+    background: linear-gradient(#0099db 0 35%, #2ce8f5 35% 62%, #c0cbdc 62% 82%, #ead4aa 82%);   /* bandas, como un cielo pixelado */
+    overflow: hidden;
 }
-@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
-
-.categorias { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-.categorias button { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
-.categorias button.activa { background: var(--accent); color: #fff; }
-
-.productos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
+.nube {
+    position: absolute;
+    image-rendering: pixelated;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    animation: nube linear infinite;
 }
-.producto {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 10px;
+.n1 { top: 8px;  width: 144px; height: 72px; background-image: url("../img/entorno/cielo-nube.png"); animation-duration: 90s; animation-delay: -20s; }
+.n2 { top: 30px; width: 96px;  height: 48px; background-image: url("../img/entorno/nube-pequena.png"); animation-duration: 60s; animation-delay: -45s; }
+.n3 { top: 4px;  width: 96px;  height: 48px; background-image: url("../img/entorno/nube-pequena.png"); animation-duration: 75s; animation-delay: -5s; }
+@keyframes nube { from { left: -160px; } to { left: 100%; } }
+
+/* ---- Cartel con el título ---- */
+.cartel {
+    position: relative;
+    z-index: 3;
+    width: calc(192px * var(--u));
+    height: calc(40px * var(--u));
+    margin: 8px auto 0;
+    background: url("../img/entorno/cartel.png") center / 100% 100% no-repeat, var(--madera);
+    display: flex; align-items: center; justify-content: center;
+    image-rendering: pixelated;
+    animation: balanceo 6s ease-in-out infinite;
+    transform-origin: 50% 0;
+}
+.cartel h1 {
+    margin: 0;
+    padding-top: 6px;
+    font-size: 15px;
+    line-height: 1.35;
     text-align: center;
+    color: var(--contorno);
+    text-shadow: 1px 1px 0 var(--arena);
 }
-.producto img { width: 100%; height: 90px; object-fit: contain; }
-.producto .nombre { font-size: .9rem; margin: 6px 0 2px; }
-.producto .precio { font-weight: 600; }
-.producto .stock { color: var(--muted); font-size: .8rem; }
+@keyframes balanceo { 0%, 100% { transform: rotate(-.6deg); } 50% { transform: rotate(.6deg); } }
 
-.caja {
-    background: var(--card);
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 16px;
-    align-self: start;
+/* ---- Toldo de la tienda ---- */
+.toldo {
+    position: relative;
+    z-index: 2;
+    height: var(--alto-toldo);
+    margin-top: calc(var(--alto-cielo) - 8px - 40px * var(--u));   /* justo debajo de la franja de cielo (el cartel ocupa 8 px + 80 px en el flujo) */
+    background-color: var(--rojo);
+    background-image: url("../img/entorno/toldo.png");
+    background-size: calc(32px * var(--u)) var(--alto-toldo);
+    background-repeat: repeat-x;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 6px 0 rgba(24, 20, 37, .55));
 }
-.caja h2 { margin-top: 0; }
-.carrito { list-style: none; padding: 0; margin: 0 0 12px; }
-.carrito li { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
-.caja label { display: block; margin-bottom: 10px; font-size: .9rem; }
-.caja input { width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 6px; font: inherit; }
-#btn-cobrar { width: 100%; }
 
-.ticket {
-    max-width: 420px;
-    margin: 0 auto 30px;
-    padding: 20px;
-    background: var(--card);
-    border: 1px dashed var(--muted);
-    font-family: ui-monospace, Menlo, monospace;
+/* ---- Calle: local · juego · local ---- */
+.calle {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 16px;
+    padding: 18px 12px 0;
+    position: relative;
+    z-index: 1;
+}
+.local {
+    display: none;
+    position: relative;
+    width: calc(112px * var(--u));
+    height: calc(128px * var(--u));
+    align-self: flex-end;
+}
+.local img { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.rotulo {                                   /* el nombre va en el friso liso de la fachada (x8 y9, 96 x 12 px del PNG) */
+    position: absolute;
+    left: calc(8px * var(--u)); top: calc(9px * var(--u));
+    width: calc(96px * var(--u)); height: calc(12px * var(--u));
+    display: flex; align-items: center; justify-content: center;
+    font-size: max(8px, calc(6px * var(--u)));
+    color: var(--crema);
+    text-shadow: 1px 1px 0 var(--contorno);
+    white-space: nowrap;
+}
+@media (min-width: 1480px) { .local { display: block; } }
+
+/* ---- Mensajes de la API ---- */
+.mensaje {
+    position: fixed; top: 10px; right: 10px; z-index: 20;
+    max-width: min(420px, calc(100vw - 20px));
+    padding: 10px 14px;
+    font-size: 10px; line-height: 1.5;
+    color: var(--contorno);
+    background: var(--crema);
+    border: 3px solid var(--contorno);
+    box-shadow: 4px 4px 0 var(--contorno);
+}
+.mensaje.error { background: var(--rosa, #f6757a); }
+
+/* ---- Acera y clientes que pasean ---- */
+.acera {
+    position: relative;
+    z-index: 1;
+    height: var(--alto-acera);
+    margin-top: 0;
+    background-color: #5a6988;
+    background-image: url("../img/entorno/acera.png");
+    background-size: calc(32px * var(--u)) calc(16px * var(--u));
+    background-repeat: repeat-x;
+    background-position: left bottom;
+    image-rendering: pixelated;
+    overflow: hidden;
+}
+.paseante {
+    position: absolute;
+    bottom: 22px;
+    left: -80px;
+    width: calc(32px * var(--u));
+    height: calc(38px * var(--u));
+    background-size: calc(192px * var(--u)) calc(152px * var(--u));        /* hoja 6 x 4 de 32 x 38 */
+    background-position: 0 calc(-38px * var(--u));                         /* fila 2: caminar hacia la derecha */
+    image-rendering: pixelated;
+    animation: pasear 26s linear infinite, pasos .72s steps(6) infinite;
+}
+.c1 { background-image: url("../img/characters/cliente-1-anim.png"); animation-delay: -4s, 0s; }
+.c2 { background-image: url("../img/characters/cliente-2-anim.png"); animation-delay: -12s, -.2s; animation-duration: 32s, .8s; }
+.c3 { background-image: url("../img/characters/cliente-3-anim.png"); animation-delay: -19s, -.4s; animation-duration: 28s, .7s; }
+.c4 { background-image: url("../img/characters/cliente-4-anim.png"); animation-delay: -25s, -.1s; animation-duration: 36s, .76s; }
+@keyframes pasear { from { left: -80px; } to { left: 100%; } }
+@keyframes pasos { from { background-position-x: 0; } to { background-position-x: calc(-192px * var(--u)); } }
+
+/* ---- Créditos ---- */
+.creditos {
+    margin: 0;
+    padding: 10px 12px 14px;
+    text-align: center;
+    font-size: 8px;
+    line-height: 1.8;
+    color: var(--gris);
+    background: var(--contorno);
+}
+
+/* Ventanas bajas: la decoración se reduce a la mitad para que el juego gane espacio */
+@media (max-height: 820px) {
+    :root { --u: 1; --alto-cielo: 56px; --alto-toldo: 20px; --alto-acera: 64px; --extra: 215px; }
+    .cartel h1 { font-size: 8px; padding-top: 3px; }
+    .paseante { bottom: 12px; }
+    .nube { transform: scale(.5); transform-origin: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nube, .cartel, .paseante { animation: none; }
+    .paseante { left: 20%; }
 }

@@ -45,3 +45,9 @@ Reglas y decisiones para dibujar assets del juego. La usa el agente `pixel-artis
 - `hud-boton.png` 408x16: frames 68x16 (verde normal/pulsado/apagado, rojo normal/pulsado/apagado); zona lisa de texto [3,3,62,10] en cada frame. Pulsado = relieve invertido, el texto debe bajar 1 px por código.
 - `hud-lampara.png` 3 frames 8x8 (rojo, verde, ámbar); `hud-iconos.png` 4x10x10 (reloj, persona, estrella, moneda).
 - `panel-cierre.png` 224x168: marco de madera con tablero pizarra; título lisa [6,6,212,11] (banda y0..17), cuerpo liso [6,22,212,140].
+
+## Entorno de la página (`public/assets/img/entorno/`, script `entorno.lua`, comprobación `assets-src/scripts/chk_entorno.py`)
+- Ejecutado con `aseprite -b --script`. Fuente `assets-src/entorno.aseprite` (una capa por pieza en una hoja 512x300). Previews en `assets-src/previews/entorno-tiles.png` y `entorno-fachadas-x3.png`.
+- Tiles: `toldo` 32x20 (periodo 16 en x, sin contorno lateral), `ladrillo` 16x16 (x e y), `acera` 32x16 (periodo 16 en x), `mini-suelo` 16x16 (x e y).
+- Zonas lisas: cartel [8,12,176,24]; fachadas: friso [8,9,96,12] y letrero colgante [80,51,18,6].
+- Las nubes usan contorno `181425` como el resto de reglas.

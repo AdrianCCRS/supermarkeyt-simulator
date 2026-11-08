@@ -8,26 +8,34 @@
     <link rel="stylesheet" href="assets/css/game.css">
 </head>
 <body>
-    <!-- ENCABEZADO: estado de la jornada -->
-    <header class="topbar">
-        <h1>Supermarket Simulator</h1>
-        <div id="jornada" class="jornada">
-            <span id="jornada-estado">Cargando jornada…</span>
-            <button id="btn-abrir-jornada" type="button" hidden>Abrir jornada</button>
-            <button id="btn-cerrar-jornada" type="button" hidden>Cerrar jornada</button>
-        </div>
+    <!-- CIELO con nubes y el cartel de la tienda -->
+    <div class="cielo" aria-hidden="true">
+        <span class="nube n1"></span><span class="nube n2"></span><span class="nube n3"></span>
+    </div>
+    <header class="cartel">
+        <h1>SUPERMARKET<br>SIMULATOR</h1>
     </header>
+    <div class="toldo" aria-hidden="true"></div>
 
     <!-- Mensajes (errores de la API, avisos) -->
     <div id="mensaje" class="mensaje" role="status" hidden></div>
 
-    <!-- JUEGO: tienda · banda · caja (Phaser) -->
-    <main class="escenario"><div id="game"></div></main>
+    <!-- CALLE: local · JUEGO (tienda · banda · caja, en Phaser) · local -->
+    <div class="calle">
+        <div class="local" aria-hidden="true"><img src="assets/img/entorno/fachada-fruteria.png" alt=""><span class="rotulo">FRUTERIA</span></div>
+        <main class="escenario"><div id="game"></div></main>
+        <div class="local" aria-hidden="true"><img src="assets/img/entorno/fachada-panaderia.png" alt=""><span class="rotulo">PANADERIA</span></div>
+    </div>
 
-    <p class="creditos">Iconos de comida: Alex, <em>Free pixel food 16x16</em> (CC BY 4.0) · Fuente: Press Start 2P (OFL) · Ver CREDITS.md</p>
+    <!-- ACERA con clientes paseando -->
+    <div class="acera" aria-hidden="true">
+        <span class="paseante c1"></span><span class="paseante c2"></span>
+        <span class="paseante c3"></span><span class="paseante c4"></span>
+    </div>
 
-    <!-- TICKET (se llena con la respuesta de /api/checkout.php) -->
-    <section id="ticket" class="ticket" hidden></section>
+    <footer class="creditos">
+        Iconos de comida: Alex, <em>Free pixel food 16x16</em> (CC BY 4.0) · Fuente: Press Start 2P (OFL) · Ver CREDITS.md
+    </footer>
 
     <script src="assets/js/vendor/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="assets/js/vendor/phaser-3.90.0.min.js"></script>

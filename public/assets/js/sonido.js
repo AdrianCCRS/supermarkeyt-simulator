@@ -43,6 +43,7 @@ const Sonido = (function () {
         const v = o.vol === undefined ? 0.15 : o.vol;
         g.gain.setValueAtTime(0.0001, t0);
         g.gain.exponentialRampToValueAtTime(v, t0 + 0.005);
+        if (o.plano) { g.gain.setValueAtTime(v, t0 + dur - 0.01); }      // pitido: volumen constante y corte seco
         g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
         osc.connect(g); g.connect(o.destino || efectos);
         osc.start(t0); osc.stop(t0 + dur + 0.02);
@@ -70,7 +71,7 @@ const Sonido = (function () {
     const RECETAS = {
         tecla()    { tono(880, 0.04, { vol: 0.08 }); },
         coger()    { tono(420, 0.03, { vol: 0.06, tipo: 'triangle' }); },
-        escaner()  { tono(1500, 0.07, { vol: 0.1 }); tono(2000, 0.09, { vol: 0.1, en: 0.07 }); },
+        escaner()  { ruido(0.015, { freq: 4000, vol: 0.12 }); tono(2800, 0.12, { vol: 0.12, plano: true }); },      // el «¡bip!» seco de un lector de códigos
         pesa()     { tono(520, 0.05, { vol: 0.08, tipo: 'triangle' }); tono(780, 0.07, { vol: 0.08, tipo: 'triangle', en: 0.05 }); },
         bolsa()    { ruido(0.09, { freq: 500, filtro: 'lowpass', vol: 0.25 }); tono(180, 0.07, { tipo: 'triangle', vol: 0.12 }); },
         anular()   { tono(500, 0.08, { hasta: 250, tipo: 'triangle', vol: 0.1 }); },

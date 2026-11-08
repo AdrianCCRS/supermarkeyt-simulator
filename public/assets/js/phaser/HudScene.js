@@ -38,7 +38,7 @@ class HudScene extends Phaser.Scene {
         this.boton = this.add.sprite(bx, by, 'hud-boton', 0).setOrigin(0).setInteractive({ useHandCursor: true });
         this.tBoton = this.add.text(bx + 34, by + 5, '', { ...FUENTE, color: '#ffffff' }).setOrigin(0.5, 0);
         this.pulsado = false;
-        this.boton.on('pointerdown', () => { this.pulsado = true; });
+        this.boton.on('pointerdown', () => { this.pulsado = true; Sonido.tocar('tecla'); });
         this.boton.on('pointerout', () => { this.pulsado = false; });
         this.boton.on('pointerup', () => {
             if (!this.pulsado) { return; }
@@ -102,7 +102,7 @@ class HudScene extends Phaser.Scene {
     llenarPanel(res) {
         const d = (c) => Money.pantalla(Money.fromCents(c));
         const filas = [
-            ['CLIENTES', String(res.clientes), TXT_PANEL],
+            ['CLIENTES', String(res.clientes) + (res.abandonos ? ' (' + res.abandonos + ' SE FUE)' : ''), TXT_PANEL],
             ['VENTAS', d(res.cobrado), TXT_PANEL],
             ['EXACTAS', String(res.exactas), TXT_PANEL],
             ['PROTESTAS', String(res.protestas), TXT_PANEL],

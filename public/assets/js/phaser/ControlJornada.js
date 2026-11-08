@@ -30,6 +30,8 @@ class ControlJornada {
         this.reloj.reiniciar();
         this.resumen = null;
         this.estado = 'ABIERTA';
+        Sonido.tocar('abrir');
+        Sonido.musica(true);
         const guardado = recuperar ? this.leer() : null;          // la página se recargó a mitad de jornada
         if (!guardado) { this.borrar(); }
         if (guardado) { this.reloj.fijar(guardado.t); }
@@ -101,6 +103,8 @@ class ControlJornada {
             this.ocupado = false;
             this.resumen = resumen;
             this.borrar();
+            Sonido.musica(false);
+            Sonido.tocar('cerrar');
             this.estado = 'RESUMEN';
             this.escena.despedirFila();                 // los clientes que quedaban en la cola se van
             this.escena.pantallaReposo();
@@ -109,6 +113,7 @@ class ControlJornada {
     }
 
     error(e) {
+        Sonido.tocar('error');
         this.escena.avisar('ERROR ' + ((e && e.status) || ''), (e && e.mensaje) || 'SIN RESPUESTA', 2600);
     }
 }

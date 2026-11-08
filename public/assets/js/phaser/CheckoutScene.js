@@ -77,6 +77,8 @@ class CheckoutScene extends Phaser.Scene {
             console.info('[assets] usando placeholder para:', Array.from(this.faltantes).join(', '));
         }
 
+        this.paciencia = null;                                     // paciencia del cliente atendido (null entre clientes)
+        this.barraPaciencia = this.add.graphics().setDepth(6);
         this.listo = true;
         this.scene.launch('HudScene');                             // menú de la jornada, encima del juego
         const abierta = Juego.jornadaActual();                     // jornada ya abierta en el servidor (la pone el backend)
@@ -90,6 +92,7 @@ class CheckoutScene extends Phaser.Scene {
 
     update(_t, delta) {
         this.jornada.tick(delta);
+        this.actualizarPaciencia(delta);
         // Cada producto avanza hasta su sitio en la cola; la cinta solo gira mientras algo avanza.
         let avanza = false;
         this.cola.forEach((p, i) => {
@@ -106,6 +109,71 @@ class CheckoutScene extends Phaser.Scene {
             this.bandaTienda.tilePositionY -= VEL_BANDA * delta;
             this.bandaZoom.tilePositionY -= VEL_BANDA * delta;
         }
+    }
+
+    /** ¿Hay algún producto en el aire (arrastrado o en movimiento)? Entonces no se toca la escena. */
+    hayProductoEnMovimiento() {
+        return this.children.list.some((o) => o.sku && o.active && (o.estado === 'arrastrando' || o.estado === 'moviendo'));
+    }
+
+    /**
+     * Paciencia del cliente atendido: se gasta mientras espera que lo atiendan (no mientras el cobrador responde,
+     * ni cobrado y esperando la entrega) y se dibuja como una barrita sobre su cabeza. Al agotarse, se va enojado.
+     */
+    actualizarPaciencia(delta) {
+        const g = this.barraPaciencia;
+        g.clear();
+        const o = this.fila[this.fila.length - 1];
+        if (!this.paciencia || !o || o.saliendo || !this.jornada.operativa) { return; }
+        const esperando = !this.venta.pagada && !this.cobrando && !this.entregando;
+        const antes = this.paciencia.nivel();
+        if (esperando) { this.paciencia.avanzar(delta); }
+        const nivel = this.paciencia.nivel();
+        if (nivel !== antes && nivel === 'baja') {
+            Sonido.tocar('alerta');
+            o.cara = 1;                                                       // impaciente
+            if (!o.c.anims.isPlaying) { this.pararAnim(o); }
+        }
+        if (!o.enMarcha) {
+            const x = Math.max(14, Math.round(o.c.x)) - 12, y = Math.round(o.y) - 43;
+            g.fillStyle(COLOR.contorno).fillRect(x, y, 24, 5);
+            g.fillStyle(COLOR.gris5).fillRect(x + 1, y + 1, 22, 3);
+            const color = nivel === 'alta' ? COLOR.verde : (nivel === 'media' ? COLOR.amarillo : COLOR.rojo);
+            g.fillStyle(color).fillRect(x + 1, y + 1, Math.max(0, Math.round(22 * this.paciencia.restante())), 3);
+        }
+        if (this.paciencia.agotada() && esperando && !this.hayProductoEnMovimiento()) { this.clienteAbandona(); }
+    }
+
+    /** Se agotó la paciencia: el cliente deja su compra, no paga y se va enojado (resta puntos; no hay pérdida, no se llevó nada). */
+    clienteAbandona() {
+        this.paciencia = null;
+        this.barraPaciencia.clear();
+        this.cancelarCobroAbierto();
+        const sprites = this.children.list.filter((o) => o.sku && o.active);      // banda, balanza y bolsa
+        this.tweens.add({ targets: sprites, alpha: 0, duration: 300, onComplete: () => sprites.forEach((s) => s.destroy()) });
+        this.cola = [];
+        this.itemsBolsa = [];
+        this.enBolsa = 0;
+        this.enBalanza = null;
+        this.pesoTexto.setText('0 kg');
+        this.miniFrutaEn(null);
+        this.venta = Venta.crear((sku) => Juego.producto(sku));
+        this.compra = {};
+        this.modo = 'CODIGO';
+        this.entrada = '';
+        this.registros = [];
+        this.qtyPendiente = null;
+        this.dinero = null;
+        this.cuadre = null;
+        this.actualizarBolsa();
+        this.jornadaJuego.abandono();
+        this.jornada.guardar();
+        this.cajeroAnimar('molesto');
+        Sonido.tocar('abandono');
+        this.avisar('SE FUE ENOJADO', 'ABANDONO ' + Auditoria.PUNTOS_ABANDONO + ' PTS', 2600);
+        this.finBolsa = true;                                        // no hay bolsa que cambiar
+        this.finClientes = false;
+        this.clienteSale(2);
     }
 
     /** y donde se detiene el producto que ocupa el puesto i de la cola (0 = el primero, al final de la banda). */
@@ -133,6 +201,7 @@ class CheckoutScene extends Phaser.Scene {
             const unidades = this.esFruta(sku) ? 1 : compra[sku];
             for (let i = 0; i < unidades; i++) { skus.push(sku); }
         });
+        this.paciencia = Paciencia.crear(Paciencia.duracion(skus.length, JORNADA_CONFIG));
         this.llegadaPedido(skus);
     }
 
@@ -242,6 +311,7 @@ class CheckoutScene extends Phaser.Scene {
         for (let k = 0; k < huecos; k++) {
             this.time.delayedCall(k * 1100, () => {
                 const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
+                Sonido.tocar('campana');
                 const puesto = 3 - this.fila.length;                         // 3 = el de abajo (atendido), 0 = el de arriba
                 this.fila.unshift(nuevo);
                 this.mover(nuevo, c0.x, c0.y, 900, 'derecha', () => {
@@ -336,6 +406,7 @@ class CheckoutScene extends Phaser.Scene {
             this.fila.forEach((o) => this.mover(o, o.c.x, o.y + c0.paso, 700, 'frente'));
             if (this.jornada.admiteClientes) {
                 const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
+                Sonido.tocar('campana');
                 this.fila.unshift(nuevo);
                 this.mover(nuevo, c0.x, c0.y, 1000, 'derecha', () => { this.finClientes = true; this.siguienteSiListo(); });
             } else {                                                   // cerrando: no entra nadie más, la fila solo avanza
@@ -472,6 +543,7 @@ class CheckoutScene extends Phaser.Scene {
         const desdeBanda = p.estado === 'banda' && this.haLlegado(p);
         if (!desdeBanda && p.estado !== 'pesada') { p.arrastrando = false; return; }
         p.arrastrando = true;
+        Sonido.tocar('coger');
         p.desde = p.estado;
         p.estado = 'arrastrando';
         p.setDepth(10);
@@ -523,6 +595,7 @@ class CheckoutScene extends Phaser.Scene {
 
     /** Rechazo: el producto vuelve atrás con una sacudida y la pantalla de la caja avisa del motivo. */
     rechazar(p, linea1, linea2) {
+        Sonido.tocar('error');
         this.avisar(linea1, linea2, 1400);
         const x = p.x;
         this.tweens.add({
@@ -586,6 +659,7 @@ class CheckoutScene extends Phaser.Scene {
                 p.estado = 'pesada';
                 if (!p.pesada) {
                     p.pesada = true;
+                    Sonido.tocar('pesa');
                     p.kg = this.compra[p.sku] || 1;               // lo que pesa de verdad la compra del cliente
                     this.avisar('PESADO ' + p.kg + 'KG', 'TECLEA CODIGO', 1800);
                 }
@@ -608,6 +682,7 @@ class CheckoutScene extends Phaser.Scene {
         this.tweens.add({
             targets: p, x: BANDA_X + ex + 8 + 8, y: ey + 10, duration: 200, ease: 'Quad.easeOut',
             onComplete: () => {
+                Sonido.tocar('escaner');
                 this.escaner.setFrame(1);
                 this.miniEscaner.setFrame(1);
                 this.time.delayedCall(150, () => this.escaner.setFrame(2));
@@ -666,6 +741,7 @@ class CheckoutScene extends Phaser.Scene {
         const sku = p.skuCobrado || p.sku;                          // lo que se COBRA (puede no ser lo que es, si se tecleó otro código)
         p.cantidad = p.kg || p.cantidad || 1;                       // la fruta cuenta por kg
         const r = this.venta.agregar(sku, p.cantidad);
+        Sonido.tocar('bolsa');
         this.registros.push({ sku, cantidad: p.cantidad, sprites: unidades });
         this.avisar(this.nombreCorto(sku, p.kg, p.kg ? 0 : p.cantidad), Money.pantalla(Money.fromCents(r.delta)), 1500);   // precio de lo registrado, con IVA
         unidades.forEach((u) => this.itemsBolsa.push(u));
@@ -682,6 +758,7 @@ class CheckoutScene extends Phaser.Scene {
         if (!r) { return this.avisar('NADA QUE', 'ANULAR', 1400); }
         this.cancelarCobroAbierto();
         const q = this.venta.quitar(r.sku, r.cantidad);
+        Sonido.tocar('anular');
         this.avisar('ANULADO', '-' + Money.pantalla(Money.fromCents(q.delta)), 1500);
         this.itemsBolsa = this.itemsBolsa.filter((it) => !r.sprites.includes(it));
         this.enBolsa = this.itemsBolsa.length;
@@ -745,6 +822,9 @@ class CheckoutScene extends Phaser.Scene {
         const liq = Auditoria.liquidar(this.compra, this.venta.carrito(), (sku) => Juego.producto(sku));
         const res = this.jornadaJuego.registrar(liq, this.venta.total(), this.cuadre || undefined);
         this.jornada.guardar();
+        this.paciencia = null;
+        this.barraPaciencia.clear();
+        Sonido.tocar(res.exacta ? 'celebrar' : (res.protesta ? 'protesta' : 'entregar'));
         if (res.exacta) { this.cajeroAnimar('celebrar'); }                  // venta exacta: celebra
         else if (res.protesta) { this.cajeroAnimar('molesto'); }            // el cliente protesta: se molesta
         this.llevarseLoQueQueda();
@@ -903,7 +983,8 @@ class CheckoutScene extends Phaser.Scene {
      * CLR vuelve al estado inicial.
      */
     pulsarTecla(label) {
-        if (!this.jornada.operativa) { return this.avisar('CERRADO', 'ABRE LA JORNADA', 1600); }
+        if (!this.jornada.operativa) { Sonido.tocar('error'); return this.avisar('CERRADO', 'ABRE LA JORNADA', 1600); }
+        Sonido.tocar('tecla');
         this.cajeroAnimar('teclear');
         if (this.cobrando) { return; }                       // esperando al cobrador: teclado bloqueado
         if (/^\d$/.test(label)) {
@@ -991,6 +1072,7 @@ class CheckoutScene extends Phaser.Scene {
         this.cuadre = Auditoria.cuadreCaja(this.dinero ? this.dinero.suma : efectivo, efectivo, r.total);
         this.modo = 'CODIGO';
         this.quitarBilletes(true);
+        Sonido.tocar('cobro');
         this.imprimirRecibo();
         this.cajeroDaCambio(r.cambio);
         this.actualizarBolsa();            // ENTREGAR se activa cuando termina de salir el cambio
@@ -1000,6 +1082,7 @@ class CheckoutScene extends Phaser.Scene {
     /** El cobrador rechazó el cobro (efectivo insuficiente, stock, jornada cerrada, sin red…): no se cobró nada. */
     cobroError(efectivo, e) {
         this.cobrando = false;
+        Sonido.tocar('error');
         const faltan = this.venta.total() - efectivo;
         if (e && e.status === 422 && faltan > 0) { return this.avisar('FALTAN', Money.pantalla(Money.fromCents(faltan)), 1800); }
         this.avisar('ERROR ' + ((e && e.status) || ''), (e && e.mensaje) || 'SIN RESPUESTA', 2200);
@@ -1019,6 +1102,7 @@ class CheckoutScene extends Phaser.Scene {
     /** Los billetes del cliente aparecen en los compartimentos de la bandeja (una pila por valor). */
     mostrarBilletes() {
         this.quitarBilletes(false);
+        Sonido.tocar('billete');
         const [bx, by] = COBRO.bandeja;
         const [bw, bh] = COBRO.billete;
         const [zx, zy, zw, zh] = COBRO.zonaValor;
@@ -1066,6 +1150,7 @@ class CheckoutScene extends Phaser.Scene {
     }
 
     imprimirRecibo() {
+        Sonido.tocar('recibo');
         this.recibo.setTexture('recibo-imprimir', 0).setVisible(true).play('recibo-imprimir');
     }
 
@@ -1145,6 +1230,7 @@ class CheckoutScene extends Phaser.Scene {
                 this.tweens.add({ targets: g, y: by + 6, alpha: 1, duration: 260, delay: demora, ease: 'Quad.easeIn' });
             }
             this.cambioObjs.push(...objs);
+            this.time.delayedCall(demora + 260, () => Sonido.tocar(p.billete ? 'billete' : 'moneda'));
         });
         this.time.delayedCall(ultimo + 120, () => { this.dandoCambio = false; this.actualizarBolsa(); });
     }

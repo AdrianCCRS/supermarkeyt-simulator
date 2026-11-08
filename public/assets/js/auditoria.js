@@ -10,6 +10,7 @@
 const Auditoria = (function () {
     const PUNTOS_VENTA_EXACTA = 100;
     const PUNTOS_PROTESTA = -50;
+    const PUNTOS_ABANDONO = -50;       // el cliente se cansó de esperar y se fue sin comprar
 
     /** Diferencia de dos mapas {sku: cantidad}: lo que tiene `a` de más respecto a `b`. */
     function exceso(a, b) {
@@ -54,7 +55,7 @@ const Auditoria = (function () {
     /** Acumulado de la jornada. sueldoBase: texto con 2 decimales ("60000.00"). */
     function jornada(sueldoBase, inicial) {
         const base = Money.toCents(sueldoBase);
-        const acum = { clientes: 0, exactas: 0, protestas: 0, cobrado: 0, perdida: 0, perdida_caja: 0, sobrecobro: 0, puntos: 0, faltantes: {}, sobrantes: {} };
+        const acum = { clientes: 0, exactas: 0, protestas: 0, abandonos: 0, cobrado: 0, perdida: 0, perdida_caja: 0, sobrecobro: 0, puntos: 0, faltantes: {}, sobrantes: {} };
 
         if (inicial) { Object.keys(acum).forEach((k) => { if (inicial[k] !== undefined) { acum[k] = typeof acum[k] === 'object' ? Object.assign({}, inicial[k]) : Number(inicial[k]) || 0; } }); }
 
@@ -77,6 +78,12 @@ const Auditoria = (function () {
                 if (protesta) { acum.protestas++; acum.puntos += PUNTOS_PROTESTA; }
                 return { exacta, protesta };
             },
+            /** Un cliente se fue sin comprar porque se agotó su paciencia: no se cobra nada y no hay pérdida (no se llevó nada). */
+            abandono() {
+                acum.clientes++;
+                acum.abandonos++;
+                acum.puntos += PUNTOS_ABANDONO;
+            },
             /** Copia del acumulado, para guardarlo y recuperarlo con jornada(sueldoBase, copia). */
             exportar() {
                 return Object.assign({}, acum, { faltantes: Object.assign({}, acum.faltantes), sobrantes: Object.assign({}, acum.sobrantes) });
@@ -92,5 +99,5 @@ const Auditoria = (function () {
         };
     }
 
-    return { liquidar, cuadreCaja, jornada, PUNTOS_VENTA_EXACTA, PUNTOS_PROTESTA };
+    return { liquidar, cuadreCaja, jornada, PUNTOS_VENTA_EXACTA, PUNTOS_PROTESTA, PUNTOS_ABANDONO };
 })();

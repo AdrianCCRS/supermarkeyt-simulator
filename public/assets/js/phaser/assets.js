@@ -303,7 +303,9 @@ const COMPRAS_DEMO = [
 const JORNADA_CONFIG = {
     sueldoBase: '200000.00',
     inicio: '08:00', fin: '20:00',       // horario de la tienda (hora de juego)
-    duracionMs: 600000                   // lo que dura la jornada en tiempo real (10 min): 1 min real = 1 h 12 min de juego
+    duracionMs: 600000,                  // lo que dura la jornada en tiempo real (10 min): 1 min real = 1 h 12 min de juego
+    // Paciencia del cliente en caja: base + por unidad de su compra (ver paciencia.js)
+    pacienciaBaseMs: 35000, pacienciaPorUnidadMs: 8000, pacienciaMaxUnidades: 12
 };
 
 // Paleta Endesga 32 (solo los tonos usados por los placeholders y textos)

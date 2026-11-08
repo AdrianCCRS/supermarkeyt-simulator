@@ -8,11 +8,11 @@ import path from 'node:path';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ctx = vm.createContext({ Intl, console, setTimeout });
-for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'nombres.js', 'phaser/assets.js']) {
+for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'paciencia.js', 'nombres.js', 'phaser/assets.js']) {
     const codigo = fs.readFileSync(path.join(raiz, 'public/assets/js', f), 'utf8').replace(/^const (\w+) =/gm, 'globalThis.$1 =');
     vm.runInContext(codigo, ctx);
 }
-const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Nombres, PRODUCTOS_DEMO } = ctx;
+const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Paciencia, Nombres, PRODUCTOS_DEMO } = ctx;
 const skus = Object.keys(PRODUCTOS_DEMO);
 
 let fallos = 0, pruebas = 0;
@@ -234,6 +234,24 @@ console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
     ok(b.resumen().faltantes['LAC-002'] === 2 && a.resumen().faltantes['LAC-002'] === 1, 'la copia no comparte estado con la original');
     const r = Reloj.crear({}); r.fijar(300000);
     ok(r.tiempo() === 300000 && r.texto() === '14:00', 'el reloj recupera su tiempo');
+}
+
+// Paciencia del cliente
+{
+    ok(Paciencia.duracion(0) === 35000 && Paciencia.duracion(5) === 75000, 'la paciencia crece con la compra');
+    ok(Paciencia.duracion(50) === Paciencia.duracion(12), 'la paciencia tiene tope');
+    ok(Paciencia.duracion(5, { pacienciaBaseMs: 1000, pacienciaPorUnidadMs: 100 }) === 1500, 'la paciencia usa la configuración');
+    const p = Paciencia.crear(10000);
+    ok(p.restante() === 1 && p.nivel() === 'alta' && !p.agotada(), 'empieza llena');
+    p.avanzar(6000);
+    ok(p.nivel() === 'media' && Math.abs(p.restante() - 0.4) < 1e-9, 'a mitad es media');
+    p.avanzar(2000);
+    ok(p.nivel() === 'baja' && !p.agotada(), 'al final es baja');
+    p.avanzar(99999); p.avanzar(-5);
+    ok(p.agotada() && p.restante() === 0, 'se agota y no baja de 0');
+    const j = Auditoria.jornada('200000.00'); j.abandono(); j.abandono();
+    const r = j.resumen();
+    ok(r.abandonos === 2 && r.clientes === 2 && r.puntos === 2 * Auditoria.PUNTOS_ABANDONO && r.perdida === 0, 'el abandono resta puntos y no es pérdida');
 }
 
 console.log(fallos ? '\n' + fallos + ' FALLOS de ' + pruebas : '\nTodo correcto (' + pruebas + ' comprobaciones)');

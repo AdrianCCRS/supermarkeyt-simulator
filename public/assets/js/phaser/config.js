@@ -55,6 +55,17 @@ const Juego = (function () {
         if (game) { game.scene.getScene('CheckoutScene').jornada.sincronizar(jornadaActual); }
     }
 
+    // Pausa (la pide la pantalla de ayuda): la caja deja de actualizarse, así que el reloj, la paciencia y las animaciones se detienen.
+    let pausado = false;
+    function aplicarPausa() {
+        if (!game) { return; }
+        const escena = game.scene.getScene('CheckoutScene');
+        if (!escena || !escena.listo) { return; }          // aún cargando: CheckoutScene vuelve a llamar a esto al terminar de crearse
+        if (pausado && escena.sys.isActive()) { game.scene.pause('CheckoutScene'); }
+        else if (!pausado && escena.sys.isPaused()) { game.scene.resume('CheckoutScene'); }
+    }
+    function pausar(valor) { pausado = !!valor; aplicarPausa(); }
+
     function producto(sku) {
         const p = catalogo.find((x) => x.sku === sku);
         return p || Object.assign({ sku }, PRODUCTOS_DEMO[sku]);
@@ -87,5 +98,5 @@ const Juego = (function () {
         return game.scene.getScene('CheckoutScene').jornadaJuego.resumen();
     }
 
-    return { iniciar, juego: () => game, setCatalogo, setGeneradorCompras, setJornadaHooks, setJornada, jornadaActual: () => jornadaActual, abrirJornada, cerrarJornada, compraAleatoria, producto, resumenJornada, cobrar, setCobrador };
+    return { iniciar, juego: () => game, setCatalogo, setGeneradorCompras, setJornadaHooks, setJornada, jornadaActual: () => jornadaActual, abrirJornada, cerrarJornada, compraAleatoria, producto, resumenJornada, cobrar, setCobrador, pausar, aplicarPausa };
 })();

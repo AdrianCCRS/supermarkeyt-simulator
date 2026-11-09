@@ -17,6 +17,7 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 - **Jornada:** reloj de 08:00 a 20:00 (10 minutos reales), botón ABRIR/CERRAR, y pantalla de cierre con el resumen.
 - **Catálogo:** 108 productos con nombres colombianos, precios en COP y un icono de 16×16 cada uno.
 - **Pantalla grande:** botón o tecla `F`.
+- **Ayuda:** 5 páginas (trabajo, escanear, cobrar, puntos y sueldo, teclas y progreso). Se abre sola la primera visita; después con el botón «AYUDA» o la tecla `H`. Pausa el juego mientras está abierta; `←` `→` cambian de página y `Esc` cierra. Es HTML estático en `index.html` (`ayuda.js`, `ayuda.css`).
 
 ## Estructura
 
@@ -46,7 +47,7 @@ supermarket-simulator/
 | `money.js`, `pricing.js`, `venta.js`, `auditoria.js`, `cobro.js`, `compra.js`, `reloj.js`, `paciencia.js`, `perfil.js`, `nombres.js` | Lógica pura del juego, sin Phaser (con pruebas) |
 | `phaser/` | Escenas del juego: `CheckoutScene` (caja), `HudScene` (menú), `ControlJornada`, `config.js` (`Juego`), `assets.js` |
 | `sonido.js` | Efectos y música con WebAudio (`Sonido.tocar`, `Sonido.musica`) |
-| `pantalla.js` | Modo pantalla grande |
+| `pantalla.js`, `ayuda.js` | Modo pantalla grande y pantallas de ayuda |
 
 El juego no hace peticiones: `app.js` le entrega datos y funciones (`Juego.setCatalogo`, `setJornada`, `setJornadaHooks`, `setCobrador`).
 Detalle de esos ganchos en [docs/CONEXION_BACKEND.md](docs/CONEXION_BACKEND.md).

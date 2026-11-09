@@ -8,6 +8,7 @@
     <link rel="icon" href="favicon.ico" sizes="any">
     <link rel="stylesheet" href="assets/css/styles.css">
     <link rel="stylesheet" href="assets/css/game.css">
+    <link rel="stylesheet" href="assets/css/ayuda.css">
 </head>
 <body>
     <!-- CIELO con nubes y el cartel de la tienda -->
@@ -38,8 +39,89 @@
         <span class="paseante c3"></span><span class="paseante c4"></span>
     </div>
 
+    <button id="btn-ayuda" class="btn-pantalla btn-ayuda" type="button" title="Cómo se juega (tecla H)">AYUDA</button>
     <button id="btn-sonido" class="btn-pantalla btn-sonido" type="button" title="Sonido (tecla M)">SONIDO: SI</button>
     <button id="btn-pantalla" class="btn-pantalla" type="button" title="Pantalla grande (tecla F)">PANTALLA GRANDE</button>
+
+    <!-- AYUDA: páginas que se cambian con ayuda.js (todo el texto es estático) -->
+    <div id="ayuda" class="ayuda" role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo" hidden>
+        <div class="ayuda-panel">
+            <div class="ayuda-cabecera">
+                <h2 id="ayuda-titulo">AYUDA</h2>
+                <button type="button" class="ayuda-cerrar" data-ayuda="cerrar" aria-label="Cerrar la ayuda">X</button>
+            </div>
+            <div class="ayuda-cuerpo">
+                <section class="ayuda-pagina">
+                    <h3>TU TRABAJO</h3>
+                    <p>Eres el cajero de <b>TIENDAS D2</b>. Pulsa <b>ABRIR</b> en la barra de arriba y empieza la jornada.</p>
+                    <ul>
+                        <li>La jornada va de las 08:00 a las 20:00 y dura 10 minutos de verdad.</li>
+                        <li>Los clientes hacen fila. Atiendes a uno por vez.</li>
+                        <li>Cobras un sueldo de $200.000. Los errores de caja se descuentan.</li>
+                        <li>Para terminar antes pulsa <b>CERRAR</b>: atiendes al cliente que tengas en caja y se acaba.</li>
+                    </ul>
+                    <p>Cada cliente es siempre lo mismo:</p>
+                    <ol class="ayuda-pasos">
+                        <li>ESCANEAR</li><li class="flecha">&gt;</li><li>PAY</li><li class="flecha">&gt;</li><li>CAMBIO</li><li class="flecha">&gt;</li><li>ENTREGAR</li>
+                    </ol>
+                </section>
+
+                <section class="ayuda-pagina" hidden>
+                    <h3>ESCANEAR</h3>
+                    <ul>
+                        <li>Arrastra cada producto de la banda hasta el <b>ESCANER</b>. Suena el pitido y cae a la bolsa.</li>
+                        <li>Frutas y verduras no se escanean: llévalas a la <b>BALANZA</b>.</li>
+                        <li>Busca su código de 4 cifras en el <b>LIBRO</b> de la caja (cambia de página con <kbd>&lt;</kbd> <kbd>&gt;</kbd> o las flechas del teclado). Tecléalo y pulsa <kbd>ENT</kbd>.</li>
+                        <li>Varias unidades iguales: teclea el número, pulsa <kbd>QTY</kbd> y escanea una sola.</li>
+                        <li>Te equivocaste: <kbd>VOID</kbd> anula el último producto. <kbd>CLR</kbd> borra lo que llevas tecleado.</li>
+                    </ul>
+                </section>
+
+                <section class="ayuda-pagina" hidden>
+                    <h3>COBRAR</h3>
+                    <ul>
+                        <li>Cuando termines de escanear, pulsa <kbd>PAY</kbd>. El cliente deja sus billetes en la bandeja.</li>
+                        <li><b>Cuenta los billetes</b> (2.000, 5.000, 10.000, 20.000, 50.000 y 100.000), teclea la suma y pulsa <kbd>ENT</kbd>.</li>
+                        <li>La caja entrega el cambio sola. Cuando termine, pulsa <b>ENTREGAR</b> para darle la bolsa.</li>
+                        <li><kbd>CLR</kbd> cancela el cobro y el cliente se guarda el dinero.</li>
+                    </ul>
+                    <p>Ojo con la suma: si tecleas más de lo que dio, devuelves de más y esa plata la pierdes. Si tecleas menos, devuelves de menos y el cliente protesta.</p>
+                </section>
+
+                <section class="ayuda-pagina" hidden>
+                    <h3>PUNTOS Y SUELDO</h3>
+                    <table class="ayuda-tabla">
+                        <tr><td>Venta exacta, sin errores</td><td class="mas">+100</td></tr>
+                        <tr><td>El cliente protesta</td><td class="menos">-50</td></tr>
+                        <tr><td>El cliente se cansa y se va</td><td class="menos">-50</td></tr>
+                    </table>
+                    <ul>
+                        <li>Lo que un cliente se lleve sin que lo cobres es <b>pérdida</b>. También el cambio de más. Se resta de tu sueldo.</li>
+                        <li>Cobrar de más hace que el cliente proteste, pero esa plata no sale de tu bolsillo.</li>
+                        <li>La barrita sobre el cliente es su <b>paciencia</b>. Mientras más compra, más aguanta. Si se acaba, se va sin comprar.</li>
+                        <li>Puedes cobrar con cosas aún en la banda, pero el cliente se las lleva sin pagar.</li>
+                    </ul>
+                </section>
+
+                <section class="ayuda-pagina" hidden>
+                    <h3>TECLAS Y PROGRESO</h3>
+                    <ul>
+                        <li><kbd>H</kbd> abre y cierra esta ayuda. El juego se pausa mientras la lees.</li>
+                        <li><kbd>F</kbd> pantalla grande · <kbd>M</kbd> sonido · <kbd>&lt;</kbd> <kbd>&gt;</kbd> libro de códigos.</li>
+                        <li>No hay cuentas: tu progreso (puntos, récords) se guarda en este navegador. Si borras los datos del sitio, empiezas de cero.</li>
+                        <li>Si recargas a mitad de jornada, sigues donde ibas. El cliente en caja empieza su compra otra vez.</li>
+                        <li>Cada jugador tiene su propia tienda y su propio inventario: los demás no te afectan.</li>
+                    </ul>
+                    <p>Buena suerte, y cuenta bien los billetes.</p>
+                </section>
+            </div>
+            <div class="ayuda-pie">
+                <button type="button" data-ayuda="atras">ANTERIOR</button>
+                <div class="ayuda-puntos" aria-hidden="true"></div>
+                <button type="button" data-ayuda="siguiente">SIGUIENTE</button>
+            </div>
+        </div>
+    </div>
 
     <div id="perfil" class="perfil"><span class="perfil-datos"></span> <button type="button" hidden>BORRAR PROGRESO</button></div>
 
@@ -68,6 +150,7 @@
     <script src="assets/js/phaser/HudScene.js"></script>
     <script src="assets/js/phaser/config.js"></script>
     <script src="assets/js/pantalla.js"></script>
+    <script src="assets/js/ayuda.js"></script>
     <script src="assets/js/app.js"></script>
 </body>
 </html>

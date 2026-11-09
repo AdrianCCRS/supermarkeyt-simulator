@@ -1,0 +1,89 @@
+/* Pantallas de ayuda: panel por encima del juego, con la misma paleta y fuente pixel que el resto. */
+.btn-ayuda { bottom: 94px; }
+
+.ayuda {
+    position: fixed; inset: 0; z-index: 30;
+    display: flex; align-items: center; justify-content: center;
+    padding: 12px;
+    background: rgba(24, 20, 37, .88);
+}
+
+.ayuda-panel {
+    display: flex; flex-direction: column;
+    width: min(680px, 100%); max-height: 100%;
+    color: var(--contorno);
+    background: var(--crema);
+    border: 4px solid var(--contorno);
+    box-shadow: 0 0 0 4px var(--madera-osc), 6px 6px 0 4px var(--contorno);
+    font: 9px/1.9 "Press Start 2P", system-ui, sans-serif;
+}
+
+.ayuda-cabecera {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px;
+    color: var(--crema); background: var(--rojo-osc);
+    border-bottom: 4px solid var(--contorno);
+}
+.ayuda-cabecera h2 { margin: 0; font-size: 11px; line-height: 1.5; font-weight: normal; }
+.ayuda-cerrar { padding: 4px 8px; }
+
+.ayuda-cuerpo { padding: 14px 18px 6px; overflow-y: auto; min-height: min(340px, 55vh); }
+.ayuda-pagina h3 { margin: 0 0 10px; font-size: 10px; font-weight: normal; color: var(--rojo-osc); }
+.ayuda-pagina p { margin: 0 0 10px; }
+.ayuda-pagina ul { margin: 0 0 10px; padding: 0; list-style: none; }
+.ayuda-pagina li { position: relative; margin: 0 0 8px; padding-left: 16px; }
+.ayuda-pagina li::before { content: ""; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; background: var(--rojo); }
+.ayuda-pagina li.aviso::before { background: var(--azul); }
+.ayuda-pagina b { font-weight: normal; color: var(--rojo-osc); }
+
+/* tecla de la caja */
+.ayuda kbd {
+    display: inline-block; min-width: 1.8em; padding: 1px 5px; margin: 0 1px;
+    font: inherit; text-align: center;
+    color: var(--contorno); background: var(--gris);
+    border: 2px solid var(--contorno); box-shadow: 0 2px 0 var(--contorno);
+}
+
+/* recorrido de una venta: BANDA > ESCANER > ... */
+.ayuda-pasos { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0 12px; padding: 0; list-style: none; }
+.ayuda-pasos li { margin: 0; padding: 5px 8px; color: var(--crema); background: var(--contorno); border: 2px solid var(--contorno); }
+.ayuda-pasos li::before { content: none; }
+.ayuda-pasos li + li::after { content: none; }
+.ayuda-pasos .flecha { padding: 0; color: var(--rojo-osc); background: none; border: 0; }
+
+/* tabla de puntos */
+.ayuda-tabla { width: 100%; margin: 0 0 10px; border-collapse: collapse; }
+.ayuda-tabla td { padding: 5px 6px; border: 2px solid var(--contorno); background: #f5e6c4; }
+.ayuda-tabla td:last-child { width: 5.5em; text-align: right; }
+.ayuda-tabla .mas { color: var(--verde-osc, #3e8948); }
+.ayuda-tabla .menos { color: var(--rojo-osc); }
+
+.ayuda-pie {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 14px;
+    border-top: 4px solid var(--contorno);
+    background: var(--arena);
+}
+.ayuda-puntos { display: flex; gap: 6px; }
+.ayuda-puntos span { width: 10px; height: 10px; background: var(--crema); border: 2px solid var(--contorno); }
+.ayuda-puntos span.activo { background: var(--rojo); }
+
+.ayuda button {
+    font: 8px "Press Start 2P", system-ui, sans-serif;
+    color: var(--contorno); background: var(--crema);
+    border: 3px solid var(--contorno); box-shadow: 3px 3px 0 var(--contorno);
+    padding: 7px 10px; cursor: pointer;
+}
+.ayuda button:hover { background: #fff3d1; }
+.ayuda button:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--contorno); }
+.ayuda button:disabled { opacity: .4; cursor: default; transform: none; box-shadow: 3px 3px 0 var(--contorno); }
+.ayuda button:focus-visible { outline: 3px solid var(--azul); outline-offset: 2px; }
+.ayuda .ayuda-principal { background: var(--verde); }
+
+@media (max-width: 520px) {
+    .ayuda-panel { font-size: 8px; }
+    .ayuda-cuerpo { padding: 10px 12px 4px; }
+    .ayuda-puntos { display: none; }
+}
+
+body.grande .btn-ayuda { bottom: 94px; }

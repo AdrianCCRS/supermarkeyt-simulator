@@ -83,6 +83,7 @@ class CheckoutScene extends Phaser.Scene {
         this.scene.launch('HudScene');                             // menú de la jornada, encima del juego
         const abierta = Juego.jornadaActual();                     // jornada ya abierta en el servidor (la pone el backend)
         if (abierta) { this.jornada.entrar(abierta, true); } else { this.pantallaReposo(); }
+        this.events.once('update', () => Juego.aplicarPausa());    // la ayuda ya estaba abierta mientras cargaba el juego (ya en marcha, se puede pausar)
     }
 
     /** ¿Hay un cliente en caja? (productos en la banda o en la bolsa, cobro o entrega en curso). */

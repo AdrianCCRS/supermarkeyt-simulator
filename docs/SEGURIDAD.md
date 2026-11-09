@@ -7,6 +7,8 @@ del navegador, base de datos, configuración del servidor y repositorio. No incl
 falta limitar peticiones (ver «Riesgos aceptados»).
 
 ## Lista antes de publicar
+Los pasos detallados (comandos, configuración de nginx, comprobaciones con `curl`, limitación de peticiones) están en [PUBLICAR_SEGURO.md](PUBLICAR_SEGURO.md).
+
 1. HTTPS activo. Sin él, el identificador del jugador viaja en claro.
 2. Raíz web = `public/`; `src/`, `database/`, `.env`, `tests/`, `tools/`, `assets-src/`, `.claude/`, `.codex/` fuera de ella (o sin subir).
 3. `ADMIN_TOKEN` largo y aleatorio (p. ej. `openssl rand -hex 32`) en las variables del servidor.

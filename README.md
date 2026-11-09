@@ -142,6 +142,7 @@ ALTER TABLE jornadas
 |---|---|
 | [docs/CONEXION_BACKEND.md](docs/CONEXION_BACKEND.md) | Cómo conectar el juego con la API (ganchos de `Juego`) |
 | [docs/SEGURIDAD.md](docs/SEGURIDAD.md) | Revisión de seguridad y lista antes de publicar |
+| [docs/PUBLICAR_SEGURO.md](docs/PUBLICAR_SEGURO.md) | Guía paso a paso de acciones de seguridad para publicar (comandos y comprobaciones) |
 | [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) | Publicar el juego en un hosting para jugar con amigos |
 | [docs/API_FRONTEND.md](docs/API_FRONTEND.md) | Contrato de la API con ejemplos reales |
 | [docs/MECANICA_PAGO.md](docs/MECANICA_PAGO.md) | Flujo del cobro en efectivo y del cliente |

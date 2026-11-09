@@ -28,7 +28,7 @@ propia jornada y su propio stock (ver [API_FRONTEND.md](API_FRONTEND.md)), así 
 4. **Comprueba:** abre `https://tu-dominio/api/productos.php` (debe devolver JSON con los productos) y luego el juego.
 
 ## Seguridad
-Hay una revisión completa en [SEGURIDAD.md](SEGURIDAD.md), con la lista de comprobaciones antes de publicar. Lo imprescindible:
+La guía paso a paso está en [PUBLICAR_SEGURO.md](PUBLICAR_SEGURO.md) y la revisión completa en [SEGURIDAD.md](SEGURIDAD.md). Lo imprescindible:
 HTTPS, raíz web en `public/`, `ADMIN_TOKEN`, un usuario de MySQL solo con `SELECT, INSERT, UPDATE` y el `public/.htaccess` activo
 (Apache; en nginx, las mismas cabeceras en su configuración).
 

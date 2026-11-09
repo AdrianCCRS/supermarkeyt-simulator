@@ -3,10 +3,15 @@
 
 foreach (['Services/PricingService', 'Services/CheckoutService', 'Services/JornadaService',
           'Services/VentaService', 'Services/ProductoService', 'Repositories/CategoriaRepository',
-          'Repositories/ProductoRepository', 'Repositories/VentaRepository',
+          'Repositories/StockJugadorRepository', 'Repositories/ProductoRepository', 'Repositories/VentaRepository',
           'Repositories/JornadaRepository', 'Config/Env'] as $f) {
     require_once __DIR__ . "/../src/$f.php";
 }
+
+// Jugadores de prueba: identificadores anónimos como los que genera el navegador
+const JUG = '11111111-1111-4111-8111-111111111111';
+const JUG2 = '22222222-2222-4222-8222-222222222222';
+const ADM = ['X-Admin-Token' => 'token-de-prueba'];
 
 final class T
 {

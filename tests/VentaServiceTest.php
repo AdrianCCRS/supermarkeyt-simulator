@@ -4,7 +4,7 @@ echo "Cancelación de ventas (servicio + API)\n";
 function makeVentas(PDO $pdo, ?VentaRepository $ventas = null): VentaService
 {
     return new VentaService($pdo, $ventas ?? new VentaRepository($pdo),
-        new ProductoRepository($pdo), new JornadaRepository($pdo));
+        new ProductoRepository($pdo, JUG), new JornadaRepository($pdo));
 }
 
 T::test('cancelar devuelve el stock y marca la venta como cancelada', function () {
@@ -25,7 +25,7 @@ T::test('una venta cancelada deja de contar en el resumen de la jornada', functi
     $a = makeCheckout($pdo)->procesarCompra(1, 'Ana', ['A-1' => 2, 'B-2' => 1], '10000.00');
     makeCheckout($pdo)->procesarCompra(1, 'Luis', ['A-1' => 1], '5000.00');
     makeVentas($pdo)->cancelar($a['venta_id']);
-    $j = makeJornadas($pdo)->actual();
+    $j = makeJornadas($pdo)->actual(JUG);
     T::same(1, $j['ventas_completadas']);
     T::same('1000.00', $j['total_vendido']);
 });

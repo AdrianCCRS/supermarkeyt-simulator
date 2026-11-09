@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../src/bootstrap.php';
 
 // POST /api/producto_reponer.php {"sku": "FRU-001", "cantidad": 20}
 Api::handle('POST', function (): array {
+    Api::exigirAdmin();
     $body = Api::jsonBody();
     $sku = $body['sku'] ?? null;
     $cantidad = $body['cantidad'] ?? null;

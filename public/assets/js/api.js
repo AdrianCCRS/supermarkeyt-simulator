@@ -20,6 +20,7 @@ const Api = (function () {
             method: method,
             data: payload === undefined ? undefined : JSON.stringify(payload),
             contentType: payload === undefined ? undefined : 'application/json',
+            headers: { 'X-Jugador': Jugador.id() },          // la identidad anónima de este navegador: su jornada y su stock
             dataType: 'json'
         })
             .done(function (res) {

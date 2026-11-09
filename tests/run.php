@@ -6,6 +6,7 @@ require __DIR__ . '/ApiTest.php';
 require __DIR__ . '/JornadaTest.php';
 require __DIR__ . '/VentaServiceTest.php';
 require __DIR__ . '/ProductoGestionTest.php';
+require __DIR__ . '/MultijugadorTest.php';
 
 printf("\n%d passed, %d failed, %d skipped\n", T::$passed, T::$failed, T::$skipped);
 

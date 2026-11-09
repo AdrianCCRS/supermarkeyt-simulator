@@ -5,7 +5,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../src/bootstrap.php';
 
 Api::handle('GET', function (): array {
-    $productos = (new ProductoRepository(Database::connection()))->getAll();
+    $productos = (new ProductoRepository(Database::connection(), Api::jugador(false)))->getAll();      // con X-Jugador, SU stock
 
     return array_map(fn(array $p): array => [
         'id' => (int) $p['id'],

@@ -21,6 +21,7 @@ final class TestServer
 
         $env = array_merge(getenv(), [
             'DB_NAME' => Env::get('DB_NAME_TEST', 'supermarket_simulator_test'),
+            'ADMIN_TOKEN' => 'token-de-prueba',
         ]);
         self::$proc = proc_open(
             [PHP_BINARY, '-S', "127.0.0.1:$port", '-t', dirname(__DIR__) . '/public'],
@@ -42,12 +43,16 @@ final class TestServer
 }
 
 /** @return array{0:int,1:string,2:mixed} [status, content-type, json decodificado] */
-function http(string $method, string $path, ?string $body = null): array
+function http(string $method, string $path, ?string $body = null, ?string $jugador = JUG, array $extra = []): array
 {
     TestServer::start();
+    $cabeceras = "Content-Type: application/json\r\n" . ($jugador === null ? '' : "X-Jugador: $jugador\r\n");
+    foreach ($extra as $k => $v) {
+        $cabeceras .= "$k: $v\r\n";
+    }
     $ctx = stream_context_create(['http' => [
         'method' => $method,
-        'header' => "Content-Type: application/json\r\n",
+        'header' => $cabeceras,
         'content' => $body ?? '',
         'ignore_errors' => true,
     ]]);

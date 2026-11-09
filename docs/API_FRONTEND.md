@@ -18,6 +18,12 @@ error: {"success": false, "error": "mensaje legible"}
 | **422** | **datos inválidos**: efectivo insuficiente, formato de importe, cantidad | mostrar `error` junto al formulario |
 | 500 | error interno | mensaje genérico |
 
+**Jugador:** no hay cuentas. Cada navegador genera un UUID aleatorio (`jugador.js`) y lo manda en la cabecera `X-Jugador` de
+**todas** las peticiones (`api.js` lo hace solo). Con él, cada jugador tiene **su** jornada abierta (una por jugador) y **su** stock
+(parte del stock base de `productos.stock`). La jornada o la venta de otro jugador responde 404, igual que si no existiera. Sin la
+cabecera (o inválida) las rutas de jornada, cobro y ventas responden 400; `productos.php` sin ella devuelve el stock base.
+**Administración:** `producto_reponer.php` y `producto_estado.php` exigen la cabecera `X-Admin-Token` igual a `ADMIN_TOKEN` del `.env` (403 si no); el juego no las usa.
+
 **Importes:** siempre *texto* con dos decimales (`"2500.00"`). Se envían así y se reciben así.
 **Precios y totales los calcula el servidor;** el navegador solo envía SKUs y cantidades.
 
@@ -59,7 +65,7 @@ Reglas: `jornada_id` entero · `carrito` objeto `{sku: cantidad entera}` · máx
 Error típico: `409 {"success":false,"error":"Stock insuficiente para: FRU-001"}`.
 ⚠ **No es idempotente:** deshabilita el botón mientras la petición está en curso o se creará una venta por clic.
 
-### `POST jornada_abrir.php` → 201 (409 si ya hay una abierta)
+### `POST jornada_abrir.php` → 201 (409 si ese jugador ya tiene una abierta)
 ### `POST jornada_cerrar.php` → jornada cerrada con su resumen
 ```json
 {"jornada_id": 2, "faltantes": {"LAC-001": 1}, "sobrantes": {"LAC-002": 3}, "perdida": "7100.00", "sobrecobro": "0.00"}

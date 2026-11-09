@@ -39,19 +39,21 @@ function testPdo(): PDO
         (2, 'B-2', 'Queso', 1, 4900.00, 5.00, 3, 'x', 1),
         (3, 'C-3', 'Inactivo', 1, 100.00, 0.00, 5, 'x', 0),
         (4, 'D-4', 'Caro', 1, 60000.00, 19.00, 10, 'x', 1)");
-    $root->exec("INSERT INTO jornadas (id, estado) VALUES (1, 'abierta'), (2, 'cerrada')");
+    $root->exec("INSERT INTO jornadas (id, estado, jugador) VALUES (1, 'abierta', '" . JUG . "'), (2, 'cerrada', '" . JUG . "')");
     return $root;
 }
 
 function makeCheckout(PDO $pdo): CheckoutService
 {
-    return new CheckoutService($pdo, new ProductoRepository($pdo), new VentaRepository($pdo),
+    return new CheckoutService($pdo, new ProductoRepository($pdo, JUG), new VentaRepository($pdo),
         new JornadaRepository($pdo), new PricingService());
 }
 
 function stockOf(PDO $pdo, int $id): int
 {
-    return (int) $pdo->query("SELECT stock FROM productos WHERE id = $id")->fetchColumn();
+    // El stock del jugador de prueba; si aún no tiene fila, el base
+    return (int) $pdo->query("SELECT COALESCE((SELECT stock FROM stock_jugador WHERE jugador = '" . JUG . "' AND producto_id = $id),
+        (SELECT stock FROM productos WHERE id = $id))")->fetchColumn();
 }
 
 T::test('registra la venta, descuenta stock y calcula el cambio', function () {
@@ -118,7 +120,7 @@ T::test('rollback revierte venta y stock cuando falla tras insertar el encabezad
             throw new RuntimeException('fallo simulado');
         }
     };
-    $checkout = new CheckoutService($pdo, new ProductoRepository($pdo), $ventas,
+    $checkout = new CheckoutService($pdo, new ProductoRepository($pdo, JUG), $ventas,
         new JornadaRepository($pdo), new PricingService());
 
     T::throws(RuntimeException::class, fn() =>

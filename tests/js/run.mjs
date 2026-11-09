@@ -8,11 +8,11 @@ import path from 'node:path';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ctx = vm.createContext({ Intl, console, setTimeout });
-for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'paciencia.js', 'perfil.js', 'nombres.js', 'phaser/assets.js']) {
+for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'paciencia.js', 'perfil.js', 'jugador.js', 'nombres.js', 'phaser/assets.js']) {
     const codigo = fs.readFileSync(path.join(raiz, 'public/assets/js', f), 'utf8').replace(/^const (\w+) =/gm, 'globalThis.$1 =');
     vm.runInContext(codigo, ctx);
 }
-const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Paciencia, Perfil, Nombres, PRODUCTOS_DEMO } = ctx;
+const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Paciencia, Perfil, Jugador, Nombres, PRODUCTOS_DEMO } = ctx;
 const skus = Object.keys(PRODUCTOS_DEMO);
 
 let fallos = 0, pruebas = 0;
@@ -255,6 +255,13 @@ console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
     const j = Auditoria.jornada('200000.00'); j.abandono(); j.abandono();
     const r = j.resumen();
     ok(r.abandonos === 2 && r.clientes === 2 && r.puntos === 2 * Auditoria.PUNTOS_ABANDONO && r.perdida === 0, 'el abandono resta puntos y no es pérdida');
+}
+
+// Identidad anónima del jugador
+{
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+    ok(uuid.test(Jugador.id()), 'sin localStorage ni crypto igual da un UUID válido (' + Jugador.id() + ')');
+    ok(Jugador.id() === Jugador.id(), 'el id es estable durante la página');
 }
 
 // Progreso del jugador (localStorage simulado)

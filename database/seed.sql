@@ -8,6 +8,7 @@ USE supermarket_simulator;
 
 SET FOREIGN_KEY_CHECKS = 0;
 TRUNCATE TABLE detalles_venta;
+TRUNCATE TABLE stock_jugador;
 TRUNCATE TABLE ventas;
 TRUNCATE TABLE jornadas;
 TRUNCATE TABLE productos;
@@ -138,9 +139,9 @@ VALUES
     (107, 'HEL-007', 'Paleta de cereza', 9, 2500.00, 19.00, 48, '/assets/img/icons/hel-007.png', TRUE),
     (108, 'HEL-008', 'Paleta de maracuya', 9, 2500.00, 19.00, 118, '/assets/img/icons/hel-008.png', TRUE);
 
-INSERT INTO jornadas (id, fecha_inicio, fecha_fin, estado) VALUES
-    (1, '2026-11-03 08:00:00', '2026-11-03 20:00:00', 'cerrada'),
-    (2, '2026-11-05 08:00:00', '2026-11-05 20:00:00', 'cerrada');
+INSERT INTO jornadas (id, fecha_inicio, fecha_fin, estado, jugador) VALUES
+    (1, '2026-11-03 08:00:00', '2026-11-03 20:00:00', 'cerrada', '00000000-0000-4000-8000-000000000000'),
+    (2, '2026-11-05 08:00:00', '2026-11-05 20:00:00', 'cerrada', '00000000-0000-4000-8000-000000000000');
 
 
 INSERT INTO ventas

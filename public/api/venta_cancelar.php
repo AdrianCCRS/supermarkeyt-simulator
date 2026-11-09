@@ -12,17 +12,21 @@ Api::handle('POST', function (): array {
         throw new ApiException(422, 'venta_id debe ser un entero positivo');
     }
 
+    $jugador = Api::jugador();
     $pdo = Database::connection();
     $ventas = new VentaRepository($pdo);
+    $jornadas = new JornadaRepository($pdo);
+    $venta = $ventas->getById($id);
 
-    if ($ventas->getById($id) === null) {
+    // 404 si no existe o es de la jornada de otro jugador
+    if ($venta === null || ($jornadas->findById((int) $venta['jornada_id'])['jugador'] ?? null) !== $jugador) {
         throw new ApiException(404, 'Venta no encontrada');
     }
 
     return (new VentaService(
         $pdo,
         $ventas,
-        new ProductoRepository($pdo),
-        new JornadaRepository($pdo)
+        new ProductoRepository($pdo, $jugador),
+        $jornadas
     ))->cancelar($id);
 });

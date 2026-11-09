@@ -54,9 +54,7 @@ Api::handle('POST', function (): array {
     $pdo = Database::connection();
     $repo = new JornadaRepository($pdo);
 
-    if ($repo->findById($id) === null) {
-        throw new ApiException(404, 'Jornada no encontrada');
-    }
+    Api::jornadaDe($repo, $id, Api::jugador());      // 404 si no existe o es de otro jugador
 
     return (new JornadaService($pdo, $repo))->cerrar($id, $faltantes, $sobrantes, $perdida, $sobrecobro);
 });

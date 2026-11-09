@@ -29,14 +29,29 @@ CREATE TABLE jornadas (
     fecha_inicio TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fecha_fin TIMESTAMP NULL,
     estado ENUM('abierta', 'cerrada') NOT NULL DEFAULT 'abierta',
-    -- 1 mientras la jornada esté abierta, NULL si está cerrada. El índice único
-    -- (que ignora NULL) garantiza como máximo UNA jornada abierta a la vez,
+    -- Dueño de la jornada: un identificador anónimo (UUID) que genera el navegador del jugador. No hay cuentas.
+    jugador CHAR(36) NOT NULL,
+    -- El jugador mientras la jornada esté abierta, NULL si está cerrada. El índice único
+    -- (que ignora NULL) garantiza como máximo UNA jornada abierta POR JUGADOR,
     -- incluso con peticiones simultáneas.
-    abierta_unica TINYINT
-        GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED,
+    abierta_jugador CHAR(36)
+        GENERATED ALWAYS AS (IF(estado = 'abierta', jugador, NULL)) STORED,
     perdida_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (perdida_total >= 0),
     sobrecobro_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (sobrecobro_total >= 0),
-    UNIQUE KEY uq_jornada_abierta (abierta_unica)
+    UNIQUE KEY uq_jornada_abierta (abierta_jugador),
+    KEY idx_jornadas_jugador (jugador)
+);
+
+-- Stock propio de cada jugador (una fila por jugador y producto, que se crea la primera vez que hace falta).
+-- productos.stock es el stock BASE con el que empieza cada jugador.
+CREATE TABLE stock_jugador (
+    jugador CHAR(36) NOT NULL,
+    producto_id INT NOT NULL,
+    stock INT NOT NULL CHECK (stock >= 0),
+    PRIMARY KEY (jugador, producto_id),
+    CONSTRAINT fk_stock_jugador_producto
+        FOREIGN KEY (producto_id)
+        REFERENCES productos(id)
 );
 
 

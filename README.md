@@ -11,6 +11,7 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 - **Responsabilidad:** si un cliente se lleva algo sin cobrar, o das de más, es pérdida y se descuenta del sueldo base al cerrar. Cobrar de más hace que el cliente proteste (−50 puntos); una venta exacta suma 100.
 - **Clientes:** entran cuando abres la jornada, con un nombre aleatorio sobre la cabeza (ese nombre viaja al backend en cada venta), y se van cuando la cierras.
 - **Paciencia:** el cliente atendido tiene una barrita sobre la cabeza que se vacía mientras espera (más compra, más aguante). Si se agota se va enojado: no se cobra, resta 50 puntos y no cuenta como pérdida porque no se llevó nada.
+- **Varios jugadores:** sin registro ni contraseña. Cada navegador genera un identificador anónimo y tiene su propia jornada y su propio stock; lo que hace un jugador no afecta a los demás. Para ponerlo en línea, ver [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 - **Progreso del jugador:** sin cuentas: se guarda en el navegador (localStorage), como los juegos flash de antes. Acumula jornadas, clientes, puntos, ventas y mejores marcas, con aviso de récord al cerrar y un botón para borrarlo. Si se borran los datos del navegador, empieza de cero.
 - **Sonido:** efectos y musiquita de 8 bits sintetizados con WebAudio (sin archivos de audio). Botón «SONIDO» o tecla `M` para silenciar; se recuerda entre visitas.
 - **Jornada:** reloj de 08:00 a 20:00 (10 minutos reales), botón ABRIR/CERRAR, y pantalla de cierre con el resumen.
@@ -41,7 +42,7 @@ supermarket-simulator/
 | Archivo | Para qué |
 |---|---|
 | `app.js` | Conecta la API con el juego: catálogo, jornada (abrir/cerrar) y cobro |
-| `api.js` | Cliente de la API (promesas de jQuery) |
+| `api.js`, `jugador.js` | Cliente de la API (promesas de jQuery) e identidad anónima del jugador (cabecera `X-Jugador`) |
 | `money.js`, `pricing.js`, `venta.js`, `auditoria.js`, `cobro.js`, `compra.js`, `reloj.js`, `paciencia.js`, `perfil.js`, `nombres.js` | Lógica pura del juego, sin Phaser (con pruebas) |
 | `phaser/` | Escenas del juego: `CheckoutScene` (caja), `HudScene` (menú), `ControlJornada`, `config.js` (`Juego`), `assets.js` |
 | `sonido.js` | Efectos y música con WebAudio (`Sonido.tocar`, `Sonido.musica`) |
@@ -73,6 +74,7 @@ Requisitos: PHP 8.2+ con `pdo_mysql` y `mbstring`, MySQL/MariaDB (por ejemplo XA
 
 ## API
 
+Cada navegador manda su identificador anónimo en la cabecera `X-Jugador` (sin cuentas): cada jugador tiene **su** jornada y **su** stock.
 Respuesta: `{"success": true, "data": ...}` o `{"success": false, "error": "..."}`.
 Códigos: 400 petición malformada, 404 no encontrado, 405 método, 409 conflicto de negocio (stock, jornada cerrada),
 422 datos inválidos, 500 error interno. Los precios y totales se calculan siempre en el servidor.
@@ -104,14 +106,17 @@ Las tarifas de IVA (0, 5 y 19 %) son **ficticias**, solo para la simulación.
 ## Pruebas
 
 ```bash
-node tests/js/run.mjs     # 376 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
-php tests/run.php         # 61 pruebas; requiere pdo_mysql y mbstring
+node tests/js/run.mjs     # 378 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
+php tests/run.php         # 72 pruebas; requiere pdo_mysql y mbstring
 ```
 
 Las pruebas de integración de PHP usan una base aparte (`DB_NAME_TEST`, por defecto `supermarket_simulator_test`; debe terminar en `_test`)
 que se recrea en cada ejecución. Las pruebas omitidas cuentan como fallo salvo con `--allow-skip`.
 
 ### Migrar una base ya creada
+
+Para pasar a **varios jugadores** (jornada y stock por jugador) ejecuta `database/migracion_multijugador.sql`; se puede repetir sin problema.
+Las migraciones sueltas de abajo ya están incluidas en `init.sql`.
 
 ```sql
 -- Una sola jornada abierta a la vez
@@ -136,6 +141,7 @@ ALTER TABLE jornadas
 | Documento | Contenido |
 |---|---|
 | [docs/CONEXION_BACKEND.md](docs/CONEXION_BACKEND.md) | Cómo conectar el juego con la API (ganchos de `Juego`) |
+| [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) | Publicar el juego en un hosting para jugar con amigos |
 | [docs/API_FRONTEND.md](docs/API_FRONTEND.md) | Contrato de la API con ejemplos reales |
 | [docs/MECANICA_PAGO.md](docs/MECANICA_PAGO.md) | Flujo del cobro en efectivo y del cliente |
 | [docs/CIERRE_JORNADA.md](docs/CIERRE_JORNADA.md) | Pérdidas del tendero y cierre de jornada |

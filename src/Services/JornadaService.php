@@ -9,22 +9,22 @@ class JornadaService
         private JornadaRepository $jornadas
     ) {}
 
-    /** La jornada abierta con su resumen de ventas, o null si no hay. */
-    public function actual(): ?array
+    /** La jornada abierta de ese jugador con su resumen de ventas, o null si no tiene. */
+    public function actual(string $jugador): ?array
     {
-        $jornada = $this->jornadas->findAbierta();
+        $jornada = $this->jornadas->findAbierta($jugador);
 
         return $jornada === null ? null : $this->conResumen($jornada);
     }
 
     /**
-     * Abre una jornada. Solo puede haber una abierta: lo garantiza el índice
-     * único de la BD, así que dos aperturas simultáneas no pueden coexistir.
+     * Abre una jornada para el jugador. Cada jugador puede tener UNA abierta (las de otros no cuentan): lo garantiza
+     * el índice único de la BD, así que dos aperturas simultáneas del mismo jugador no pueden coexistir.
      */
-    public function abrir(): array
+    public function abrir(string $jugador): array
     {
         try {
-            $id = $this->jornadas->abrir();
+            $id = $this->jornadas->abrir($jugador);
         } catch (PDOException $e) {
             if (($e->errorInfo[1] ?? null) === self::MYSQL_DUPLICATE_KEY) {
                 throw new RuntimeException('Ya existe una jornada abierta');

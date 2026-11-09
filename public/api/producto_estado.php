@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../src/bootstrap.php';
 
 // POST /api/producto_estado.php {"sku": "FRU-001", "activo": false}
 Api::handle('POST', function (): array {
+    Api::exigirAdmin();
     $body = Api::jsonBody();
     $sku = $body['sku'] ?? null;
     $activo = $body['activo'] ?? null;

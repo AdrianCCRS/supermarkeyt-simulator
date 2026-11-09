@@ -63,13 +63,13 @@ T::test('cambiar estado desactiva y reactiva; el catálogo lo refleja', function
 
 T::test('API producto_reponer: 200, 404, 422, 409', function () {
     testPdo();
-    [$s, , $j] = http('POST', '/api/producto_reponer.php', '{"sku":"A-1","cantidad":5}');
+    [$s, , $j] = http('POST', '/api/producto_reponer.php', '{"sku":"A-1","cantidad":5}', JUG, ADM);
     T::same(200, $s);
     T::same(15, $j['data']['stock']);
-    [$s] = http('POST', '/api/producto_reponer.php', '{"sku":"NOPE","cantidad":5}');
+    [$s] = http('POST', '/api/producto_reponer.php', '{"sku":"NOPE","cantidad":5}', JUG, ADM);
     T::same(404, $s);
     foreach (['{"sku":"A-1","cantidad":"5"}', '{"sku":"A-1","cantidad":0}', '{"sku":"","cantidad":1}', '{"cantidad":1}'] as $b) {
-        [$s] = http('POST', '/api/producto_reponer.php', $b);
+        [$s] = http('POST', '/api/producto_reponer.php', $b, JUG, ADM);
         T::same(422, $s, $b);
     }
     [$s] = http('GET', '/api/producto_reponer.php');
@@ -78,13 +78,13 @@ T::test('API producto_reponer: 200, 404, 422, 409', function () {
 
 T::test('API producto_estado: 200, 404, 422', function () {
     testPdo();
-    [$s, , $j] = http('POST', '/api/producto_estado.php', '{"sku":"A-1","activo":false}');
+    [$s, , $j] = http('POST', '/api/producto_estado.php', '{"sku":"A-1","activo":false}', JUG, ADM);
     T::same(200, $s);
     T::same(false, $j['data']['activo']);
-    [$s] = http('POST', '/api/producto_estado.php', '{"sku":"NOPE","activo":true}');
+    [$s] = http('POST', '/api/producto_estado.php', '{"sku":"NOPE","activo":true}', JUG, ADM);
     T::same(404, $s);
     foreach (['{"sku":"A-1","activo":"false"}', '{"sku":"A-1","activo":0}', '{"sku":"A-1"}'] as $b) {
-        [$s] = http('POST', '/api/producto_estado.php', $b);
+        [$s] = http('POST', '/api/producto_estado.php', $b, JUG, ADM);
         T::same(422, $s, $b);
     }
 });

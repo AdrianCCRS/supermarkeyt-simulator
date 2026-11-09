@@ -50,6 +50,50 @@ class Api
         }
     }
 
+    /**
+     * El jugador de la petición: un UUID anónimo que el navegador guarda y manda en la cabecera X-Jugador.
+     * No es una cuenta: es la llave de SU jornada y de SU stock. Con $obligatorio = false devuelve null si falta.
+     */
+    public static function jugador(bool $obligatorio = true): ?string
+    {
+        $id = $_SERVER['HTTP_X_JUGADOR'] ?? null;
+
+        if ($id === null || $id === '') {
+            if ($obligatorio) {
+                throw new ApiException(400, 'Falta la cabecera X-Jugador');
+            }
+            return null;
+        }
+        if (!is_string($id) || !preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $id)) {
+            throw new ApiException(400, 'X-Jugador no es un identificador válido');
+        }
+
+        return strtolower($id);
+    }
+
+    /** La jornada $id, si es del jugador. Si no existe o es de otro responde 404 igual (no revela que existe). */
+    public static function jornadaDe(JornadaRepository $jornadas, int $id, string $jugador): array
+    {
+        $jornada = $jornadas->findById($id);
+
+        if ($jornada === null || $jornada['jugador'] !== $jugador) {
+            throw new ApiException(404, 'Jornada no encontrada');
+        }
+
+        return $jornada;
+    }
+
+    /** Endpoints de administración (reponer, activar/desactivar): solo con la cabecera X-Admin-Token igual a ADMIN_TOKEN. */
+    public static function exigirAdmin(): void
+    {
+        $token = Env::get('ADMIN_TOKEN');
+        $dado = $_SERVER['HTTP_X_ADMIN_TOKEN'] ?? '';
+
+        if ($token === null || $token === '' || !is_string($dado) || !hash_equals($token, $dado)) {
+            throw new ApiException(403, 'Operación de administración no autorizada');
+        }
+    }
+
     /** Lee el cuerpo de la petición como un objeto JSON (array asociativo). */
     public static function jsonBody(): array
     {

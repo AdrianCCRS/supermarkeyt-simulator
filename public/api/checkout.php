@@ -35,12 +35,15 @@ Api::handle('POST', function (): array {
         throw new ApiException(422, 'efectivo_recibido debe ser texto con formato "0.00"');
     }
 
+    $jugador = Api::jugador();
     $pdo = Database::connection();
+    $jornadas = new JornadaRepository($pdo);
+    Api::jornadaDe($jornadas, $jornadaId, $jugador);          // la jornada tiene que ser de este jugador
     $checkout = new CheckoutService(
         $pdo,
-        new ProductoRepository($pdo),
+        new ProductoRepository($pdo, $jugador),               // y el stock que se mueve es el suyo
         new VentaRepository($pdo),
-        new JornadaRepository($pdo),
+        $jornadas,
         new PricingService()
     );
 

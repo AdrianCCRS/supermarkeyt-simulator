@@ -10,7 +10,8 @@ class JornadaRepository {
                 j.fecha_fin,
                 j.estado,
                 j.perdida_total,
-                j.sobrecobro_total
+                j.sobrecobro_total,
+                j.jugador
             FROM jornadas AS j
             WHERE j.id = ?");
 
@@ -19,26 +20,30 @@ class JornadaRepository {
         return $result ?: null;
     }
 
-    public function findAbierta(): ?array
+    /** La jornada abierta de ese jugador (cada jugador tiene como máximo una). */
+    public function findAbierta(string $jugador): ?array
     {
-        $query = $this->pdo->query(
-            "SELECT id, fecha_inicio, fecha_fin, estado, perdida_total, sobrecobro_total
+        $query = $this->pdo->prepare(
+            "SELECT id, fecha_inicio, fecha_fin, estado, perdida_total, sobrecobro_total, jugador
             FROM jornadas
-            WHERE estado = 'abierta'
+            WHERE estado = 'abierta' AND jugador = ?
             LIMIT 1"
         );
+        $query->execute([$jugador]);
 
         $result = $query->fetch(PDO::FETCH_ASSOC);
 
         return $result ?: null;
     }
 
-    /** Crea una jornada abierta y devuelve su id. */
-    public function abrir(): int
+    /** Crea una jornada abierta para el jugador y devuelve su id. */
+    public function abrir(string $jugador): int
     {
-        $this->pdo->exec("INSERT INTO jornadas (estado) VALUES ('abierta')");
+        $this->pdo->prepare("INSERT INTO jornadas (estado, jugador) VALUES ('abierta', ?)")->execute([$jugador]);
+        $id = (int) $this->pdo->lastInsertId();                     // antes de cualquier otra sentencia
+        (new StockJugadorRepository($this->pdo))->asegurar($jugador);
 
-        return (int) $this->pdo->lastInsertId();
+        return $id;
     }
 
     /**
@@ -56,8 +61,10 @@ class JornadaRepository {
         string $sobrecobro = '0.00',
         int $maxStock = ProductoService::MAX_STOCK
     ): void {
-        $this->ajustarStock($faltantes, -1, 'faltantes', $maxStock);
-        $this->ajustarStock($sobrantes, 1, 'sobrantes', $maxStock);
+        $jugador = $this->jugadorDe($id);
+        (new StockJugadorRepository($this->pdo))->asegurar($jugador);
+        $this->ajustarStock($faltantes, -1, 'faltantes', $maxStock, $jugador);
+        $this->ajustarStock($sobrantes, 1, 'sobrantes', $maxStock, $jugador);
 
         $query = $this->pdo->prepare(
             "UPDATE jornadas
@@ -72,13 +79,16 @@ class JornadaRepository {
      * Suma ($signo = 1) o resta ($signo = -1) unidades al stock. Valida SKU y cantidades.
      * El stock nunca baja de 0 ni sube de $maxStock (se recorta en vez de fallar, para no bloquear el cierre).
      */
-    private function ajustarStock(array $mapa, int $signo, string $tipo, int $maxStock): void
+    private function ajustarStock(array $mapa, int $signo, string $tipo, int $maxStock, string $jugador): void
     {
         $existe = $this->pdo->prepare("SELECT 1 FROM productos WHERE sku = ?");
+        // Es el stock del JUGADOR dueño de la jornada, no el de los demás
         $ajusta = $this->pdo->prepare(
             $signo < 0
-                ? "UPDATE productos SET stock = GREATEST(stock - ?, 0) WHERE sku = ?"
-                : "UPDATE productos SET stock = LEAST(stock + ?, $maxStock) WHERE sku = ?"
+                ? "UPDATE stock_jugador SET stock = GREATEST(stock - ?, 0)
+                   WHERE jugador = ? AND producto_id = (SELECT id FROM productos WHERE sku = ?)"
+                : "UPDATE stock_jugador SET stock = LEAST(stock + ?, $maxStock)
+                   WHERE jugador = ? AND producto_id = (SELECT id FROM productos WHERE sku = ?)"
         );
 
         foreach ($mapa as $sku => $cantidad) {
@@ -90,8 +100,20 @@ class JornadaRepository {
             if ($existe->fetchColumn() === false) {
                 throw new InvalidArgumentException("SKU desconocido en $tipo: $sku");
             }
-            $ajusta->execute([$cantidad, $sku]);
+            $ajusta->execute([$cantidad, $jugador, $sku]);
         }
+    }
+
+    private function jugadorDe(int $id): string
+    {
+        $query = $this->pdo->prepare("SELECT jugador FROM jornadas WHERE id = ?");
+        $query->execute([$id]);
+        $jugador = $query->fetchColumn();
+        if ($jugador === false) {
+            throw new InvalidArgumentException('Jornada no encontrada');
+        }
+
+        return (string) $jugador;
     }
 
     /** Ventas completadas y total vendido de una jornada. */
@@ -122,7 +144,8 @@ class JornadaRepository {
                 fecha_fin,
                 estado,
                 perdida_total,
-                sobrecobro_total
+                sobrecobro_total,
+                jugador
             FROM jornadas
             WHERE id = ?
             FOR UPDATE"

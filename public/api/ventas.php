@@ -10,7 +10,10 @@ require_once __DIR__ . '/../../src/bootstrap.php';
  */
 Api::handle('GET', function (): array {
     $positivo = ['options' => ['min_range' => 1]];
-    $ventas = new VentaRepository(Database::connection());
+    $jugador = Api::jugador();
+    $pdo = Database::connection();
+    $ventas = new VentaRepository($pdo);
+    $jornadas = new JornadaRepository($pdo);
 
     if (isset($_GET['jornada_id'])) {
         $jornadaId = filter_var($_GET['jornada_id'], FILTER_VALIDATE_INT, $positivo);
@@ -18,6 +21,8 @@ Api::handle('GET', function (): array {
         if ($jornadaId === false) {
             throw new ApiException(400, 'jornada_id debe ser un entero positivo');
         }
+
+        Api::jornadaDe($jornadas, $jornadaId, $jugador);
 
         return $ventas->getByJornadaId($jornadaId);
     }
@@ -30,7 +35,7 @@ Api::handle('GET', function (): array {
 
     $venta = $ventas->getById($id);
 
-    if ($venta === null) {
+    if ($venta === null || ($jornadas->findById((int) $venta['jornada_id'])['jugador'] ?? null) !== $jugador) {
         throw new ApiException(404, 'Venta no encontrada');
     }
 

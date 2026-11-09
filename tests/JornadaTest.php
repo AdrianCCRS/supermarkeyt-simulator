@@ -8,7 +8,7 @@ function makeJornadas(PDO $pdo): JornadaService
 
 T::test('actual devuelve la jornada abierta con su resumen', function () {
     $pdo = testPdo();
-    $j = makeJornadas($pdo)->actual();
+    $j = makeJornadas($pdo)->actual(JUG);
     T::same(1, (int) $j['id']);
     T::same('abierta', $j['estado']);
     T::same(0, $j['ventas_completadas']);
@@ -19,19 +19,19 @@ T::test('el resumen cuenta las ventas completadas de la jornada', function () {
     $pdo = testPdo();
     makeCheckout($pdo)->procesarCompra(1, 'Ana', ['A-1' => 2, 'B-2' => 1], '10000.00');
     makeCheckout($pdo)->procesarCompra(1, 'Luis', ['A-1' => 1], '5000.00');
-    $j = makeJornadas($pdo)->actual();
+    $j = makeJornadas($pdo)->actual(JUG);
     T::same(2, $j['ventas_completadas']);
     T::same('8145.00', $j['total_vendido']);
 });
 
 T::test('no se puede abrir otra jornada mientras hay una abierta', function () {
     $pdo = testPdo();
-    T::throws(RuntimeException::class, fn() => makeJornadas($pdo)->abrir());
+    T::throws(RuntimeException::class, fn() => makeJornadas($pdo)->abrir(JUG));
 });
 
 T::test('la BD impide dos jornadas abiertas aunque se salte el servicio', function () {
     $pdo = testPdo();
-    T::throws(PDOException::class, fn() => $pdo->exec("INSERT INTO jornadas (estado) VALUES ('abierta')"));
+    T::throws(PDOException::class, fn() => $pdo->exec("INSERT INTO jornadas (estado, jugador) VALUES ('abierta', '" . JUG . "')"));
 });
 
 T::test('cerrar y volver a abrir', function () {
@@ -40,8 +40,8 @@ T::test('cerrar y volver a abrir', function () {
     $cerrada = $svc->cerrar(1);
     T::same('cerrada', $cerrada['estado']);
     T::same(true, $cerrada['fecha_fin'] !== null);
-    T::same(null, $svc->actual());
-    $nueva = $svc->abrir();
+    T::same(null, $svc->actual(JUG));
+    $nueva = $svc->abrir(JUG);
     T::same('abierta', $nueva['estado']);
     T::same(true, (int) $nueva['id'] > 2);
 });
@@ -105,7 +105,8 @@ T::test('API: cerrar devuelve resumen; 409, 404, 422 y 400 en los errores', func
 // ---- Cierre con faltantes y sobrantes (ajuste de stock) ----
 function stockDe(PDO $pdo, string $sku): int
 {
-    return (int) $pdo->query("SELECT stock FROM productos WHERE sku = '$sku'")->fetchColumn();
+    return (int) $pdo->query("SELECT COALESCE((SELECT sj.stock FROM stock_jugador sj JOIN productos p ON p.id = sj.producto_id
+        WHERE sj.jugador = '" . JUG . "' AND p.sku = '$sku'), (SELECT stock FROM productos WHERE sku = '$sku'))")->fetchColumn();
 }
 
 T::test('cerrar descuenta los faltantes y repone los sobrantes del stock', function () {
@@ -129,7 +130,7 @@ T::test('un SKU desconocido o una cantidad inválida cancelan TODO el cierre', f
     T::throws(InvalidArgumentException::class, fn() => $svc->cerrar(1, ['A-1' => 0]), 'cero');
     T::throws(InvalidArgumentException::class, fn() => $svc->cerrar(1, [], ['A-1' => '2']), 'texto');
     T::same(10, stockDe($pdo, 'A-1'), 'el stock no cambió');
-    T::same('abierta', $svc->actual()['estado'], 'la jornada sigue abierta');
+    T::same('abierta', $svc->actual(JUG)['estado'], 'la jornada sigue abierta');
 });
 
 T::test('API: cerrar con faltantes/sobrantes ajusta el stock; datos mal formados dan 422', function () {

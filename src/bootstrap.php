@@ -5,6 +5,7 @@ foreach ([
     'Config/Env',
     'Config/Database',
     'Http/Api',
+    'Repositories/StockJugadorRepository',
     'Repositories/ProductoRepository',
     'Repositories/CategoriaRepository',
     'Repositories/VentaRepository',

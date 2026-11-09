@@ -107,7 +107,7 @@ Las tarifas de IVA (0, 5 y 19 %) son **ficticias**, solo para la simulación.
 
 ```bash
 node tests/js/run.mjs     # 378 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
-php tests/run.php         # 72 pruebas; requiere pdo_mysql y mbstring
+php tests/run.php         # 74 pruebas; requiere pdo_mysql y mbstring
 ```
 
 Las pruebas de integración de PHP usan una base aparte (`DB_NAME_TEST`, por defecto `supermarket_simulator_test`; debe terminar en `_test`)
@@ -141,6 +141,7 @@ ALTER TABLE jornadas
 | Documento | Contenido |
 |---|---|
 | [docs/CONEXION_BACKEND.md](docs/CONEXION_BACKEND.md) | Cómo conectar el juego con la API (ganchos de `Juego`) |
+| [docs/SEGURIDAD.md](docs/SEGURIDAD.md) | Revisión de seguridad y lista antes de publicar |
 | [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) | Publicar el juego en un hosting para jugar con amigos |
 | [docs/API_FRONTEND.md](docs/API_FRONTEND.md) | Contrato de la API con ejemplos reales |
 | [docs/MECANICA_PAGO.md](docs/MECANICA_PAGO.md) | Flujo del cobro en efectivo y del cliente |

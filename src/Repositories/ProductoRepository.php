@@ -11,11 +11,18 @@ class ProductoRepository
         private ?string $jugador = null
     ) {}
 
-    /** [expresión de la columna stock, JOIN, parámetros del JOIN] según haya jugador o no. */
-    private function origenStock(): array
+    /**
+     * [expresión de la columna stock, JOIN, parámetros del JOIN] según haya jugador o no.
+     * $escribir = false (solo lectura): NO crea filas, así que consultar el catálogo con un identificador cualquiera no escribe
+     * nada en la base; el que aún no tiene stock propio ve el base. $escribir = true (cobros): crea las filas que falten y las usa.
+     */
+    private function origenStock(bool $escribir): array
     {
         if ($this->jugador === null) {
             return ['p.stock', '', []];
+        }
+        if (!$escribir) {
+            return ['COALESCE(sj.stock, p.stock)', 'LEFT JOIN stock_jugador AS sj ON sj.producto_id = p.id AND sj.jugador = ?', [$this->jugador]];
         }
         (new StockJugadorRepository($this->pdo))->asegurar($this->jugador);
 
@@ -24,7 +31,7 @@ class ProductoRepository
 
     public function getAll(): array
     {
-        [$stock, $join, $paramsJoin] = $this->origenStock();
+        [$stock, $join, $paramsJoin] = $this->origenStock(false);
         $query = $this->pdo->prepare(
             "SELECT
                 p.id,
@@ -64,7 +71,7 @@ class ProductoRepository
             array_fill(0, count($skus), '?')
         );
 
-        [$stock, $join, $paramsJoin] = $this->origenStock();
+        [$stock, $join, $paramsJoin] = $this->origenStock(false);
         $query = $this->pdo->prepare(
             "SELECT
                 p.id,
@@ -112,7 +119,7 @@ class ProductoRepository
             array_fill(0, count($skus), '?')
         );
 
-        [$stock, $join, $paramsJoin] = $this->origenStock();
+        [$stock, $join, $paramsJoin] = $this->origenStock(true);
         $query = $this->pdo->prepare(
             "SELECT
                 p.id,

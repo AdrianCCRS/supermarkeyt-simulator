@@ -1,0 +1,18 @@
+# Apache. En otro servidor (nginx, etc.) hay que poner las mismas cabeceras en su configuración.
+Options -Indexes
+
+# Nada de archivos ocultos (.env, .git…) por si acaso se subieran dentro de la raíz web
+<FilesMatch "^\.(?!well-known)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    # Todo el contenido es propio (sin CDN, sin scripts ni estilos en línea, sin fuentes externas)
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; media-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+    Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+    # Solo con HTTPS ya funcionando (si no, el navegador bloquearía el sitio). Quita el # cuando lo tengas:
+    # Header always set Strict-Transport-Security "max-age=31536000"
+</IfModule>

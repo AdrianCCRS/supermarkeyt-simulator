@@ -26,6 +26,8 @@ class Api
         ini_set('display_errors', '0');
         header('Content-Type: application/json; charset=utf-8');
         header('X-Content-Type-Options: nosniff');
+        header('Cache-Control: no-store');                 // los datos son de cada jugador: que ninguna caché los guarde
+        header('Referrer-Policy: no-referrer');
 
         try {
             if ($_SERVER['REQUEST_METHOD'] !== $method) {

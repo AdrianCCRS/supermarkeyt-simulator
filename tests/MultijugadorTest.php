@@ -134,3 +134,26 @@ T::test('API: reponer y activar/desactivar exigen el token de administración', 
     [$s] = http('POST', '/api/producto_reponer.php', '{"sku":"A-1","cantidad":5}', JUG, ADM);
     T::same(200, $s, 'con token');
 });
+
+T::test('consultar el catálogo con un identificador cualquiera no escribe nada en la base', function () {
+    $pdo = testPdo();
+    [$s, , $j] = http('GET', '/api/productos.php', null, '99999999-9999-4999-8999-999999999999');
+    T::same(200, $s);
+    T::same(10, $j['data'][0]['stock'], 've el stock base');
+    T::same(0, (int) $pdo->query('SELECT COUNT(*) FROM stock_jugador')->fetchColumn(), 'sin filas nuevas');
+    http('GET', '/api/jornada_actual.php', null, '99999999-9999-4999-8999-999999999999');
+    T::same(0, (int) $pdo->query('SELECT COUNT(*) FROM jornadas WHERE jugador = \'99999999-9999-4999-8999-999999999999\'')->fetchColumn());
+});
+
+T::test('las respuestas de la API no se guardan en caché y no filtran el motivo de un error interno', function () {
+    testPdo();
+    TestServer::start();
+    $ctx = stream_context_create(['http' => ['method' => 'GET', 'header' => "X-Jugador: " . JUG . "\r\n", 'ignore_errors' => true]]);
+    file_get_contents(TestServer::$base . '/api/productos.php', false, $ctx);
+    $h = implode("\n", $http_response_header);
+    T::same(true, stripos($h, 'Cache-Control: no-store') !== false, 'Cache-Control');
+    T::same(true, stripos($h, 'X-Content-Type-Options: nosniff') !== false, 'nosniff');
+    // los errores 500 no cuentan qué falló
+    [$s, , $j] = http('GET', '/api/ventas.php?id=1', null, JUG);
+    T::same(false, isset($j['trace']) || (isset($j['error']) && str_contains((string) $j['error'], 'SQLSTATE')));
+});

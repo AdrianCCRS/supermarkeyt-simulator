@@ -15,6 +15,12 @@ class Database
         if (self::$pdo === null) {
             Env::load(dirname(__DIR__, 2) . '/.env');
 
+            // Sin usuario configurado no se conecta: no hay un «root sin contraseña» por defecto
+            if ((string) Env::get('DB_USER', '') === '') {
+                error_log('Falta DB_USER: configura el .env o las variables de entorno');
+                throw new LogicException('Base de datos sin configurar');
+            }
+
             $dsn = sprintf(
                 'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
                 Env::get('DB_HOST', '127.0.0.1'),
@@ -24,7 +30,7 @@ class Database
 
             self::$pdo = new PDO(
                 $dsn,
-                Env::get('DB_USER', 'root'),
+                Env::get('DB_USER'),
                 Env::get('DB_PASS', ''),
                 [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

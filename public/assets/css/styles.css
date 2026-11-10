@@ -214,6 +214,8 @@ body {
     color: var(--contorno); background: var(--crema); border: 2px solid var(--contorno); cursor: pointer;
 }
 .perfil button:hover { background: var(--arena); }
+.creditos a { color: var(--crema); text-decoration: underline; }
+.creditos a:hover, .creditos a:focus-visible { color: var(--amarillo, #feae34); }
 .creditos {
     margin: 0;
     padding: 10px 12px 14px;

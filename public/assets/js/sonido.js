@@ -24,7 +24,7 @@ const Sonido = (function () {
                 maestro.gain.value = activo ? 0.6 : 0;
                 maestro.connect(ctx.destination);
                 efectos = ctx.createGain(); efectos.gain.value = 1; efectos.connect(maestro);
-                musicaGain = ctx.createGain(); musicaGain.gain.value = 0.5; musicaGain.connect(maestro);
+                musicaGain = ctx.createGain(); musicaGain.gain.value = enPausa ? 0 : 0.5; musicaGain.connect(maestro);
             } catch (e) { ctx = null; return null; }
         }
         if (ctx.state === 'suspended') { ctx.resume(); }
@@ -101,7 +101,7 @@ const Sonido = (function () {
     const ACORDES = [[60, 64, 67, 72], [57, 60, 64, 69], [53, 57, 60, 65], [55, 59, 62, 67]];
     const MELODIA = [0, 1, 2, 3, 2, 1, 2, 1, 0, 2, 3, 2, 1, 2, 1, 0];
     const PASO = 60 / 112 / 2;                       // una corchea a 112 negras por minuto
-    let sonando = false, temporizador = null, proxima = 0, paso = 0;
+    let enPausa = false, sonando = false, temporizador = null, proxima = 0, paso = 0;
 
     function planificar() {
         if (!ctx || ctx.state !== 'running') { proxima = ctx ? ctx.currentTime + 0.1 : 0; return; }
@@ -129,6 +129,12 @@ const Sonido = (function () {
         }
     }
 
+    /** Pausa del juego: la música se calla (el planificador sigue su curso, sin sonar) y vuelve igual de donde iba. */
+    function pausarMusica(pausa) {
+        enPausa = !!pausa;
+        if (musicaGain) { musicaGain.gain.value = enPausa ? 0 : 0.5; }
+    }
+
     function alternar() {
         activo = !activo;
         try { localStorage.setItem(CLAVE, activo ? '1' : '0'); } catch (e) { /* nada */ }
@@ -153,5 +159,5 @@ const Sonido = (function () {
         actualizarBoton();
     });
 
-    return { tocar, musica, alternar, activo: () => activo, contexto: () => ctx };
+    return { tocar, musica, pausarMusica, alternar, activo: () => activo, contexto: () => ctx };
 })();

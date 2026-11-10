@@ -10,13 +10,14 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 - **Cobro en efectivo:** `PAY`, lees los billetes del cliente en la bandeja y tecleas la suma; el backend valida el cobro y la caja da el cambio sola (billetes y monedas).
 - **Responsabilidad:** si un cliente se lleva algo sin cobrar, o das de más, es pérdida y se descuenta del sueldo base al cerrar. Cobrar de más hace que el cliente proteste (−50 puntos); una venta exacta suma 100.
 - **Clientes:** entran cuando abres la jornada, con un nombre aleatorio sobre la cabeza (ese nombre viaja al backend en cada venta), y se van cuando la cierras.
-- **Paciencia:** el cliente atendido tiene una barrita sobre la cabeza que se vacía mientras espera (más compra, más aguante). Si se agota se va enojado: no se cobra, resta 50 puntos y no cuenta como pérdida porque no se llevó nada.
+- **Paciencia:** todos los clientes tienen una barrita sobre la cabeza que se vacía mientras esperan (más compra, más aguante). Los de la fila la gastan más despacio (`pacienciaFilaFactor`, un cuarto del ritmo) y el atendido, a ritmo normal. Si se agota se va enojado: no se cobra, resta 50 puntos y no cuenta como pérdida porque no se llevó nada; los de atrás avanzan y entra otro.
 - **Varios jugadores:** sin registro ni contraseña. Cada navegador genera un identificador anónimo y tiene su propia jornada y su propio stock; lo que hace un jugador no afecta a los demás. Para ponerlo en línea, ver [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
 - **Progreso del jugador:** sin cuentas: se guarda en el navegador (localStorage), como los juegos flash de antes. Acumula jornadas, clientes, puntos, ventas y mejores marcas, con aviso de récord al cerrar y un botón para borrarlo. Si se borran los datos del navegador, empieza de cero.
 - **Sonido:** efectos y musiquita de 8 bits sintetizados con WebAudio (sin archivos de audio). Botón «SONIDO» o tecla `M` para silenciar; se recuerda entre visitas.
 - **Jornada:** reloj de 08:00 a 20:00 (10 minutos reales), botón ABRIR/CERRAR, y pantalla de cierre con el resumen.
 - **Catálogo:** 108 productos con nombres colombianos, precios en COP y un icono de 16×16 cada uno.
 - **Pantalla grande:** botón o tecla `F`.
+- **Pausa:** botón «PAUSA» o tecla `P`: detiene el reloj, la paciencia, las animaciones y la música.
 - **Ayuda:** 5 páginas (trabajo, escanear, cobrar, puntos y sueldo, teclas y progreso). Se abre sola la primera visita; después con el botón «AYUDA» o la tecla `H`. Pausa el juego mientras está abierta; `←` `→` cambian de página y `Esc` cierra. Es HTML estático en `index.html` (`ayuda.js`, `ayuda.css`).
 
 ## Estructura

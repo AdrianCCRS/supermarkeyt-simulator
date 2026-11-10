@@ -40,7 +40,7 @@ class ControlJornada {
         this.escena.pantallaReposo();
         // entran los clientes; cuando el primero llega a la caja, empieza su compra
         if (guardado && guardado.clientes && guardado.clientes.fila.length) { return this.escena.restaurarClientes(guardado.clientes); }
-        this.escena.llenarFila(() => this.escena.nuevaCompra(this.escena.compraDelSiguiente()));
+        this.escena.llenarFila(() => this.escena.nuevaCompra());
     }
 
     /** Una jornada ya abierta en el servidor (Juego.setJornada). No hace nada si ya se está jugando. */

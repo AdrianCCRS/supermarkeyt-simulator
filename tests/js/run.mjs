@@ -240,6 +240,8 @@ console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
 {
     ok(Paciencia.duracion(0) === 35000 && Paciencia.duracion(5) === 75000, 'la paciencia crece con la compra');
     ok(Paciencia.duracion(50) === Paciencia.duracion(12), 'la paciencia tiene tope');
+    ok(Paciencia.ritmoFila({ pacienciaFilaFactor: 0.5 }) === 0.5 && Paciencia.ritmoFila() === 0.25 && Paciencia.ritmoFila({ pacienciaFilaFactor: -1 }) === 0.25, 'la fila gasta la paciencia a otro ritmo (por defecto, un cuarto)');
+    ok(ctx.JORNADA_CONFIG.pacienciaFilaFactor > 0 && ctx.JORNADA_CONFIG.pacienciaFilaFactor < 1, 'la configuración trae el ritmo de la fila');
     ok(Paciencia.duracion(5, { pacienciaBaseMs: 1000, pacienciaPorUnidadMs: 100 }) === 1500, 'la paciencia usa la configuración');
     const p = Paciencia.crear(10000);
     ok(p.restante() === 1 && p.nivel() === 'alta' && !p.agotada(), 'empieza llena');

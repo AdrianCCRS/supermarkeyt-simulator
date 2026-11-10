@@ -86,7 +86,7 @@ class HudScene extends Phaser.Scene {
         this.poner(this.tReloj, j.reloj.texto());
         this.poner(this.tClientes, String(r.clientes));
         this.poner(this.tPuntos, String(r.puntos), r.puntos < 0 ? '#e43b44' : COLOR_LCD);
-        this.poner(this.tVentas, Money.pantalla(Money.fromCents(r.cobrado)));
+        this.poner(this.tVentas, this.dineroCorto(r.cobrado));
 
         this.lampara.setFrame(j.estado === 'ABIERTA' ? 1 : (j.estado === 'CIERRE' ? 2 : 0));
         const verde = !abierta;                                    // ABRIR (verde) cuando no hay jornada; CERRAR (rojo) cuando la hay
@@ -97,6 +97,16 @@ class HudScene extends Phaser.Scene {
         const mostrar = j.estado === 'RESUMEN' && !!j.resumen;
         if (mostrar !== this.panel.visible) { this.panel.setVisible(mostrar); }
         if (mostrar) { this.llenarPanel(j.resumen); this.poner(this.pie, this.textoPie(j.logro), j.logro && (j.logro.recordPuntos || j.logro.recordSueldo) ? TXT_BIEN : '#8b9bb4'); }
+    }
+
+    /** Importe (centavos) que cabe en la ranura de ventas (9 caracteres): sin céntimos si no cabe, y en millones si sigue sin caber. */
+    dineroCorto(centavos) {
+        const tope = 9;
+        let t = Money.pantalla(Money.fromCents(centavos));
+        if (t.length <= tope) { return t; }
+        t = Money.pantalla(Money.fromCents(Math.floor(centavos / 100) * 100));
+        if (t.length <= tope) { return t; }
+        return (centavos / 100000000).toFixed(1).replace('.', ',') + 'M$';
     }
 
     /** Línea de abajo del panel: marcas nuevas del jugador, o la invitación a abrir otra jornada. */

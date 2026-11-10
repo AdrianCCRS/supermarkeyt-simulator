@@ -1,5 +1,4 @@
 /* Pantallas de ayuda: panel por encima del juego, con la misma paleta y fuente pixel que el resto. */
-.btn-ayuda { bottom: 94px; }
 
 .ayuda {
     position: fixed; inset: 0; z-index: 30;
@@ -86,4 +85,22 @@
     .ayuda-puntos { display: none; }
 }
 
-body.grande .btn-ayuda { bottom: 94px; }
+body.grande 
+/* Botón y velo de pausa */
+.escenario { position: relative; }
+.pausa {
+    position: absolute; inset: 0; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+    color: var(--crema); background: rgba(24, 20, 37, .78);
+    font: 24px "Press Start 2P", system-ui, sans-serif; text-shadow: 3px 3px 0 var(--contorno);
+    cursor: pointer;
+}
+.pausa span { font-size: 9px; color: var(--gris); text-shadow: none; }
+
+/* Botones de la esquina (pausa, ayuda, sonido, pantalla grande): una fila abajo a la derecha, para no tapar el juego */
+.botones {
+    position: fixed; right: 10px; bottom: 10px; z-index: 15;
+    display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px;
+    max-width: calc(100vw - 20px);
+}
+.botones .btn-pantalla { position: static; bottom: auto; }

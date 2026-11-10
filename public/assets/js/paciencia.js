@@ -11,6 +11,12 @@ const Paciencia = (function () {
         return base + porUnidad * Math.min(Math.max(0, unidades), tope);
     }
 
+    /** A qué ritmo se gasta la paciencia de los que esperan en la fila, respecto a la del atendido (1 = igual). */
+    function ritmoFila(opciones) {
+        const r = opciones && opciones.pacienciaFilaFactor;
+        return typeof r === 'number' && r >= 0 ? r : 0.25;
+    }
+
     /** transcurrido: milisegundos ya gastados (para recuperar al cliente tras recargar la página). */
     function crear(duracionMs, transcurrido) {
         let t = Math.min(duracionMs, Math.max(0, Number(transcurrido) || 0));
@@ -25,5 +31,5 @@ const Paciencia = (function () {
         };
     }
 
-    return { duracion, crear };
+    return { duracion, ritmoFila, crear };
 })();

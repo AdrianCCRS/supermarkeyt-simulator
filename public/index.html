@@ -29,7 +29,7 @@
     <!-- CALLE: local · JUEGO (tienda · banda · caja, en Phaser) · local -->
     <div class="calle">
         <div class="local" aria-hidden="true"><img src="assets/img/entorno/fachada-fruteria.png" alt=""><span class="rotulo">FRUTERIA</span></div>
-        <main class="escenario"><div id="game"></div></main>
+        <main class="escenario"><div id="game"></div><div id="pausa" class="pausa" hidden>PAUSA<span>PULSA P PARA SEGUIR</span></div></main>
         <div class="local" aria-hidden="true"><img src="assets/img/entorno/fachada-panaderia.png" alt=""><span class="rotulo">PANADERIA</span></div>
     </div>
 
@@ -39,9 +39,12 @@
         <span class="paseante c3"></span><span class="paseante c4"></span>
     </div>
 
-    <button id="btn-ayuda" class="btn-pantalla btn-ayuda" type="button" title="Cómo se juega (tecla H)">AYUDA</button>
-    <button id="btn-sonido" class="btn-pantalla btn-sonido" type="button" title="Sonido (tecla M)">SONIDO: SI</button>
-    <button id="btn-pantalla" class="btn-pantalla" type="button" title="Pantalla grande (tecla F)">PANTALLA GRANDE</button>
+    <div class="botones">
+        <button id="btn-pausa" class="btn-pantalla btn-pausa" type="button" title="Pausa (tecla P)">PAUSA</button>
+        <button id="btn-ayuda" class="btn-pantalla btn-ayuda" type="button" title="Cómo se juega (tecla H)">AYUDA</button>
+        <button id="btn-sonido" class="btn-pantalla btn-sonido" type="button" title="Sonido (tecla M)">SONIDO: SI</button>
+        <button id="btn-pantalla" class="btn-pantalla" type="button" title="Pantalla grande (tecla F)">PANTALLA GRANDE</button>
+    </div>
 
     <!-- AYUDA: páginas que se cambian con ayuda.js (todo el texto es estático) -->
     <div id="ayuda" class="ayuda" role="dialog" aria-modal="true" aria-labelledby="ayuda-titulo" hidden>
@@ -98,7 +101,7 @@
                     <ul>
                         <li>Lo que un cliente se lleve sin que lo cobres es <b>pérdida</b>. También el cambio de más. Se resta de tu sueldo.</li>
                         <li>Cobrar de más hace que el cliente proteste, pero esa plata no sale de tu bolsillo.</li>
-                        <li>La barrita sobre el cliente es su <b>paciencia</b>. Mientras más compra, más aguanta. Si se acaba, se va sin comprar.</li>
+                        <li>La barrita sobre el cliente es su <b>paciencia</b>. Mientras más compra, más aguanta. Si se acaba, se va sin comprar. Los de la fila también se impacientan, pero más despacio.</li>
                         <li>Puedes cobrar con cosas aún en la banda, pero el cliente se las lleva sin pagar.</li>
                     </ul>
                 </section>
@@ -107,7 +110,7 @@
                     <h3>TECLAS Y PROGRESO</h3>
                     <ul>
                         <li><kbd>H</kbd> abre y cierra esta ayuda. El juego se pausa mientras la lees.</li>
-                        <li><kbd>F</kbd> pantalla grande · <kbd>M</kbd> sonido · <kbd>&lt;</kbd> <kbd>&gt;</kbd> libro de códigos.</li>
+                        <li><kbd>P</kbd> pausa · <kbd>F</kbd> pantalla grande · <kbd>M</kbd> sonido · <kbd>&lt;</kbd> <kbd>&gt;</kbd> libro de códigos.</li>
                         <li>No hay cuentas: tu progreso (puntos, récords) se guarda en este navegador. Si borras los datos del sitio, empiezas de cero.</li>
                         <li>Si recargas a mitad de jornada, sigues donde ibas. El cliente en caja empieza su compra otra vez.</li>
                         <li>Cada jugador tiene su propia tienda y su propio inventario: los demás no te afectan.</li>
@@ -151,6 +154,7 @@
     <script src="assets/js/phaser/config.js"></script>
     <script src="assets/js/pantalla.js"></script>
     <script src="assets/js/ayuda.js"></script>
+    <script src="assets/js/pausa.js"></script>
     <script src="assets/js/app.js"></script>
 </body>
 </html>

@@ -55,16 +55,21 @@ const Juego = (function () {
         if (game) { game.scene.getScene('CheckoutScene').jornada.sincronizar(jornadaActual); }
     }
 
-    // Pausa (la pide la pantalla de ayuda): la caja deja de actualizarse, así que el reloj, la paciencia y las animaciones se detienen.
-    let pausado = false;
+    // Pausa: la piden la pantalla de ayuda y el botón de pausa (cada uno con su motivo; el juego sigue en pausa mientras quede alguno).
+    // La caja deja de actualizarse, así que el reloj, la paciencia y las animaciones se detienen, y la música se calla.
+    const pausas = new Set();
     function aplicarPausa() {
+        if (typeof Sonido !== 'undefined') { Sonido.pausarMusica(pausas.size > 0); }
         if (!game) { return; }
         const escena = game.scene.getScene('CheckoutScene');
         if (!escena || !escena.listo) { return; }          // aún cargando: CheckoutScene vuelve a llamar a esto al terminar de crearse
-        if (pausado && escena.sys.isActive()) { game.scene.pause('CheckoutScene'); }
-        else if (!pausado && escena.sys.isPaused()) { game.scene.resume('CheckoutScene'); }
+        if (pausas.size > 0 && escena.sys.isActive()) { game.scene.pause('CheckoutScene'); }
+        else if (pausas.size === 0 && escena.sys.isPaused()) { game.scene.resume('CheckoutScene'); }
     }
-    function pausar(valor) { pausado = !!valor; aplicarPausa(); }
+    function pausar(valor, motivo) {
+        if (valor) { pausas.add(motivo || 'ayuda'); } else { pausas.delete(motivo || 'ayuda'); }
+        aplicarPausa();
+    }
 
     function producto(sku) {
         const p = catalogo.find((x) => x.sku === sku);

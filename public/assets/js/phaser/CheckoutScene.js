@@ -124,6 +124,7 @@ class CheckoutScene extends Phaser.Scene {
     actualizarPaciencia(delta) {
         const g = this.barraPaciencia;
         g.clear();
+        this.actualizarPacienciaFila(delta, g);
         const o = this.fila[this.fila.length - 1];
         if (!this.paciencia || !o || o.saliendo || !this.jornada.operativa) { return; }
         const esperando = !this.venta.pagada && !this.cobrando && !this.entregando;
@@ -142,7 +143,60 @@ class CheckoutScene extends Phaser.Scene {
             const color = nivel === 'alta' ? COLOR.verde : (nivel === 'media' ? COLOR.amarillo : COLOR.rojo);
             g.fillStyle(color).fillRect(x + 1, y + 1, Math.max(0, Math.round(22 * this.paciencia.restante())), 3);
         }
-        if (this.paciencia.agotada() && esperando && !this.hayProductoEnMovimiento()) { this.clienteAbandona(); }
+        if (this.paciencia.agotada() && esperando && !this.hayProductoEnMovimiento() && !this.abandonoFila) { this.clienteAbandona(); }
+    }
+
+    /**
+     * Paciencia de los que esperan en la fila: se gasta más despacio que la del atendido (JORNADA_CONFIG.pacienciaFilaFactor), no
+     * mientras caminan ni al cerrar la tienda (a esos se les despide). Se dibuja una barrita pequeña sobre su cabeza. Si se agota,
+     * el cliente se va de la fila enojado, pero solo cuando la fila está quieta (si no, los movimientos se pisarían).
+     */
+    actualizarPacienciaFila(delta, g) {
+        if (!this.jornada.admiteClientes) { return; }
+        const ritmo = Paciencia.ritmoFila(JORNADA_CONFIG);
+        const quieta = !this.cambiandoCliente && !this.abandonoFila && !this.entregando && !this.fila.some((x) => x.enMarcha);
+        for (let i = 0; i < this.fila.length - 1; i++) {                       // el último es el atendido: lo lleva actualizarPaciencia
+            const o = this.fila[i];
+            if (o.enMarcha || o.saliendo || !o.paciencia) { continue; }
+            const antes = o.paciencia.nivel();
+            o.paciencia.avanzar(delta * ritmo);
+            const nivel = o.paciencia.nivel();
+            if (nivel !== antes && nivel === 'baja') { o.cara = 1; this.pararAnim(o); }
+            if (o.paciencia.tiempo() > 0) {
+                const x = Math.max(11, Math.round(o.c.x)) - 9, y = Math.round(o.y) - 41;
+                g.fillStyle(COLOR.contorno).fillRect(x, y, 18, 4);
+                g.fillStyle(COLOR.gris5).fillRect(x + 1, y + 1, 16, 2);
+                const color = nivel === 'alta' ? COLOR.verde : (nivel === 'media' ? COLOR.amarillo : COLOR.rojo);
+                g.fillStyle(color).fillRect(x + 1, y + 1, Math.max(0, Math.round(16 * o.paciencia.restante())), 2);
+            }
+            if (o.paciencia.agotada() && quieta) { return this.clienteAbandonaFila(o); }     // uno por fotograma, y la fila se reordena
+        }
+    }
+
+    /** Se agotó la paciencia de uno de la fila: se va por la izquierda protestando (resta puntos, no hay pérdida), los de atrás avanzan y entra otro. */
+    clienteAbandonaFila(o) {
+        const i = this.fila.indexOf(o);
+        if (i < 0) { return; }
+        const c0 = TIENDA.cola;
+        this.abandonoFila = true;
+        this.fila.splice(i, 1);
+        this.jornadaJuego.abandono();
+        this.jornada.guardar();
+        Sonido.tocar('abandono');
+        this.avisar('SE FUE ' + o.nombre.nombre.toUpperCase(), 'ABANDONO ' + Auditoria.PUNTOS_ABANDONO + ' PTS', 2200);
+        o.saliendo = true;
+        o.cara = 2;
+        if (o.tag) { o.tag.destroy(); o.tag = null; }
+        this.tweens.killTweensOf(o.c);
+        this.quieto(o);
+        o.c.setFlipX(true);                                                  // camina hacia la izquierda con la animación de «derecha»
+        if (!this.animar(o, 'derecha')) { o.c.setTexture('cliente-' + o.n, 2); }
+        this.globoProtesta(o);
+        this.tweens.add({ targets: o.c, x: -30, duration: 1500, ease: 'Linear', onComplete: () => o.c.destroy() });
+        this.fila.slice(0, i).forEach((a) => this.mover(a, a.c.x, a.y + c0.paso, 700, 'frente'));      // los de atrás cierran el hueco
+        this.time.delayedCall(600, () => {
+            if (this.jornada.admiteClientes) { this.entraCliente(() => { this.abandonoFila = false; }); } else { this.abandonoFila = false; }
+        });
     }
 
     /** Se agotó la paciencia: el cliente deja su compra, no paga y se va enojado (resta puntos; no hay pérdida, no se llevó nada). */
@@ -192,18 +246,24 @@ class CheckoutScene extends Phaser.Scene {
      * Llega un cliente con su inventario de compra. En la banda hay UN producto por unidad (la fruta, uno solo:
      * su cantidad es el peso). Ese inventario es lo que la venta tiene que igualar exactamente al cobrar.
      */
-    nuevaCompra(compra, pacienciaGastada) {
-        this.cajeroAnimar('saludar');                                 // llega un cliente a la caja
-        this.compra = Object.assign({}, compra);
+    nuevaCompra() {
+        const o = this.fila[this.fila.length - 1];                     // el cliente que llega a la caja: trae su compra y la paciencia que ya gastó en la fila
+        this.cajeroAnimar('saludar');
+        this.compra = Object.assign({}, o.compra);
         this.registros = [];
         this.qtyPendiente = null;
+        this.paciencia = o.paciencia;
+        this.llegadaPedido(this.productosDe(this.compra));
+    }
+
+    /** La compra {sku: cantidad} como lista de productos de la banda: uno por unidad (la fruta, uno solo: su cantidad es el peso). */
+    productosDe(compra) {
         const skus = [];
         Object.keys(compra).forEach((sku) => {
             const unidades = this.esFruta(sku) ? 1 : compra[sku];
             for (let i = 0; i < unidades; i++) { skus.push(sku); }
         });
-        this.paciencia = Paciencia.crear(Paciencia.duracion(skus.length, JORNADA_CONFIG), pacienciaGastada);
-        this.llegadaPedido(skus);
+        return skus;
     }
 
     /** Llegan productos a la banda desde arriba, en el orden de la lista (hito 2: el pedido del cliente). */
@@ -280,7 +340,9 @@ class CheckoutScene extends Phaser.Scene {
     // Clientes: cola, entrada y salida
     // ------------------------------------------------------------------
     crearCliente(n, x, y) {
-        const o = { c: this.add.sprite(x, y, 'cliente-' + n, 0).setOrigin(0.5, 1), n, y, cara: 0, nombre: Nombres.generar(), tag: null };
+        const compra = this.compraDelSiguiente();                      // cada cliente trae su compra y su paciencia desde que entra
+        const o = { c: this.add.sprite(x, y, 'cliente-' + n, 0).setOrigin(0.5, 1), n, y, cara: 0, nombre: Nombres.generar(), tag: null,
+            compra, paciencia: Paciencia.crear(Paciencia.duracion(this.productosDe(compra).length, JORNADA_CONFIG), 0) };
         this.bob(o);
         return o;
     }
@@ -324,29 +386,38 @@ class CheckoutScene extends Phaser.Scene {
         }
     }
 
-    /** Los clientes de la fila (de arriba abajo; el último es el atendido) y la compra en curso, para guardarlos y recuperarlos al recargar. */
+    /** Los clientes de la fila (de arriba abajo; el último es el atendido), cada uno con su compra y su paciencia, para guardarlos y recuperarlos al recargar. */
     estadoClientes() {
+        const ultimo = this.fila.length - 1;
         return {
-            fila: this.fila.map((o) => ({ n: o.n, nombre: o.nombre })),
-            compra: this.paciencia ? this.compra : null,
-            paciencia: this.paciencia ? this.paciencia.tiempo() : 0
+            fila: this.fila.map((o, i) => ({
+                n: o.n, nombre: o.nombre,
+                compra: i === ultimo && !this.paciencia ? null : o.compra,        // el que acaba de pagar y se va no recupera su compra
+                paciencia: o.paciencia.tiempo()
+            }))
         };
     }
 
     /**
-     * Pone de nuevo a los clientes guardados en su sitio de la fila, sin que vuelvan a entrar caminando. El atendido
-     * recupera su compra (la banda se llena otra vez: lo que ya había escaneado no se guarda) y la paciencia que le quedaba.
+     * Pone de nuevo a los clientes guardados en su sitio de la fila, sin que vuelvan a entrar caminando. Cada uno recupera su compra
+     * y la paciencia que le quedaba; el atendido llena la banda otra vez (lo que ya había escaneado no se guarda).
      */
     restaurarClientes(g) {
         const c0 = TIENDA.cola;
         const desde = 4 - g.fila.length;                           // los que faltan entrarán por arriba
+        this.cambiandoCliente = false;
+        this.abandonoFila = false;
         this.fila = g.fila.map((d, i) => {
             const o = this.crearCliente(d.n, c0.x, c0.y + (desde + i) * c0.paso);
             o.nombre = d.nombre;
+            if (d.compra && Object.keys(d.compra).length) {
+                o.compra = d.compra;
+                o.paciencia = Paciencia.crear(Paciencia.duracion(this.productosDe(d.compra).length, JORNADA_CONFIG), d.paciencia);
+            }
             return o;
         });
         this.refrescarEtiqueta();
-        this.nuevaCompra(g.compra && Object.keys(g.compra).length ? g.compra : this.compraDelSiguiente(), g.compra ? g.paciencia : 0);
+        this.nuevaCompra();
         if (desde > 0 && this.jornada.admiteClientes) { this.llenarFila(null); }
     }
 
@@ -354,6 +425,8 @@ class CheckoutScene extends Phaser.Scene {
     despedirFila() {
         const fila = this.fila;
         this.fila = [];
+        this.cambiandoCliente = false;
+        this.abandonoFila = false;
         fila.forEach((o, i) => {
             this.tweens.killTweensOf(o.c);
             this.quieto(o);
@@ -405,6 +478,7 @@ class CheckoutScene extends Phaser.Scene {
 
     /** El atendido coge la bolsa y se va; la cola avanza un puesto y entra otro cliente por la izquierda. */
     clienteSale(cara) {
+        this.cambiandoCliente = true;                                  // la fila se está reorganizando (hasta siguienteSiListo)
         const servido = this.fila.pop();
         const c0 = TIENDA.cola;
         servido.saliendo = true;
@@ -429,17 +503,25 @@ class CheckoutScene extends Phaser.Scene {
                 this.tweens.add({ targets: servido.c, y: 270 + 48, duration: 1900, ease: 'Linear', onComplete: () => servido.c.destroy() });
             });
         });
-        this.time.delayedCall(900 + espera, () => {
+        const avanzarFila = () => {
+            if (this.abandonoFila) { return this.time.delayedCall(200, avanzarFila); }       // uno de la fila se está yendo: se espera a que termine
             this.fila.forEach((o) => this.mover(o, o.c.x, o.y + c0.paso, 700, 'frente'));
             if (this.jornada.admiteClientes) {
-                const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
-                Sonido.tocar('campana');
-                this.fila.unshift(nuevo);
-                this.mover(nuevo, c0.x, c0.y, 1000, 'derecha', () => { this.finClientes = true; this.siguienteSiListo(); });
+                this.entraCliente(() => { this.finClientes = true; this.siguienteSiListo(); });
             } else {                                                   // cerrando: no entra nadie más, la fila solo avanza
                 this.time.delayedCall(800, () => { this.finClientes = true; this.siguienteSiListo(); });
             }
-        });
+        };
+        this.time.delayedCall(900 + espera, avanzarFila);
+    }
+
+    /** Entra un cliente nuevo por la izquierda hasta el puesto de arriba de la fila. */
+    entraCliente(fin) {
+        const c0 = TIENDA.cola;
+        const nuevo = this.crearCliente(Phaser.Math.Between(1, 4), -20, c0.y);
+        Sonido.tocar('campana');
+        this.fila.unshift(nuevo);
+        this.mover(nuevo, c0.x, c0.y, 1000, 'derecha', fin);
     }
 
     /** Globito rojo con un grito sobre la cabeza del cliente que protesta (desaparece solo). */
@@ -457,8 +539,9 @@ class CheckoutScene extends Phaser.Scene {
         if (!this.finBolsa || !this.finClientes) { return; }
         this.finBolsa = false;
         this.finClientes = false;
+        this.cambiandoCliente = false;
         if (!this.jornada.admiteClientes) { return this.jornada.clienteTerminado(); }     // cerrando: no entra otro cliente
-        this.nuevaCompra(this.compraDelSiguiente());
+        this.nuevaCompra();
     }
 
     /** Versión pequeña de lo que se juega en las otras columnas: escáner, balanza, caja y productos de la banda. */

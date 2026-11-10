@@ -3,7 +3,7 @@
  *
  *  - generarBilletes(): con qué billetes paga el cliente (lo que el tendero tiene que LEER y sumar).
  *  - local(): cobrador de pruebas que imita a checkout.php (valida el efectivo y calcula el cambio).
- *    Se sustituye por la llamada real con Juego.setCobrador(); ver docs/MECANICA_PAGO.md.
+ *    Se sustituye por la llamada real con Juego.setCobrador().
  *
  * Contrato de un cobrador (local o real):
  *   cobrador({carrito: {sku: cantidad}, efectivo: centavos}) -> Promise

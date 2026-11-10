@@ -1,16 +1,34 @@
-# Guía de acciones de seguridad para publicar
+# Publicar el juego
 
-Pasos concretos, en orden, para subir el juego a internet. El porqué de cada punto está en [SEGURIDAD.md](SEGURIDAD.md);
-cómo subir los archivos y la base, en [DESPLIEGUE.md](DESPLIEGUE.md). Marca cada casilla al terminar.
+Pasos en orden para ponerlo en internet y jugarlo con amigos, y qué cuidar para no abrirle puertas a nadie.
+El juego es PHP + MySQL + archivos estáticos; no hay cuentas (cada navegador genera un identificador anónimo con su propia jornada y stock), así que varios jugadores pueden jugar a la vez.
 
-Nivel de la guía: **A** = obligatorio para publicar · **B** = obligatorio si lo compartes más allá de amigos · **C** = recomendable.
+**Veredicto de la revisión de seguridad (nov 2026):** apto para publicarlo y jugarlo con amigos **si se cumplen los pasos marcados A**. Para abrirlo a cualquiera en internet falta limitar peticiones (nivel B). Niveles: **A** = obligatorio · **B** = si lo compartes más allá de amigos · **C** = recomendable.
+Se revisó el código, el navegador (CSP probada en Chrome sin violaciones), la base y la configuración; no se probó en un hosting real, ni con carga alta, ni con ataques automatizados.
 
----
+## 1. Qué necesita el hosting
+- PHP 8.2 o superior con `pdo_mysql` y `mbstring`.
+- MySQL 8.0.16+ o MariaDB 10.2+ (columnas generadas y restricciones `CHECK`).
+- Poder poner la **raíz web en `public/`**: `src/`, `database/`, `tests/`, `.env` deben quedar fuera de lo que se publica.
+- HTTPS (casi todos los hostings lo dan gratis). Sin él, el identificador del jugador viaja en claro.
 
-## 1. Servidor y archivos (A)
+## 2. Pasos
+1. **Base de datos:** crea una base y un usuario con permisos solo sobre ella. Importa `database/init.sql` (quita las dos primeras líneas `CREATE DATABASE` / `USE` si el hosting ya te da la base) y luego `database/seed.sql` para el catálogo (**el seed hace `TRUNCATE`**: solo en una base vacía).
+   Si tu base ya existía de antes del multijugador: `mysql -u <admin> -p <base> < database/migracion_multijugador.sql` (se puede repetir sin problema; haz antes un `mysqldump`). Sin ella, `jornada_actual.php` y `productos.php` responden 500.
+2. **Configuración:** variables de entorno en el panel del hosting, o un `.env` fuera de la raíz web:
+
+   | Variable | Para qué |
+   |---|---|
+   | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | Conexión a la base (si falta `DB_USER` no conecta) |
+   | `ADMIN_TOKEN` | Token largo y aleatorio para `producto_reponer` y `producto_estado`. Sin él quedan deshabilitados (403) |
+
+3. **Archivos:** sube el proyecto sin `tests/`, `assets-src/`, `.git`, `.claude/` ni `.codex/`.
+4. **Comprueba:** `https://tu-dominio/api/productos.php` debe devolver JSON y luego abre el juego. Sigue con los apartados siguientes.
+
+## 3. Servidor y archivos (A)
 
 - [ ] **Raíz web = `public/`.** Fuera de ella quedan `src/`, `database/`, `tests/`, `tools/`, `assets-src/`, `docs/`, `.env`, `.git`, `.claude/`, `.codex/`.
-  Si el hosting solo ofrece `public_html`: sube el *contenido* de `public/` ahí y el resto en la carpeta de al lado (ver DESPLIEGUE.md).
+  Si el hosting solo ofrece `public_html`: sube el *contenido* de `public/` ahí y el resto en la carpeta de al lado (el código busca `src/` con `../../src`: `public_html/api/` debe quedar dos niveles por debajo de la carpeta que contiene `src/`; ajusta si tu estructura difiere).
 - [ ] **No subas** `.git`, `tests/`, `assets-src/`, `.claude/`, `.codex/` ni ningún `.env` de desarrollo.
 - [ ] **HTTPS activo** (Let's Encrypt o el que dé el hosting) y redirección de `http://` a `https://`.
 - [ ] **HSTS:** con HTTPS ya funcionando, quita el `#` de la línea `Strict-Transport-Security` de [public/.htaccess](../public/.htaccess).
@@ -39,7 +57,7 @@ location ~ \.php$ {
 
 > `add_header` dentro de un `location` anula los del `server`: si añades otros `location` con sus propias cabeceras, repítelas.
 
-## 2. Secretos y base de datos (A)
+## 4. Secretos y base de datos (A)
 
 - [ ] **`ADMIN_TOKEN`** aleatorio y largo, solo en las variables del servidor (o en un `.env` fuera de la raíz web):
   ```bash
@@ -60,9 +78,9 @@ location ~ \.php$ {
   ```bash
   mysql -u <admin> -p <base> < database/migracion_multijugador.sql
   ```
-  Haz antes un `mysqldump` (ver el apartado de copias).
+  Haz antes un `mysqldump` (ver «Operación»).
 
-## 3. Comprobación desde fuera (A)
+## 5. Comprobación desde fuera (A)
 
 Con la web ya publicada, sustituye `TU-DOMINIO` y ejecuta desde cualquier equipo:
 
@@ -90,7 +108,7 @@ curl -s -o /dev/null -w 'http -> https: %{http_code} %{redirect_url}\n' http://T
 Además, abre el juego en el navegador con las herramientas de desarrollo (pestaña Consola): no debe haber errores «Refused to…» de la CSP.
 Pega la URL en <https://securityheaders.com> para una nota rápida de cabeceras.
 
-## 4. Si lo compartes más allá de amigos (B)
+## 6. Si lo compartes más allá de amigos (B)
 
 Esta es la parte que el código no cubre: **no hay limitación de peticiones**. Cada identificador nuevo que abre una jornada crea ~110 filas.
 
@@ -115,7 +133,7 @@ Esta es la parte que el código no cubre: **no hay limitación de peticiones**. 
   Si quieres borrar también el stock de jugadores que no vuelven, hazlo solo para jugadores sin jornada abierta y con jornadas de más de 30 días; revísalo antes con un `SELECT`.
 - [ ] **Cuota de disco y alertas:** pon aviso del hosting si la base supera un tamaño razonable (p. ej. 500 MB).
 
-## 5. Operación (C)
+## 7. Operación (C)
 
 - [ ] **Copias de seguridad:** `mysqldump` diario o semanal a un sitio distinto del servidor.
   ```bash
@@ -133,3 +151,12 @@ Esta es la parte que el código no cubre: **no hay limitación de peticiones**. 
 - **A (publicar con amigos):** HTTPS, raíz en `public/`, `ADMIN_TOKEN`, usuario MySQL mínimo, `.htaccess`/cabeceras activos, comprobación desde fuera.
 - **B (abrirlo al público):** limitación de peticiones + limpieza periódica de jornadas.
 - **C (mantenerlo):** copias de seguridad, revisar logs, actualizar.
+
+## 8. Riesgos aceptados (no se arreglan en el código)
+- **Sin limitación de peticiones:** cualquiera puede inventar identificadores sin parar y cada jornada abierta crea ~110 filas de stock. Con amigos no pasa; en abierto llenaría la base (ver apartado 6).
+- **Los importes del cierre los manda el navegador** (pérdidas, sobrecobros, faltantes y sobrantes): con la consola se pueden falsear. Solo afecta a la partida de ese jugador; no hay ranking ni premios. Si algún día hay ranking, hay que recalcularlos en el servidor.
+- **El identificador es una llave, no una identidad:** vive en el `localStorage`. Quien lo robe (por HTTP sin cifrar o con acceso al navegador) actúa como ese jugador; con 122 bits aleatorios no se puede adivinar. Si el jugador borra los datos del sitio, empieza como uno nuevo y su jornada anterior queda abierta en la base.
+- **Sin cuentas ni recuperación** (decisión de diseño) y **sin registro de actividad** más allá del log de errores del servidor.
+
+## 9. Qué se comprobó
+SQL con sentencias preparadas (nada concatenado) · sin `innerHTML`, `eval` ni `document.write`, y CSP estricta · sin cookies ni sesiones, y cabecera propia que fuerza *preflight* (otros sitios no pueden llamar a la API) · jornada, cobro, cierre y ventas comprueban que sean del jugador (404 si no) · `.env` ignorado y nunca estuvo en el historial · errores internos genéricos, con `display_errors` apagado · cuerpo máx. 64 KB, tipos estrictos, importes con formato fijo, UUID validado · sin subida de archivos · jQuery y Phaser incluidos localmente (sin CDN). Corregido en la revisión: la conexión caía a `root` sin contraseña si faltaba `DB_USER`; consultar el catálogo con un identificador cualquiera escribía ~110 filas (ahora es solo lectura); faltaban las cabeceras de seguridad.

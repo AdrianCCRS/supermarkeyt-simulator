@@ -6,7 +6,6 @@
  * por arte real basta con dejar el PNG en su ruta (mismo nombre y tamaño).
  *
  * w/h = tamaño exacto del PNG. frames = nº de frames en tira horizontal.
- * Especificación completa para generarlos: docs/ASSETS_IA.md
  */
 const IMG = 'assets/img/';
 

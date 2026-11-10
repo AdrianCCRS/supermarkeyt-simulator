@@ -11,7 +11,7 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 - **Responsabilidad:** si un cliente se lleva algo sin cobrar, o das de más, es pérdida y se descuenta del sueldo base al cerrar. Cobrar de más hace que el cliente proteste (−50 puntos); una venta exacta suma 100.
 - **Clientes:** entran cuando abres la jornada, con un nombre aleatorio sobre la cabeza (ese nombre viaja al backend en cada venta), y se van cuando la cierras.
 - **Paciencia:** todos los clientes tienen una barrita sobre la cabeza que se vacía mientras esperan (más compra, más aguante). Los de la fila la gastan más despacio (`pacienciaFilaFactor`, un cuarto del ritmo) y el atendido, a ritmo normal. Si se agota se va enojado: no se cobra, resta 50 puntos y no cuenta como pérdida porque no se llevó nada; los de atrás avanzan y entra otro.
-- **Varios jugadores:** sin registro ni contraseña. Cada navegador genera un identificador anónimo y tiene su propia jornada y su propio stock; lo que hace un jugador no afecta a los demás. Para ponerlo en línea, ver [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md).
+- **Varios jugadores:** sin registro ni contraseña. Cada navegador genera un identificador anónimo y tiene su propia jornada y su propio stock; lo que hace un jugador no afecta a los demás. Para ponerlo en línea, ver [docs/PUBLICAR.md](docs/PUBLICAR.md).
 - **Progreso del jugador:** sin cuentas: se guarda en el navegador (localStorage), como los juegos flash de antes. Acumula jornadas, clientes, puntos, ventas y mejores marcas, con aviso de récord al cerrar y un botón para borrarlo. Si se borran los datos del navegador, empieza de cero.
 - **Sonido:** efectos y musiquita de 8 bits sintetizados con WebAudio (sin archivos de audio). Botón «SONIDO» o tecla `M` para silenciar; se recuerda entre visitas.
 - **Jornada:** reloj de 08:00 a 20:00 (10 minutos reales), botón ABRIR/CERRAR, y pantalla de cierre con el resumen.
@@ -51,7 +51,7 @@ supermarket-simulator/
 | `pantalla.js`, `ayuda.js` | Modo pantalla grande y pantallas de ayuda |
 
 El juego no hace peticiones: `app.js` le entrega datos y funciones (`Juego.setCatalogo`, `setJornada`, `setJornadaHooks`, `setCobrador`).
-Detalle de esos ganchos en [docs/CONEXION_BACKEND.md](docs/CONEXION_BACKEND.md).
+Cómo encaja todo, en [docs/GUIA.md](docs/GUIA.md).
 
 ## Instalación
 
@@ -101,14 +101,14 @@ curl -X POST localhost:8000/api/checkout.php -H 'Content-Type: application/json'
 ```
 
 Cierre de jornada: `faltantes` descuenta stock (mínimo 0), `sobrantes` lo repone (máximo 1.000.000) y `perdida` / `sobrecobro`
-(texto con hasta 2 decimales) quedan guardados en la jornada. Contrato completo con ejemplos: [docs/API_FRONTEND.md](docs/API_FRONTEND.md).
+(texto con hasta 2 decimales) quedan guardados en la jornada. Códigos, reglas del dinero y la cabecera `X-Jugador`: [docs/GUIA.md](docs/GUIA.md).
 
 Las tarifas de IVA (0, 5 y 19 %) son **ficticias**, solo para la simulación.
 
 ## Pruebas
 
 ```bash
-node tests/js/run.mjs     # 378 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
+node tests/js/run.mjs     # 380 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
 php tests/run.php         # 74 pruebas; requiere pdo_mysql y mbstring
 ```
 
@@ -140,18 +140,12 @@ ALTER TABLE jornadas
 
 ## Documentación
 
-| Documento | Contenido |
+| Documento | Para qué |
 |---|---|
-| [docs/CONEXION_BACKEND.md](docs/CONEXION_BACKEND.md) | Cómo conectar el juego con la API (ganchos de `Juego`) |
-| [docs/SEGURIDAD.md](docs/SEGURIDAD.md) | Revisión de seguridad y lista antes de publicar |
-| [docs/PUBLICAR_SEGURO.md](docs/PUBLICAR_SEGURO.md) | Guía paso a paso de acciones de seguridad para publicar (comandos y comprobaciones) |
-| [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) | Publicar el juego en un hosting para jugar con amigos |
-| [docs/API_FRONTEND.md](docs/API_FRONTEND.md) | Contrato de la API con ejemplos reales |
-| [docs/MECANICA_PAGO.md](docs/MECANICA_PAGO.md) | Flujo del cobro en efectivo y del cliente |
-| [docs/CIERRE_JORNADA.md](docs/CIERRE_JORNADA.md) | Pérdidas del tendero y cierre de jornada |
-| [docs/PLAN_JUEGO.md](docs/PLAN_JUEGO.md) | Plan y decisiones de diseño del juego |
-| [docs/ARTE.md](docs/ARTE.md), [docs/ASSETS_IA.md](docs/ASSETS_IA.md) | Reglas y medidas del arte |
-| [docs/GUIA_DE_ESTUDIO.md](docs/GUIA_DE_ESTUDIO.md) | Guía de estudio del proyecto |
+| [docs/GUIA.md](docs/GUIA.md) | Entender el proyecto: arquitectura, cómo fluye una venta, conceptos del backend, decisiones y autoevaluación |
+| [docs/PUBLICAR.md](docs/PUBLICAR.md) | Pasos para publicarlo (hosting, base, seguridad, comprobaciones) y riesgos aceptados |
+| [docs/ARTE.md](docs/ARTE.md) | Reglas del pixel art (las usa el agente `pixel-artist`) |
+| [CREDITS.md](CREDITS.md) | Créditos y licencias |
 
 ## Pendiente
 

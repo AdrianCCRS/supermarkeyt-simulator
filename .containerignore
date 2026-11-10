@@ -1,0 +1,14 @@
+.git
+.claude
+.codex
+.env
+.env.*
+tests
+tools
+assets-src
+docs
+deploy
+database
+*.md
+*.docx
+node_modules

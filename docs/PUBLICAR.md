@@ -25,6 +25,10 @@ Se revisó el código, el navegador (CSP probada en Chrome sin violaciones), la 
 3. **Archivos:** sube el proyecto sin `tests/`, `assets-src/`, `.git`, `.claude/` ni `.codex/`.
 4. **Comprueba:** `https://tu-dominio/api/productos.php` debe devolver JSON y luego abre el juego. Sigue con los apartados siguientes.
 
+## 2b. En un servidor compartido con Podman
+
+Para un servidor que usas para varias cosas: el juego y su base van en dos contenedores, con red y volumen propios, y el juego solo escucha en `127.0.0.1` (delante va tu proxy inverso con HTTPS). Los archivos están en `deploy/` y la guía paso a paso, con los conceptos explicados, en [SERVIDOR.md](SERVIDOR.md). Después sigue con las comprobaciones de las secciones 5 y 6.
+
 ## 3. Servidor y archivos (A)
 
 - [ ] **Raíz web = `public/`.** Fuera de ella quedan `src/`, `database/`, `tests/`, `tools/`, `assets-src/`, `docs/`, `.env`, `.git`, `.claude/`, `.codex/`.

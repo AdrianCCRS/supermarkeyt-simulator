@@ -144,6 +144,7 @@ ALTER TABLE jornadas
 |---|---|
 | [docs/GUIA.md](docs/GUIA.md) | Entender el proyecto: arquitectura, cómo fluye una venta, conceptos del backend, decisiones y autoevaluación |
 | [docs/PUBLICAR.md](docs/PUBLICAR.md) | Pasos para publicarlo (hosting, base, seguridad, comprobaciones) y riesgos aceptados |
+| [docs/SERVIDOR.md](docs/SERVIDOR.md) | Montarlo en tu propio servidor con Podman, paso a paso y con los conceptos explicados |
 | [docs/ARTE.md](docs/ARTE.md) | Reglas del pixel art (las usa el agente `pixel-artist`) |
 | [CREDITS.md](CREDITS.md) | Créditos y licencias |
 

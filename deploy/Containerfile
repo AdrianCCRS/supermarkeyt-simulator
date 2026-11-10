@@ -1,0 +1,19 @@
+# Imagen del juego: Apache + PHP con solo lo necesario. Se construye desde la raíz del proyecto:
+#   podman build -f deploy/Containerfile -t d2-web .
+FROM docker.io/library/php:8.3-apache
+
+RUN docker-php-ext-install pdo_mysql \
+ && a2enmod headers \
+ # Puerto 8080 dentro del contenedor (no hace falta ningún puerto privilegiado)
+ && sed -i 's/Listen 80$/Listen 8080/' /etc/apache2/ports.conf \
+ && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-available/000-default.conf
+
+COPY deploy/apache.conf /etc/apache2/conf-available/d2.conf
+COPY deploy/php.ini /usr/local/etc/php/conf.d/d2.ini
+RUN a2enconf d2
+
+# public/ es la raíz web; src/ queda UN nivel por encima y fuera de ella (el código lo busca con ../../src)
+COPY public/ /var/www/html/
+COPY src/ /var/www/src/
+
+EXPOSE 8080

@@ -31,14 +31,13 @@ CREATE TABLE jornadas (
     estado ENUM('abierta', 'cerrada') NOT NULL DEFAULT 'abierta',
     -- Dueño de la jornada: un identificador anónimo (UUID) que genera el navegador del jugador. No hay cuentas.
     jugador CHAR(36) NOT NULL,
-    -- El jugador mientras la jornada esté abierta, NULL si está cerrada. El índice único
-    -- (que ignora NULL) garantiza como máximo UNA jornada abierta POR JUGADOR,
-    -- incluso con peticiones simultáneas.
-    abierta_jugador CHAR(36)
-        GENERATED ALWAYS AS (IF(estado = 'abierta', jugador, NULL)) STORED,
+    -- 1 mientras la jornada esté abierta, NULL si está cerrada. Con el índice único (jugador, abierta) (que ignora NULL)
+    -- hay como máximo UNA jornada abierta POR JUGADOR, incluso con peticiones simultáneas.
+    -- Es un número y no una copia del identificador: MariaDB 10.11 rechaza funciones sobre columnas de texto en columnas STORED.
+    abierta TINYINT GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED,
     perdida_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (perdida_total >= 0),
     sobrecobro_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (sobrecobro_total >= 0),
-    UNIQUE KEY uq_jornada_abierta (abierta_jugador),
+    UNIQUE KEY uq_jornada_abierta (jugador, abierta),
     KEY idx_jornadas_jugador (jugador)
 );
 

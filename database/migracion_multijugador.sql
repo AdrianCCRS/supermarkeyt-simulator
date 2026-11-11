@@ -24,16 +24,24 @@ CALL migrar_paso(
     NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = @db AND table_name = 'jornadas' AND column_name = 'jugador'),
     "ALTER TABLE jornadas ADD COLUMN jugador CHAR(36) NOT NULL DEFAULT '00000000-0000-4000-8000-000000000000' AFTER estado");
 
--- 2) Antes: una sola jornada abierta en total (solo si tu base tenía esa columna). Ahora: una por jugador.
+-- 2) Una sola jornada abierta POR JUGADOR: columna `abierta` (1 si está abierta, NULL si no) + índice único (jugador, abierta).
+--    Se retiran las versiones anteriores (abierta_unica, y abierta_jugador, que MariaDB 10.11 no admite como columna STORED).
+CALL migrar_paso(
+    EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema = @db AND table_name = 'jornadas' AND index_name = 'uq_jornada_abierta'
+            AND NOT EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema = @db AND table_name = 'jornadas' AND index_name = 'uq_jornada_abierta' AND column_name = 'abierta')),
+    "ALTER TABLE jornadas DROP INDEX uq_jornada_abierta");
 CALL migrar_paso(
     EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = @db AND table_name = 'jornadas' AND column_name = 'abierta_unica'),
-    "ALTER TABLE jornadas DROP INDEX uq_jornada_abierta, DROP COLUMN abierta_unica");
+    "ALTER TABLE jornadas DROP COLUMN abierta_unica");
 CALL migrar_paso(
-    NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = @db AND table_name = 'jornadas' AND column_name = 'abierta_jugador'),
-    "ALTER TABLE jornadas ADD COLUMN abierta_jugador CHAR(36) GENERATED ALWAYS AS (IF(estado = 'abierta', jugador, NULL)) STORED");
+    EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = @db AND table_name = 'jornadas' AND column_name = 'abierta_jugador'),
+    "ALTER TABLE jornadas DROP COLUMN abierta_jugador");
+CALL migrar_paso(
+    NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = @db AND table_name = 'jornadas' AND column_name = 'abierta'),
+    "ALTER TABLE jornadas ADD COLUMN abierta TINYINT GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED");
 CALL migrar_paso(
     NOT EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema = @db AND table_name = 'jornadas' AND index_name = 'uq_jornada_abierta'),
-    "ALTER TABLE jornadas ADD UNIQUE KEY uq_jornada_abierta (abierta_jugador)");
+    "ALTER TABLE jornadas ADD UNIQUE KEY uq_jornada_abierta (jugador, abierta)");
 CALL migrar_paso(
     NOT EXISTS (SELECT 1 FROM information_schema.statistics WHERE table_schema = @db AND table_name = 'jornadas' AND index_name = 'idx_jornadas_jugador'),
     "ALTER TABLE jornadas ADD KEY idx_jornadas_jugador (jugador)");

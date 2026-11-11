@@ -261,8 +261,8 @@ stateDiagram-v2
     note right of Abierta
         Una sola abierta por jugador.
         Lo garantiza el indice unico
-        uq_jornada_abierta sobre abierta_jugador
-        columna generada: jugador si esta abierta, si no NULL
+        uq_jornada_abierta sobre jugador, abierta
+        abierta es una columna generada: 1 si esta abierta, si no NULL
     end note
 ```
 
@@ -369,7 +369,7 @@ erDiagram
         int id PK
         char36 jugador
         enum estado "abierta o cerrada"
-        char36 abierta_jugador UK "generada"
+        tinyint abierta "generada, 1 o NULL"
         decimal perdida_total
         decimal sobrecobro_total
     }
@@ -497,7 +497,7 @@ Orden de lectura: [Env](../src/Config/Env.php) y [Database](../src/Config/Databa
 *Explica:* qué es ACID; qué hace `FOR UPDATE`; qué es un deadlock y cómo lo evita el orden de bloqueo; por qué se hace `rollBack` en el `catch`.
 
 ### 4.4 Las reglas importantes viven en la base de datos
-Una sola jornada abierta **por jugador**: columna generada `abierta_jugador = IF(estado='abierta', jugador, NULL)` con índice `UNIQUE`. MySQL ignora los `NULL` en índices únicos, así que solo puede haber una fila abierta por jugador. El servicio captura el error 1062 (clave duplicada). Una prueba inserta por SQL directo y la base igualmente lo rechaza: PHP no ve las peticiones simultáneas, la base sí.
+Una sola jornada abierta **por jugador**: columna generada `abierta = IF(estado='abierta', 1, NULL)` con el índice `UNIQUE (jugador, abierta)`. MySQL y MariaDB ignoran los `NULL` en índices únicos, así que cada jugador solo puede tener una fila con `abierta = 1` y las cerradas no cuentan. (Una versión anterior guardaba el identificador del jugador en la columna calculada; MariaDB 10.11 no la admite como `STORED`, por eso es un número.) El servicio captura el error 1062 (clave duplicada). Una prueba inserta por SQL directo y la base igualmente lo rechaza: PHP no ve las peticiones simultáneas, la base sí.
 
 ### 4.5 API JSON y códigos HTTP
 Respuesta: `{"success": true, "data": ...}` o `{"success": false, "error": "..."}`.

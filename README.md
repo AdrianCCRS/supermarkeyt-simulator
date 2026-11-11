@@ -121,10 +121,10 @@ Para pasar a **varios jugadores** (jornada y stock por jugador) ejecuta `databas
 Las migraciones sueltas de abajo ya están incluidas en `init.sql`.
 
 ```sql
--- Una sola jornada abierta a la vez
+-- Una sola jornada abierta por jugador (la versión actual está en init.sql y en migracion_multijugador.sql)
 ALTER TABLE jornadas
-  ADD COLUMN abierta_unica TINYINT GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED,
-  ADD UNIQUE KEY uq_jornada_abierta (abierta_unica);
+  ADD COLUMN abierta TINYINT GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED,
+  ADD UNIQUE KEY uq_jornada_abierta (jugador, abierta);
 
 -- Pérdidas y sobrecobros guardados al cerrar la jornada
 ALTER TABLE jornadas

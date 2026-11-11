@@ -105,9 +105,10 @@ Guarda estos tres valores también en tu gestor de contraseñas.
 
 ## 4. Construir y levantar
 
-**4.1 Construir la imagen del juego** (desde la **raíz** del proyecto; el `.` final es importante):
+**4.1 Construir la imagen del juego.** Hazlo desde la **raíz** del proyecto (la carpeta que contiene `deploy/`, `public/` y `src/`), no desde `deploy/`: el `.` final es el «contexto» y el `COPY` busca `deploy/apache.conf`, `public/` y `src/` relativos a él.
 ```bash
-cd ~/tiendas-d2
+cd ~/tiendas-d2          # la carpeta donde clonaste
+ls                       # debes ver: deploy  public  src ...
 podman build -f deploy/Containerfile -t localhost/d2-web:latest .
 ```
 Comprueba: `podman images | grep d2-web`. La primera vez descarga PHP y compila la extensión; tarda unos minutos. Esto se hace de nuevo cada vez que cambias código del juego.
@@ -227,6 +228,7 @@ La base no se toca. Si la actualización cambia el esquema, habrá un `.sql` de 
 
 | Síntoma | Causa probable y qué hacer |
 |---|---|
+| `COPY ... no such file or directory` al construir | Estás construyendo desde `deploy/` (el contexto es `deploy/`). Vuelve a la raíz del proyecto y repite el `podman build` de 4.1 |
 | `pinging container registry localhost` | Falta construir la imagen (4.1). `localhost/d2-web` es local, no se descarga |
 | `podman ps` no muestra `d2-web` | `podman-compose logs web` o `podman logs d2-web`. Si habla de permisos o PID: en `compose.yaml` quita temporalmente `read_only: true`, vuelve a `up -d`; si así funciona, el problema es de qué carpetas necesita escribir Apache |
 | `productos.php` responde 500 | `podman-compose logs web` (error PHP) y `logs db`. Casi siempre: base sin importar, o `DB_PASS` distinta a la del volumen ya creado (ver el aviso del paso 3) |

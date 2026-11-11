@@ -154,6 +154,8 @@ y abre `http://localhost:8090` en tu PC. Juega una venta completa y cierra la jo
 
 ## 6. Publicarlo con nginx
 
+> Si tu servidor está detrás de la red de la universidad o usa Tailscale (no tiene IP pública ni el 443 libre), ve a la **sección 6B**.
+
 El proxy recibe el tráfico y lo reenvía al `127.0.0.1:8090`.
 
 ### 6.1 Ahora, sin dominio (HTTP por la IP)
@@ -193,6 +195,100 @@ Con HTTPS funcionando, **activa HSTS**: en [public/.htaccess](../public/.htacces
 ### 6.3 Límite de peticiones
 
 El juego no limita nada; el sitio natural es el proxy (ver [PUBLICAR.md](PUBLICAR.md) §6). Mínimo si es para amigos: nada. Si lo abres a todo el mundo: `limit_req` en nginx o Cloudflare delante.
+
+## 6B. Publicarlo con Cloudflare Tunnel (servidor tras la red de la universidad y Tailscale)
+
+**Cuándo usar esta sección en vez de la 6:** tu servidor no tiene IP pública (está detrás de la red de la universidad) y Tailscale ya ocupa el 443. Con el túnel, `cloudflared` abre una conexión **de salida** desde tu servidor hacia Cloudflare, y Cloudflare reenvía por ahí el tráfico de tu dominio. No se abre ningún puerto de entrada, no se toca el router y nginx no interviene para el juego.
+
+```mermaid
+flowchart LR
+    U(["Visitante"]) -->|"https://d2.adrianccrs.me"| CF["Cloudflare<br/>HTTPS, WAF, limite de peticiones"]
+    CF <-->|"tunel: conexion SALIENTE<br/>(la abre tu servidor)"| T["cloudflared<br/>en tu servidor"]
+    T -->|"http://127.0.0.1:9595"| W["d2-web"]
+    W --> D[("d2-db")]
+```
+
+**Antes de empezar:** el catálogo tiene que cargar (`/api/productos.php` con productos, no `"data":[]`). Si no, publicarías un juego vacío. Esto se corrige antes, con la importación de la base.
+
+### 1. Dominio en Cloudflare (en el navegador, gratis)
+
+1. Crea una cuenta en cloudflare.com y pulsa **Add a domain** → `adrianccrs.me` → plan **Free**.
+2. Cloudflare importa los registros DNS que encuentra. **Compruébalos antes de seguir**: el registro `A` de `adrianccrs.me` (y `www`) apunta a `100.66.180.87`, una IP privada de Tailscale. Déjalo como **«DNS only»** (nube gris), nunca en «Proxied»: una IP privada no es alcanzable desde Cloudflare. Así tu sitio actual sigue igual para quien esté en tu tailnet.
+3. Cloudflare te da **dos nameservers** (algo como `xxx.ns.cloudflare.com`). Ve al sitio donde compraste el dominio y cámbialos por esos dos. Tarda de minutos a unas horas; Cloudflare te avisa por correo cuando termina.
+
+> Mover los nameservers cambia dónde se administra **todo** el DNS del dominio. Si tienes correo u otros subdominios, comprueba que se importaron antes de cambiar.
+
+### 2. Crear el túnel (panel de Cloudflare)
+
+1. Entra a **Zero Trust** (menú izquierdo) → si es la primera vez, elige el plan **Free** (puede pedir una tarjeta solo para verificar; el plan gratuito no cobra).
+2. **Networks → Tunnels → Create a tunnel → Cloudflared**. Nómbralo `d2`.
+3. Elige **Debian / 64-bit**. La página te muestra un comando con un **token** largo. **No lo cierres todavía.** Es un secreto: quien lo tenga puede suplantar tu túnel. No lo pegues en chats ni lo subas a git.
+
+### 3. Instalar y conectar `cloudflared` (en el servidor)
+
+```bash
+sudo mkdir -p --mode=0755 /usr/share/keyrings
+curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared any main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+sudo apt-get update && sudo apt-get install cloudflared
+```
+Luego pega el comando que te dio el panel (con TU token):
+```bash
+sudo cloudflared service install <EL_TOKEN_DEL_PANEL>
+```
+Eso lo instala como servicio de systemd: arranca solo al reiniciar. Comprueba:
+```bash
+systemctl is-active cloudflared        # active
+sudo journalctl -u cloudflared -n 20 --no-pager     # debe decir "Registered tunnel connection"
+```
+En el panel, el túnel pasa a **HEALTHY**.
+
+### 4. Apuntar el subdominio al juego
+
+En el mismo túnel → **Public Hostname → Add**:
+
+| Campo | Valor |
+|---|---|
+| Subdomain / Domain | `d2` / `adrianccrs.me` |
+| Type | `HTTP` |
+| URL | `127.0.0.1:9595` (tu `WEB_PORT`) |
+
+Cloudflare crea solo el registro DNS (`d2` → el túnel, en «Proxied»). Comprueba, desde cualquier sitio:
+```bash
+curl -sI https://d2.adrianccrs.me/api/productos.php | head -5     # HTTP/2 200
+curl -s https://d2.adrianccrs.me/api/productos.php | head -c 200  # {"success":true,"data":[{...
+```
+Y abre `https://d2.adrianccrs.me` en el navegador.
+
+### 5. Endurecer (panel de Cloudflare → tu dominio)
+
+1. **SSL/TLS → Edge Certificates:** activa **Always Use HTTPS**. El certificado lo pone Cloudflare; no necesitas Let's Encrypt para el juego.
+2. **Security → WAF → Custom rules** (gratis: hasta 5). Crea una que **bloquee la administración desde fuera**; esos endpoints solo los usas tú por SSH:
+   - Expresión: `(http.host eq "d2.adrianccrs.me" and starts_with(http.request.uri.path, "/api/producto_"))` → acción **Block**.
+3. **Security → WAF → Rate limiting rules** (gratis: 1 regla). Frena el abuso del API:
+   - Expresión: `(http.host eq "d2.adrianccrs.me" and starts_with(http.request.uri.path, "/api/"))`
+   - Característica: **IP**, por ejemplo **100 peticiones cada 10 segundos** → **Block**. Un jugador normal hace muchísimas menos; ajusta tras observar.
+4. **HSTS** (solo cuando todo lo anterior funcione): en [public/.htaccess](../public/.htaccess) quita el `#` de la línea `Strict-Transport-Security`, `git pull` en el servidor y repite `podman build …` y `podman-compose up -d`.
+
+### 6. Dejar la casa ordenada
+
+- **Cortafuegos:** el juego ya no necesita puertos de entrada. Revisa `sudo ufw status` y elimina lo que no uses (por ejemplo `sudo ufw delete allow 8081/tcp`). El 22 déjalo.
+- **Contraseña SSH:** pasa a llaves y desactiva el acceso por contraseña (la que compartiste en el chat cámbiala ya).
+- **Prueba de reinicio:** `sudo reboot`; al volver, `systemctl is-active cloudflared` y `podman ps` deben estar en orden sin que hagas nada (necesita `loginctl enable-linger` de la sección 7).
+
+### Si algo falla
+
+| Síntoma | Causa y arreglo |
+|---|---|
+| El túnel no pasa a HEALTHY | `journalctl -u cloudflared`. Si dice que no puede conectar, la red de la universidad bloquea la salida hacia Cloudflare (puertos 7844 TCP/UDP o 443). Pide una excepción o usa otra opción |
+| `502 Bad Gateway` en el dominio | El túnel funciona pero no encuentra el juego: `podman ps` y `curl http://127.0.0.1:9595/api/productos.php` desde el servidor; el puerto de «Public Hostname» debe ser el de `WEB_PORT` |
+| `NXDOMAIN` / no resuelve | Los nameservers aún no se propagaron, o falta el registro de `d2` |
+| Funciona pero el catálogo está vacío | Falta la importación de la base (aparte de esta sección) |
+| El navegador no carga scripts o estilos | CSP: abre la consola (F12) y busca «Content Security Policy». No debería pasar: todo es del mismo dominio |
+
+### Deshacerlo
+
+`sudo cloudflared service uninstall` y borra el túnel en el panel. El juego sigue en `127.0.0.1:9595`; nada más cambió.
 
 ## 7. Que sobreviva a un reinicio
 

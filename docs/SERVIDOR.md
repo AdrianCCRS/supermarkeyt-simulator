@@ -314,7 +314,7 @@ cd ~/tiendas-d2 && git pull
 podman build -f deploy/Containerfile -t localhost/d2-web:latest .
 cd deploy && podman-compose up -d
 ```
-La base no se toca. Si la actualización cambia el esquema, habrá un `.sql` de migración que ejecutarás con `podman exec -i d2-db …` (se avisará en el commit).
+La base no se toca. Si la actualización cambia el esquema, habrá un `.sql` de migración (se avisará en el commit): ejecuta antes `./deploy/migrar.sh` (respaldo + migraciones), y `./deploy/desplegar.sh` se negará a continuar si falta alguna.
 
 **Actualizar MariaDB/PHP:** de vez en cuando `podman pull docker.io/library/mariadb:10.11` y `podman-compose up -d`; y reconstruir el juego (4.1) trae el PHP más reciente de su versión. Haz antes una copia.
 

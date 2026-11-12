@@ -13,6 +13,7 @@ cobras en efectivo, das el cambio y, al cerrar la jornada, respondes por las pé
 - **Paciencia:** todos los clientes tienen una barrita sobre la cabeza que se vacía mientras esperan (más compra, más aguante). Los de la fila la gastan más despacio (`pacienciaFilaFactor`, un cuarto del ritmo) y el atendido, a ritmo normal. Si se agota se va enojado: no se cobra, resta 50 puntos y no cuenta como pérdida porque no se llevó nada; los de atrás avanzan y entra otro.
 - **Varios jugadores:** sin registro ni contraseña. Cada navegador genera un identificador anónimo y tiene su propia jornada y su propio stock; lo que hace un jugador no afecta a los demás. Para ponerlo en línea, ver [docs/PUBLICAR.md](docs/PUBLICAR.md).
 - **Progreso del jugador:** sin cuentas: se guarda en el navegador (localStorage), como los juegos flash de antes. Acumula jornadas, clientes, puntos, ventas y mejores marcas, con aviso de récord al cerrar y un botón para borrarlo. Si se borran los datos del navegador, empieza de cero.
+- **Ranking:** top 5 de jugadores por puntos acumulados, colgado en la pared de la tienda y en la pantalla de cierre. Sigue sin haber cuentas: eliges un apodo (una sola vez, opcional) que queda ligado al identificador anónimo de tu navegador. Los puntos los calcula el navegador y el servidor solo comprueba que sean posibles (como mucho 100 por venta de la jornada; cada jornada suma como mínimo 0). Es un juego para compartir, no una competición a prueba de trampas. El ranking cuenta desde su lanzamiento.
 - **Sonido:** efectos y musiquita de 8 bits sintetizados con WebAudio (sin archivos de audio). Botón «SONIDO» o tecla `M` para silenciar; se recuerda entre visitas.
 - **Jornada:** reloj de 08:00 a 20:00 (10 minutos reales), botón ABRIR/CERRAR, y pantalla de cierre con el resumen.
 - **Catálogo:** 108 productos con nombres colombianos, precios en COP y un icono de 16×16 cada uno.
@@ -92,7 +93,9 @@ Códigos: 400 petición malformada, 404 no encontrado, 405 método, 409 conflict
 | POST | `/api/venta_cancelar.php` | Cancela una venta y devuelve el stock: `{venta_id}` |
 | GET | `/api/jornada_actual.php` | Jornada abierta con su resumen (404 si no hay) |
 | POST | `/api/jornada_abrir.php` | Abre una jornada (201; 409 si ya hay una abierta) |
-| POST | `/api/jornada_cerrar.php` | Cierra la jornada: `{jornada_id, faltantes?, sobrantes?, perdida?, sobrecobro?}` |
+| POST | `/api/jornada_cerrar.php` | Cierra la jornada: `{jornada_id, faltantes?, sobrantes?, perdida?, sobrecobro?, puntos?}`. Devuelve `puntos`, el valor guardado (el servidor lo recorta si es imposible) |
+| POST | `/api/apodo.php` | Fija el apodo del jugador: `{apodo}` (3 a 20 caracteres; 409 si ya existe, 429 si lo cambió hace menos de 24 h) |
+| GET | `/api/ranking.php` | Top 5 `{top: [{posicion, apodo, puntos}], yo}`; nunca devuelve identificadores |
 | POST | `/api/producto_reponer.php` | Suma stock: `{sku, cantidad}` |
 | POST | `/api/producto_estado.php` | Activa o desactiva un producto: `{sku, activo}` |
 
@@ -109,16 +112,19 @@ Las tarifas de IVA (0, 5 y 19 %) son **ficticias**, solo para la simulación.
 ## Pruebas
 
 ```bash
-node tests/js/run.mjs     # 380 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
-php tests/run.php         # 74 pruebas; requiere pdo_mysql y mbstring
+node tests/js/run.mjs     # 417 comprobaciones; compara 300 cestas aleatorias contra el PricingService real de PHP
+php tests/run.php         # 102 pruebas; requiere pdo_mysql y mbstring
 ```
 
 Las pruebas de integración de PHP usan una base aparte (`DB_NAME_TEST`, por defecto `supermarket_simulator_test`; debe terminar en `_test`)
 que se recrea en cada ejecución. Las pruebas omitidas cuentan como fallo salvo con `--allow-skip`.
 
+`tests/schema_paridad.sh <ref-git>` comprueba que el `init.sql` de esa versión, más las migraciones aplicadas dos veces, deja la misma estructura que el `init.sql` actual (lo ejecuta el CI).
+
 ### Migrar una base ya creada
 
 Para pasar a **varios jugadores** (jornada y stock por jugador) ejecuta `database/migracion_multijugador.sql`; se puede repetir sin problema.
+Para el **ranking** (puntos por jornada, apodos y límite de peticiones) ejecuta `database/migracion_ranking.sql`, también repetible. En el servidor con Podman usa `./deploy/migrar.sh`, que hace un respaldo y aplica todas las migraciones.
 Las migraciones sueltas de abajo ya están incluidas en `init.sql`.
 
 ```sql
@@ -143,8 +149,8 @@ ALTER TABLE jornadas
 
 ![CI](https://github.com/AdrianCCRS/supermarkeyt-simulator/actions/workflows/ci.yml/badge.svg)
 
-Cada push y pull request a `main` ejecuta `.github/workflows/ci.yml`: sintaxis PHP, pruebas de JS y de PHP (contra MariaDB 10.11) y construcción de la imagen.
-El despliegue en el servidor es manual con un solo comando: `./deploy/desplegar.sh` (`git pull`, reconstruye la imagen, reinicia solo el contenedor web y comprueba que responde; no toca la base ni `deploy/.env`). Detalle en [docs/CICD.md](docs/CICD.md).
+Cada push y pull request a `main` ejecuta `.github/workflows/ci.yml`: sintaxis PHP, pruebas de JS y de PHP (contra MariaDB 10.11), la comprobación de que «esquema anterior + migraciones = `init.sql`» y la construcción de la imagen.
+El despliegue en el servidor es manual: si el cambio trae migraciones, primero `./deploy/migrar.sh` (respaldo + migraciones) y luego `./deploy/desplegar.sh` (`git pull`, comprueba que la base tiene el esquema que el código necesita, reconstruye la imagen con una versión nueva de los scripts, reinicia solo el contenedor web y comprueba que responde; no toca la base ni `deploy/.env`). Detalle en [docs/CICD.md](docs/CICD.md).
 
 ## Documentación
 

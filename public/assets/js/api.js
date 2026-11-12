@@ -44,15 +44,20 @@ const Api = (function () {
         abrirJornada:   () => request('POST', 'jornada_abrir.php'),
         /**
          * faltantes / sobrantes: {sku: cantidad} que ajustan el stock. perdida / sobrecobro: importes en TEXTO ("7100.00").
-         * Todo menos el id es opcional.
+         * Todo menos el id es opcional. puntos: entero que calcula el juego (resumen.puntos).
          */
-        cerrarJornada:  (jornadaId, faltantes, sobrantes, perdida, sobrecobro) => request('POST', 'jornada_cerrar.php', {
+        cerrarJornada:  (jornadaId, faltantes, sobrantes, perdida, sobrecobro, puntos) => request('POST', 'jornada_cerrar.php', {
             jornada_id: jornadaId,
             faltantes: faltantes,
             sobrantes: sobrantes,
             perdida: perdida,
-            sobrecobro: sobrecobro
+            sobrecobro: sobrecobro,
+            puntos: Number.isFinite(puntos) ? Math.max(0, Math.round(puntos)) : 0     // los calcula el juego; el servidor los recorta si no son posibles
         }),
+        /** Top 5 y, si hay apodo, tu posición: {top: [{posicion, apodo, puntos}], yo: null | {apodo, puntos, posicion}} */
+        ranking:        () => request('GET', 'ranking.php'),
+        /** Errores: 422 apodo inválido · 409 ya lo usa otro · 429 cambiado hace menos de 24 h (mensaje en español en err.mensaje) */
+        fijarApodo:     (apodo) => request('POST', 'apodo.php', { apodo: apodo }),
         venta:          (id) => request('GET', 'ventas.php?id=' + encodeURIComponent(id)),
         ventasDeJornada: (jornadaId) => request('GET', 'ventas.php?jornada_id=' + encodeURIComponent(jornadaId)),
         cancelarVenta:  (ventaId) => request('POST', 'venta_cancelar.php', { venta_id: ventaId }),

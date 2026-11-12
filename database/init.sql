@@ -37,8 +37,33 @@ CREATE TABLE jornadas (
     abierta TINYINT GENERATED ALWAYS AS (IF(estado = 'abierta', 1, NULL)) STORED,
     perdida_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (perdida_total >= 0),
     sobrecobro_total DECIMAL(12, 2) NOT NULL DEFAULT 0 CHECK (sobrecobro_total >= 0),
+    -- Puntos de la jornada para el ranking. Los calcula el navegador y el servidor los recorta a lo posible al cerrarla.
+    puntos INT NOT NULL DEFAULT 0 CHECK (puntos >= 0),
     UNIQUE KEY uq_jornada_abierta (jugador, abierta),
     KEY idx_jornadas_jugador (jugador)
+);
+
+-- Jugadores del ranking: una fila por identificador anónimo, que se crea al cerrar su primera jornada (o al elegir apodo).
+-- El total ya viene sumado: el ranking no recalcula nada al consultarse.
+-- La colación (sin distinción de mayúsculas ni tildes) hace que «Ana», «ana» y «Aná» choquen en el índice único.
+-- `actualizado` solo cambia cuando cambian los puntos (desempate: gana quien llegó antes a esa cifra); no lleva ON UPDATE.
+CREATE TABLE jugadores (
+    id CHAR(36) NOT NULL PRIMARY KEY,
+    apodo VARCHAR(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
+    apodo_cambiado TIMESTAMP NULL,
+    puntos_total INT NOT NULL DEFAULT 0 CHECK (puntos_total >= 0),
+    creado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    actualizado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uq_jugadores_apodo (apodo),
+    KEY idx_jugadores_ranking (puntos_total, actualizado)
+) DEFAULT CHARSET = utf8mb4;
+
+-- Contador de peticiones por IP (ventana fija de un minuto) para limitar apodo.php y ranking.php sin depender de nada externo.
+-- Una fila por cliente y tipo; no se borra nada (el usuario web no tiene DELETE): se reutiliza al cambiar de ventana.
+CREATE TABLE limite_peticiones (
+    clave CHAR(40) CHARACTER SET ascii NOT NULL PRIMARY KEY,
+    ventana INT UNSIGNED NOT NULL,
+    n INT UNSIGNED NOT NULL
 );
 
 -- Stock propio de cada jugador (una fila por jugador y producto, que se crea la primera vez que hace falta).

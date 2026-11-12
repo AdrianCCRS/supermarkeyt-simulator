@@ -8,11 +8,11 @@ import path from 'node:path';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const ctx = vm.createContext({ Intl, console, setTimeout });
-for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'paciencia.js', 'perfil.js', 'jugador.js', 'nombres.js', 'phaser/assets.js']) {
+for (const f of ['money.js', 'pricing.js', 'venta.js', 'auditoria.js', 'cobro.js', 'compra.js', 'reloj.js', 'paciencia.js', 'perfil.js', 'jugador.js', 'nombres.js', 'ranking.js', 'phaser/assets.js']) {
     const codigo = fs.readFileSync(path.join(raiz, 'public/assets/js', f), 'utf8').replace(/^const (\w+) =/gm, 'globalThis.$1 =');
     vm.runInContext(codigo, ctx);
 }
-const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Paciencia, Perfil, Jugador, Nombres, PRODUCTOS_DEMO } = ctx;
+const { Money, Pricing, Venta, Auditoria, Cobro, Compra, Reloj, Paciencia, Perfil, Jugador, Nombres, Ranking, PRODUCTOS_DEMO } = ctx;
 const skus = Object.keys(PRODUCTOS_DEMO);
 
 let fallos = 0, pruebas = 0;
@@ -285,6 +285,127 @@ console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
     ok(Perfil.crear(almacen).datos().jornadas === 0 && Perfil.crear(almacen).datos().puntos === 5, 'campos inválidos se ignoran');
     ok(Perfil.crear({ getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } }).registrarJornada(resumen()).primera, 'sin almacenamiento sigue funcionando');
     p.reiniciar(); ok(p.datos().jornadas === 0, 'reiniciar borra el progreso');
+}
+
+// 6) Ranking y apodo (sin red: la API es un mock)
+{
+    const V = Ranking.validarApodo;
+    ok(V('Ana').ok && V('  Ana María_2-b  ').apodo === 'Ana María_2-b', 'apodo válido (recortado, con tilde, _ y -)');
+    ok(!V('Al').ok && !V('').ok && !V(null).ok && !V(undefined).ok && !V('   ').ok, 'apodo demasiado corto o vacío');
+    ok(V('a'.repeat(20)).ok && !V('a'.repeat(21)).ok, 'límite de 20 caracteres');
+    ok(!V('<b>hola</b>').ok && !V('ana!').ok && !V('a@b.co').ok && !V('ana\nbob').ok, 'caracteres no permitidos');
+    ok(typeof V('xx').mensaje === 'string' && V('xx').mensaje.length > 0, 'el rechazo trae mensaje en español');
+
+    const vacio = { getItem() { return null; }, setItem() {} };
+    const fila = (posicion, apodo, puntos) => ({ posicion, apodo, puntos });
+
+    // vista: vacía, cargando, error
+    let vv = Ranking.vista({ fase: 'ok', top: [], yo: null });
+    ok(vv.filas.length === 0 && /nadie/i.test(vv.aviso) && vv.pie === null, 'tabla vacía: aviso, sin filas');
+    vv = Ranking.vista({ fase: 'error', top: [], yo: null });
+    ok(vv.filas.length === 0 && /no disponible/i.test(vv.aviso), 'error: aviso discreto');
+    vv = Ranking.vista({ fase: 'cargando', top: [], yo: null });
+    ok(/cargando/i.test(vv.aviso), 'cargando: aviso');
+    ok(Ranking.vista(undefined).aviso === null && Ranking.vista({ fase: 'inicial' }).filas.length === 0, 'estado inicial: nada');
+    vv = Ranking.vista({ fase: 'ok', top: [fila(1, 'Ana', 1200), fila(2, 'Bob', 900)], yo: { apodo: 'Bob', puntos: 900, posicion: 2 } });
+    ok(vv.filas.length === 2 && !vv.filas[0].yo && vv.filas[1].yo && vv.pie === null, 'la fila propia se resalta y no hay pie si está en el top');
+    vv = Ranking.vista({ fase: 'ok', top: [fila(1, 'Ana', 1200)], yo: { apodo: 'Zoe', puntos: 40, posicion: 9 } });
+    ok(!vv.filas.some((f) => f.yo) && /puesto 9/.test(vv.pie) && /40/.test(vv.pie), 'fuera del top: se muestra la posición propia');
+    vv = Ranking.vista({ fase: 'ok', top: [fila(1, 'Ana', 1200)], yo: { apodo: null, puntos: 40, posicion: null } });
+    ok(/apodo/i.test(vv.pie), 'sin apodo: invitación a elegirlo');
+    vv = Ranking.vista({ fase: 'ok', top: [1, 2, 3, 4, 5, 6, 7].map((n) => fila(n, 'J' + n, 100 - n)), yo: null });
+    ok(vv.filas.length === 5, 'nunca más de 5 filas');
+
+    // pintarPared: DOM mínimo para comprobar la estructura y que los apodos van como texto, nunca como HTML
+    const crearDoc = () => ({ createElement(tag) {
+        const e = { tag, className: '', children: [], textContent: '', firstChild: null,
+            appendChild(c) { this.children.push(c); this.firstChild = this.children[0]; return c; },
+            removeChild(c) { this.children.splice(this.children.indexOf(c), 1); this.firstChild = this.children[0] || null; } };
+        Object.defineProperty(e, 'innerHTML', { set() { throw new Error('innerHTML prohibido'); }, get() { return ''; } });
+        return e;
+    } });
+    const doc = crearDoc(), caja = doc.createElement('div');
+    const hostil = '<img src=x onerror=alert(1)>';
+    const clases = (n) => n.className.split(' ');
+    Ranking.pintarPared(doc, caja, Ranking.vista({ fase: 'ok', top: [fila(1, hostil, 10), fila(2, 'Bob', 5)], yo: null }));
+    let raiz = caja.children[0];
+    const f0 = raiz.children.find((n) => clases(n).includes('f0')), f1 = raiz.children.find((n) => clases(n).includes('f1'));
+    ok(f0.children.length === 2 && f0.children[0].className === 'rk-apodo' && f0.children[0].textContent === hostil, 'el apodo se pinta como texto (sin innerHTML)');
+    ok(!f0.children.some((c) => c.className === 'rk-pos') && f1.children[0].textContent === '2', 'el 1.º no lleva número (va la corona); el resto sí');
+    ok(raiz.children.some((n) => n.className === 'rk-corona'), 'hay corona con un 1.º');
+    Ranking.pintarPared(doc, caja, Ranking.vista({ fase: 'ok', top: [fila(1, 'Ana', 9), fila(2, 'Bob', 5)], yo: { apodo: 'Bob', puntos: 5, posicion: 2 } }));
+    ok(caja.children[0].children.some((n) => clases(n).includes('rk-tu') && clases(n).includes('f1')), 'tu fila usa la imagen dorada, en su sitio');
+    Ranking.pintarPared(doc, caja, Ranking.vista({ fase: 'ok', top: [1, 2, 3, 4, 5].map((n) => fila(n, 'J' + n, 100 - n)), yo: { apodo: 'Zoe', puntos: 7, posicion: 12 } }));
+    const tuF = caja.children[0].children.find((n) => clases(n).includes('rk-tu'));
+    ok(clases(tuF).includes('f4') && tuF.children[0].textContent === '12' && tuF.children[1].textContent === 'Zoe', 'fuera del top: tu puesto real ocupa la 5.ª fila');
+    Ranking.pintarPared(doc, caja, Ranking.vista({ fase: 'ok', top: [], yo: null }));
+    raiz = caja.children[0];
+    ok(caja.children.length === 1 && clases(raiz).includes('rk-vacio') && /nadie/i.test(raiz.children[1].textContent) && !raiz.children.some((n) => n.className === 'rk-corona'), 'tabla vacía: panel vacío con su mensaje, sin corona');
+    Ranking.pintarPared(doc, caja, Ranking.vista({ fase: 'error', top: [], yo: null }));
+    ok(clases(caja.children[0]).includes('rk-vacio') && /no disponible/i.test(caja.children[0].children[1].textContent), 'error: panel vacío con el aviso');
+    Ranking.pintarPared(doc, caja, Ranking.vista({ fase: 'cargando', top: [], yo: null }));
+    ok(/cargando/i.test(caja.children[0].children[1].textContent), 'cargando: panel vacío con el aviso');
+
+    ok(Ranking.paraPantalla('Ñandú <b>', 20) === 'NANDU ?B?' && Ranking.paraPantalla('abcdefghij', 5) === 'ABCD.', 'texto para el lienzo: sin tildes, mayúsculas, recortado');
+
+    // Estado con API simulada
+    const asinc = async () => {
+        let r = Ranking.crear({ ranking: () => Promise.reject({ status: 0, mensaje: 'sin red' }), fijarApodo: () => Promise.reject({}) }, vacio);
+        const vistas = [];
+        r.alCambiar((e) => vistas.push(e.fase));
+        await r.cargar();
+        ok(r.estado().fase === 'error' && vistas.join() === 'cargando,error', 'sin red: pasa por cargando y acaba en error, sin lanzar');
+        r = Ranking.crear({ ranking: () => { throw new Error('boom'); } }, vacio);
+        await r.cargar();
+        ok(r.estado().fase === 'error', 'si la API lanza, también es un error controlado');
+        r = Ranking.crear({ ranking: () => Promise.resolve({ top: [], yo: null }) }, vacio);
+        await r.cargar();
+        ok(r.estado().fase === 'ok' && r.vistaActual().aviso !== null, 'respuesta con top vacío');
+        r = Ranking.crear({ ranking: () => Promise.resolve({ basura: 1 }) }, vacio);
+        await r.cargar();
+        ok(r.estado().fase === 'error', 'respuesta sin forma de ranking: error');
+
+        // respuestas desordenadas: gana la última petición
+        const resolvers = [];
+        r = Ranking.crear({ ranking: () => new Promise((res) => resolvers.push(res)) }, vacio);
+        const a = r.cargar(), b = r.cargar();
+        resolvers[1]({ top: [fila(1, 'Nueva', 5)], yo: null });
+        resolvers[0]({ top: [fila(1, 'Vieja', 1)], yo: null });
+        await Promise.all([a, b]);
+        ok(r.estado().top[0].apodo === 'Nueva', 'una respuesta vieja no pisa a la nueva');
+
+        // apodo: validación local antes de llamar, errores del servidor, guardado y «solo se pregunta una vez»
+        const mem = {};
+        const almacen = { getItem: (k) => (k in mem ? mem[k] : null), setItem: (k, v) => { mem[k] = v; } };
+        let llamadas = 0, modo = 'ok';
+        const api = {
+            ranking: () => Promise.resolve({ top: [], yo: null }),
+            fijarApodo: (a) => { llamadas++; return modo === 'ok' ? Promise.resolve({ apodo: a }) : Promise.reject({ status: modo, mensaje: 'Ese apodo ya está en uso' }); }
+        };
+        r = Ranking.crear(api, almacen);
+        ok(r.debePreguntar() && r.apodo() === null, 'jugador nuevo: hay que preguntar el apodo');
+        let e1 = await r.fijarApodo('x').then(() => null, (e) => e);
+        ok(e1 && e1.mensaje && llamadas === 0, 'apodo inválido: se rechaza sin llamar al servidor');
+        modo = 409;
+        e1 = await r.fijarApodo('Ana').then(() => null, (e) => e);
+        ok(e1 && e1.status === 409 && /uso/.test(e1.mensaje) && r.apodo() === null && r.debePreguntar(), 'el 409 del servidor llega con su mensaje y no guarda nada');
+        modo = 'ok';
+        ok(await r.fijarApodo('  Ana  ') === 'Ana' && r.apodo() === 'Ana' && !r.debePreguntar(), 'apodo guardado (recortado) y ya no se vuelve a preguntar');
+        r = Ranking.crear(api, almacen);
+        ok(r.apodo() === 'Ana' && !r.debePreguntar(), 'el apodo sobrevive a recargar la página');
+        mem['d2-apodo'] = '{basura';
+        r = Ranking.crear(api, almacen);
+        ok(r.apodo() === null && r.debePreguntar(), 'datos dañados: como jugador nuevo');
+        r.marcarPreguntado();
+        ok(!r.debePreguntar() && r.apodo() === null, 'omitir: no se vuelve a preguntar, pero se puede elegir luego');
+        r = Ranking.crear(api, { getItem() { throw new Error('x'); }, setItem() { throw new Error('x'); } });
+        ok(await r.fijarApodo('Luis') === 'Luis', 'sin almacenamiento sigue funcionando');
+    };
+    await asinc();
+
+    // código de recuperación
+    ok(Jugador.valido('123e4567-e89b-42d3-a456-426614174000') && Jugador.valido(' 123E4567-E89B-42D3-A456-426614174000 ') && !Jugador.valido('hola') && !Jugador.valido(''), 'código de recuperación: solo un UUID');
+    ok(!Jugador.fijar('nope') && Jugador.fijar('123e4567-e89b-42d3-a456-426614174000') && Jugador.id() === '123e4567-e89b-42d3-a456-426614174000', 'fijar adopta el código');
 }
 
 console.log(fallos ? '\n' + fallos + ' FALLOS de ' + pruebas : '\nTodo correcto (' + pruebas + ' comprobaciones)');

@@ -11,6 +11,7 @@ class JornadaRepository {
                 j.estado,
                 j.perdida_total,
                 j.sobrecobro_total,
+                j.puntos,
                 j.jugador
             FROM jornadas AS j
             WHERE j.id = ?");
@@ -24,7 +25,7 @@ class JornadaRepository {
     public function findAbierta(string $jugador): ?array
     {
         $query = $this->pdo->prepare(
-            "SELECT id, fecha_inicio, fecha_fin, estado, perdida_total, sobrecobro_total, jugador
+            "SELECT id, fecha_inicio, fecha_fin, estado, perdida_total, sobrecobro_total, puntos, jugador
             FROM jornadas
             WHERE estado = 'abierta' AND jugador = ?
             LIMIT 1"
@@ -73,6 +74,13 @@ class JornadaRepository {
             WHERE id = ? AND estado = 'abierta'"
         );
         $query->execute([$perdida, $sobrecobro, $id]);
+    }
+
+    /** Guarda los puntos de la jornada (ya validados por el servicio) y los suma al total del jugador, en la misma transacción. */
+    public function guardarPuntos(int $id, string $jugador, int $puntos): void
+    {
+        $this->pdo->prepare("UPDATE jornadas SET puntos = ? WHERE id = ?")->execute([$puntos, $id]);
+        (new JugadorRepository($this->pdo))->sumarPuntos($jugador, $puntos);
     }
 
     /**
@@ -145,6 +153,7 @@ class JornadaRepository {
                 estado,
                 perdida_total,
                 sobrecobro_total,
+                puntos,
                 jugador
             FROM jornadas
             WHERE id = ?

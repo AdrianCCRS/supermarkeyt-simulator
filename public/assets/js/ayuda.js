@@ -65,6 +65,7 @@
     // En fase de captura y deteniendo el evento: con la ayuda abierta las teclas no llegan al juego (← → mueven el libro de códigos).
     document.addEventListener('keydown', function (e) {
         if (e.ctrlKey || e.metaKey || e.altKey) { return; }
+        if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) { return; }       // escribiendo (el apodo): no es un atajo
         if (!abierta()) {
             if (e.key === 'h' || e.key === 'H' || e.key === '?') { e.preventDefault(); abrir(0); }
             return;

@@ -4,7 +4,8 @@
 foreach (['Services/PricingService', 'Services/CheckoutService', 'Services/JornadaService',
           'Services/VentaService', 'Services/ProductoService', 'Repositories/CategoriaRepository',
           'Repositories/StockJugadorRepository', 'Repositories/ProductoRepository', 'Repositories/VentaRepository',
-          'Repositories/JornadaRepository', 'Config/Env'] as $f) {
+          'Repositories/JornadaRepository', 'Repositories/JugadorRepository', 'Services/RankingService',
+          'Http/Api', 'Http/LimitePeticiones', 'Config/Env'] as $f) {
     require_once __DIR__ . "/../src/$f.php";
 }
 

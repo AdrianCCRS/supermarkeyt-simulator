@@ -18,7 +18,9 @@ Escaneo pasivo y sin cambios del sitio publicado (https://adrianccrs.me) y del s
 | 5 | Crear jugadores es gratis y deja datos: cada UUID nuevo que abre jornada crea 108 filas en `stock_jugador` (deducido del código, no probado) | Se podría inflar la base. El límite de peticiones lo frena en parte. Mitigar con el SQL de limpieza de `docs/PUBLICAR.md` por `cron` y, si hace falta, un tope por IP en la aplicación |
 | 6 | HSTS apagado | Descomentar la línea en `public/.htaccess` cuando HTTPS esté estable |
 | 7 | Sin `fail2ban` | Pierde sentido al pasar SSH a llaves. Opcional |
-| 8 | Los montos del cierre (pérdida, sobrecobro, faltantes) los manda el cliente | Un jugador puede hacer trampa en lo suyo; no afecta a otros. Riesgo conocido y aceptado |
+| 8 | Los montos del cierre (pérdida, sobrecobro, faltantes) y los puntos los manda el cliente | Un jugador puede hacer trampa en lo suyo. Con el ranking, además, puede inflar su puesto: el servidor recorta los puntos de cada jornada a 100 por venta completada (tope absoluto de 10 000) y nunca menos de 0, lo que frena un `curl` con `puntos: 999999` pero no a quien juegue de verdad o automatice ventas. Riesgo conocido y aceptado (es un juego para compartir). Calcularlos en el servidor está descrito en la sección «Futuro» de `docs/TAREAS_RANKING.md` |
+| 9 | El ranking publica apodos elegidos por los jugadores | Se muestran siempre como texto (nunca HTML), pasan por un filtro corto de palabras bloqueadas y no se expone ningún identificador. Para borrar uno ofensivo, ver la última sección de este documento |
+| 10 | `apodo.php` y `ranking.php` escriben en la base en cada petición (contador por IP, 10 y 120 por minuto) | Frena el abuso sin dependencias externas. Detrás de Cloudflare la IP sale de `CF-Connecting-IP`, y solo se confía en ella si la conexión directa es local o privada. Sigue valiendo añadir un límite en Cloudflare para los demás endpoints |
 
 ## Bajos
 
@@ -48,3 +50,13 @@ Denegación de servicio real, fuerza bruta, vulnerabilidades por versión de PHP
 ## Para decir al mostrarlo
 
 «El servidor no expone puertos, todo entra por un túnel cifrado, la API valida cada entrada, el aislamiento es por jugador y la administración solo es accesible por SSH.» Y para lo pendiente: el #1 y el #2 se arreglan en minutos.
+
+## Moderación del ranking: borrar un apodo ofensivo
+
+Los apodos pasan por un filtro corto de palabras bloqueadas (`RankingService`), pero no es infalible. Para quitar uno desde la base (con el usuario administrador; el usuario web no puede borrar, pero sí actualizar). El jugador conserva sus puntos y deja de salir en el ranking hasta que elija otro apodo. Busca primero con `SELECT id, apodo, puntos_total FROM jugadores WHERE apodo LIKE '%texto%';` y luego:
+
+```sql
+UPDATE jugadores SET apodo = NULL, apodo_cambiado = NULL WHERE apodo = 'ApodoOfensivo';
+```
+
+Con `apodo_cambiado = NULL` puede elegir otro enseguida, sin esperar las 24 horas. Para dejarlo sin ranking del todo, pon además `puntos_total = 0`. Para ampliar la lista de palabras bloqueadas, edita las constantes `BLOQUEADAS_*` de `src/Services/RankingService.php`.

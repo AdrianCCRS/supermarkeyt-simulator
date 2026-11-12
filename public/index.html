@@ -39,6 +39,9 @@
         <span class="paseante c3"></span><span class="paseante c4"></span>
     </div>
 
+    <!-- RANKING: panel de pixel art en la pared (arriba a la izquierda si cabe; si no, una franja bajo la acera). Lo rellena ranking.js -->
+    <section id="ranking-pared" class="pared-ranking" aria-label="Ranking: los 5 mejores cajeros" aria-live="polite"></section>
+
     <div class="botones">
         <button id="btn-pausa" class="btn-pantalla btn-pausa" type="button" title="Pausa (tecla P)">PAUSA</button>
         <button id="btn-ayuda" class="btn-pantalla btn-ayuda" type="button" title="Cómo se juega (tecla H)">AYUDA</button>
@@ -126,7 +129,33 @@
         </div>
     </div>
 
-    <div id="perfil" class="perfil"><span class="perfil-datos"></span> <button type="button" hidden>BORRAR PROGRESO</button></div>
+    <!-- APODO: se pide una sola vez, al cerrar la primera jornada (se puede omitir y elegir luego desde el perfil) -->
+    <div id="apodo" class="ayuda" role="dialog" aria-modal="true" aria-labelledby="apodo-titulo" hidden>
+        <div class="ayuda-panel apodo-panel">
+            <div class="ayuda-cabecera"><h2 id="apodo-titulo">ELIGE TU APODO</h2></div>
+            <div class="ayuda-cuerpo apodo-cuerpo">
+                <p>Con un apodo sales en el <b>RANKING</b> de los mejores cajeros. Otros jugadores lo verán.</p>
+                <label for="apodo-texto">3 a 20 letras, números, espacios, _ o -</label>
+                <input id="apodo-texto" type="text" maxlength="20" autocomplete="off" spellcheck="false">
+                <p id="apodo-error" class="apodo-error" role="alert"></p>
+            </div>
+            <div class="ayuda-pie">
+                <button type="button" id="apodo-omitir">AHORA NO</button>
+                <button type="button" id="apodo-guardar" class="ayuda-principal">GUARDAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="perfil" class="perfil">
+        <div><span class="perfil-datos"></span> <button type="button" hidden>BORRAR PROGRESO</button></div>
+        <div class="perfil-ranking">
+            <button type="button" id="ranking-actualizar" title="Volver a pedir el ranking">ACTUALIZAR RANKING</button>
+            <span id="perfil-apodo"></span> <button type="button" id="btn-apodo">ELEGIR APODO</button>
+            <button type="button" id="btn-codigo" title="Copia tu código para seguir con tu apodo y tus puntos en otro navegador">COPIAR CODIGO</button>
+            <button type="button" id="btn-pegar-codigo">PEGAR CODIGO</button>
+        </div>
+        <div class="perfil-nota">Tu progreso de aquí incluye todas tus jornadas; el ranking solo cuenta los puntos desde su lanzamiento.</div>
+    </div>
 
     <footer class="creditos">
         Creado por <a href="https://github.com/AdrianCCRS" target="_blank" rel="noopener noreferrer">AdrianCCRS</a> · Iconos de comida: Alex, <em>Free pixel food 16x16</em> (CC BY 4.0) · Fuente: Press Start 2P (OFL) · Ver CREDITS.md
@@ -134,27 +163,38 @@
 
     <script src="assets/js/vendor/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="assets/js/vendor/phaser-3.90.0.min.js"></script>
-    <script src="assets/js/money.js"></script>
-    <script src="assets/js/pricing.js"></script>
-    <script src="assets/js/venta.js"></script>
-    <script src="assets/js/auditoria.js"></script>
-    <script src="assets/js/cobro.js"></script>
-    <script src="assets/js/compra.js"></script>
-    <script src="assets/js/reloj.js"></script>
-    <script src="assets/js/paciencia.js"></script>
-    <script src="assets/js/perfil.js"></script>
-    <script src="assets/js/sonido.js"></script>
-    <script src="assets/js/nombres.js"></script>
-    <script src="assets/js/jugador.js"></script>
-    <script src="assets/js/api.js"></script>
-    <script src="assets/js/phaser/assets.js"></script>
-    <script src="assets/js/phaser/CheckoutScene.js"></script>
-    <script src="assets/js/phaser/ControlJornada.js"></script>
-    <script src="assets/js/phaser/HudScene.js"></script>
-    <script src="assets/js/phaser/config.js"></script>
-    <script src="assets/js/pantalla.js"></script>
-    <script src="assets/js/ayuda.js"></script>
-    <script src="assets/js/pausa.js"></script>
-    <script src="assets/js/app.js"></script>
+    <!-- Los scripts propios se cargan con ?v=VERSION para que el navegador no use una copia vieja tras desplegar.
+         Cambia VERSION en cada despliegue (es el único sitio) o haz que el script de despliegue la sustituya. -->
+    <script>
+    (function () {
+        var VERSION = '1';
+        var scripts = [
+        'money.js',
+        'pricing.js',
+        'venta.js',
+        'auditoria.js',
+        'cobro.js',
+        'compra.js',
+        'reloj.js',
+        'paciencia.js',
+        'perfil.js',
+        'sonido.js',
+        'nombres.js',
+        'jugador.js',
+        'api.js',
+        'ranking.js',
+        'phaser/assets.js',
+        'phaser/CheckoutScene.js',
+        'phaser/ControlJornada.js',
+        'phaser/HudScene.js',
+        'phaser/config.js',
+        'pantalla.js',
+        'ayuda.js',
+        'pausa.js',
+        'app.js'
+        ];
+        scripts.forEach(function (s) { document.write('<script src="assets/js/' + s + '?v=' + VERSION + '"><\/script>'); });
+    })();
+    </script>
 </body>
 </html>

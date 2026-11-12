@@ -15,6 +15,7 @@ Se revisó el código, el navegador (CSP probada en Chrome sin violaciones), la 
 ## 2. Pasos
 1. **Base de datos:** crea una base y un usuario con permisos solo sobre ella. Importa `database/init.sql` (quita las dos primeras líneas `CREATE DATABASE` / `USE` si el hosting ya te da la base) y luego `database/seed.sql` para el catálogo (**el seed hace `TRUNCATE`**: solo en una base vacía).
    Si tu base ya existía de antes del multijugador: `mysql -u <admin> -p <base> < database/migracion_multijugador.sql` (se puede repetir sin problema; haz antes un `mysqldump`). Sin ella, `jornada_actual.php` y `productos.php` responden 500.
+   Para el **ranking** (apodos, puntos por jornada y límite de peticiones): `mysql -u <admin> -p <base> < database/migracion_ranking.sql` (también repetible). Hazla **antes** de subir el código nuevo: sin ella, `jornada_cerrar.php` falla al cerrar. En el servidor con Podman, `./deploy/migrar.sh` hace respaldo y aplica todas las migraciones.
 2. **Configuración:** variables de entorno en el panel del hosting, o un `.env` fuera de la raíz web:
 
    | Variable | Para qué |
@@ -74,13 +75,14 @@ location ~ \.php$ {
   GRANT SELECT, INSERT, UPDATE ON supermarket_simulator.* TO 'juego'@'localhost';
   FLUSH PRIVILEGES;
   ```
-  El juego no necesita `DELETE`, `DROP`, `ALTER`, `CREATE` ni `FILE`. (Importa `init.sql`, `seed.sql` y la migración con un usuario administrador aparte, no con este.)
+  El juego no necesita `DELETE`, `DROP`, `ALTER`, `CREATE` ni `FILE` (las tablas del ranking también se leen y escriben solo con `SELECT`, `INSERT` y `UPDATE`). (Importa `init.sql`, `seed.sql` y la migración con un usuario administrador aparte, no con este.)
   Comprueba que realmente funciona con ese usuario: abre una jornada y cobra una venta.
 - [ ] **MySQL no expuesto a internet:** `bind-address = 127.0.0.1` (o el firewall del hosting cierra el 3306).
 - [ ] **Contraseñas distintas** a las de tu entorno local, y el `.env` con permisos `600`.
-- [ ] **Migración aplicada** si tu base viene de antes del multijugador:
+- [ ] **Migraciones aplicadas** si tu base viene de antes del multijugador o del ranking:
   ```bash
   mysql -u <admin> -p <base> < database/migracion_multijugador.sql
+  mysql -u <admin> -p <base> < database/migracion_ranking.sql
   ```
   Haz antes un `mysqldump` (ver «Operación»).
 

@@ -9,6 +9,7 @@ require_once __DIR__ . '/../../src/bootstrap.php';
 // -> jornada cerrada con su resumen. Todo menos jornada_id es opcional:
 //   faltantes / sobrantes: {sku: cantidad entera >= 1} (ajustan el stock)
 //   perdida / sobrecobro: importes en texto con hasta 2 decimales (se guardan en la jornada)
+//   puntos: entero (ausente o inválido = 0). El servidor lo recorta a [0, 100 x ventas completadas] y responde con el valor guardado.
 
 /** Valida un mapa {sku: cantidad}; null equivale a vacío. */
 function mapaDeCantidades(mixed $valor, string $campo): array
@@ -51,10 +52,13 @@ Api::handle('POST', function (): array {
     $perdida = importeTexto($body['perdida'] ?? null, 'perdida');
     $sobrecobro = importeTexto($body['sobrecobro'] ?? null, 'sobrecobro');
 
+    // Nunca se rechaza el cierre por los puntos: lo que no sea un entero cuenta como 0
+    $puntos = is_int($body['puntos'] ?? null) ? $body['puntos'] : 0;
+
     $pdo = Database::connection();
     $repo = new JornadaRepository($pdo);
 
     Api::jornadaDe($repo, $id, Api::jugador());      // 404 si no existe o es de otro jugador
 
-    return (new JornadaService($pdo, $repo))->cerrar($id, $faltantes, $sobrantes, $perdida, $sobrecobro);
+    return (new JornadaService($pdo, $repo))->cerrar($id, $faltantes, $sobrantes, $perdida, $sobrecobro, $puntos);
 });

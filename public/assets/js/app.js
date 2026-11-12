@@ -55,9 +55,12 @@ $(function () {
             // perdida / sobrecobro llegan en centavos: la API los quiere como texto con dos decimales
             return Api.cerrarJornada(
                 state.jornada.id, resumen.faltantes, resumen.sobrantes,
-                Money.fromCents(resumen.perdida), Money.fromCents(resumen.sobrecobro)
+                Money.fromCents(resumen.perdida), Money.fromCents(resumen.sobrecobro), resumen.puntos
             ).done(function () {
                 state.jornada = null;
+                // El ranking y el apodo van aparte: no se espera por ellos y un fallo no afecta al cierre (ver ranking.js)
+                Ranking.cargar();
+                if (Ranking.debePreguntar()) { setTimeout(function () { Ranking.abrirDialogo(); }, 900); }
             });
         }
     });

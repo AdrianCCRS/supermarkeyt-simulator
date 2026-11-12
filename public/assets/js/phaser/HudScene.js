@@ -47,6 +47,7 @@ class HudScene extends Phaser.Scene {
         });
 
         this.crearPanel();
+        this.crearRanking();
     }
 
     /** Panel con el resumen de la jornada cerrada (se muestra en el estado RESUMEN). */
@@ -65,6 +66,43 @@ class HudScene extends Phaser.Scene {
         }
         this.pie = this.add.text(px + 112, py + 24 + 9 * 12 + 6, 'PULSA ABRIR PARA OTRA', { ...FUENTE, color: '#8b9bb4' }).setOrigin(0.5, 0);
         this.panel.add(this.pie);
+    }
+
+    /**
+     * Top 5 junto al panel de cierre (a su izquierda, 120 px). Cada puesto ocupa dos líneas: apodo y puntos.
+     * Solo lee Ranking (ranking.js); si no hay datos muestra el aviso y el resto del juego no se entera.
+     */
+    crearRanking() {
+        const x = 4, y = HUD.panel[1], w = 120, h = 168;
+        this.rank = this.add.container(0, 0).setDepth(20).setVisible(false);
+        const fondo = this.add.graphics();
+        fondo.fillStyle(0x181425, 0.92).fillRect(x, y, w, h);
+        fondo.lineStyle(2, 0x733e39, 1).strokeRect(x + 1, y + 1, w - 2, h - 2);
+        this.rank.add(fondo);
+        this.rank.add(this.add.text(x + w / 2, y + 6, 'TOP 5', { ...FUENTE, color: '#feae34' }).setOrigin(0.5, 0));
+        this.rankFilas = [];
+        for (let i = 0; i < 5; i++) {
+            const fy = y + 22 + i * 20;
+            const nombre = this.add.text(x + 8, fy, '', { ...FUENTE, color: TXT_PANEL }).setOrigin(0, 0);
+            const pts = this.add.text(x + w - 8, fy + 9, '', { ...FUENTE, color: '#8b9bb4' }).setOrigin(1, 0);
+            this.rank.add([nombre, pts]);
+            this.rankFilas.push({ nombre, pts });
+        }
+        this.rankAviso = this.add.text(x + 8, y + 26, '', { ...FUENTE, color: '#8b9bb4', wordWrap: { width: w - 16 } }).setOrigin(0, 0);
+        this.rankPie = this.add.text(x + 8, y + h - 34, '', { ...FUENTE, color: '#feae34', wordWrap: { width: w - 16 } }).setOrigin(0, 0);
+        this.rank.add([this.rankAviso, this.rankPie]);
+    }
+
+    pintarRanking() {
+        const v = Ranking.vistaActual();
+        const P = (t, max) => Ranking.paraPantalla(t, max);
+        this.rankFilas.forEach((f, i) => {
+            const fila = v.filas[i];
+            this.poner(f.nombre, fila ? P(fila.posicion + ' ' + fila.apodo, 14) : '', fila && fila.yo ? '#feae34' : TXT_PANEL);
+            this.poner(f.pts, fila ? P(String(fila.puntos)) : '', fila && fila.yo ? '#feae34' : '#8b9bb4');
+        });
+        this.poner(this.rankAviso, v.aviso ? P(v.aviso) : '');
+        this.poner(this.rankPie, v.pie ? P(v.pie) : '');
     }
 
     /** Evita redibujar un texto que no cambió (Phaser lo vuelve a rasterizar en cada setText). */
@@ -95,7 +133,8 @@ class HudScene extends Phaser.Scene {
         this.tBoton.y = HUD.boton[1] + (this.pulsado ? 6 : 5);
 
         const mostrar = j.estado === 'RESUMEN' && !!j.resumen;
-        if (mostrar !== this.panel.visible) { this.panel.setVisible(mostrar); }
+        if (mostrar !== this.panel.visible) { this.panel.setVisible(mostrar); this.rank.setVisible(mostrar); }
+        if (mostrar && typeof Ranking !== 'undefined') { this.pintarRanking(); }
         if (mostrar) { this.llenarPanel(j.resumen); this.poner(this.pie, this.textoPie(j.logro), j.logro && (j.logro.recordPuntos || j.logro.recordSueldo) ? TXT_BIEN : '#8b9bb4'); }
     }
 

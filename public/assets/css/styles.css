@@ -214,6 +214,64 @@ body {
     color: var(--contorno); background: var(--crema); border: 2px solid var(--contorno); cursor: pointer;
 }
 .perfil button:hover { background: var(--arena); }
+/* Ranking (top 5): panel de pixel art 160 x 120 sobre la pared, a escala entera --ur. Coordenadas = las de ranking-layout.json. */
+.pared-ranking { --ur: 2; --u1: calc(1px * var(--ur)); }
+@media (max-width: 359px) { .pared-ranking { --ur: 1; } }
+.pared-ranking.flotante { position: absolute; z-index: 3; left: 16px; top: calc(var(--alto-cielo) + var(--alto-toldo) + 40px); }
+.pared-ranking:not(.flotante) {
+    padding: 12px 0; display: flex; flex-direction: column; align-items: center;
+    background: var(--madera-osc) url("../img/entorno/ladrillo.png"); background-size: calc(16px * var(--ul));
+}
+body.grande .pared-ranking { display: none; }
+.rk {
+    position: relative; width: calc(160 * var(--u1)); height: calc(120 * var(--u1));
+    background: url("../img/ranking/panel-ranking.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated;
+    font: 8px/1 "Press Start 2P", system-ui, sans-serif; color: #ead4aa;
+}
+.rk.rk-vacio { background-image: url("../img/ranking/ranking-vacio.png"); }
+.rk > * { position: absolute; }
+.rk-titulo { left: calc(26 * var(--u1)); top: calc(8 * var(--u1)); width: calc(108 * var(--u1)); height: calc(14 * var(--u1)); }
+.rk-titulo, .rk-pos, .rk-apodo, .rk-pts, .rk-tu > * { display: flex; align-items: center; overflow: hidden; white-space: nowrap; }
+.rk-titulo { justify-content: center; }
+.rk-mensaje {
+    left: calc(12 * var(--u1)); top: calc(62 * var(--u1)); width: calc(136 * var(--u1)); height: calc(46 * var(--u1));
+    overflow: hidden; line-height: 1.5; text-align: center; white-space: normal; display: flex; align-items: center; justify-content: center;
+}
+.rk-fila, .rk-tu { left: 0; width: calc(160 * var(--u1)); }
+.rk-fila > *, .rk-tu > * { position: absolute; height: calc(14 * var(--u1)); }
+.rk-fila .rk-pos { left: calc(10 * var(--u1)); width: calc(14 * var(--u1)); justify-content: center; }
+.rk-fila .rk-apodo { left: calc(27 * var(--u1)); width: calc(80 * var(--u1)); text-overflow: ellipsis; }
+.rk-fila .rk-pts { left: calc(110 * var(--u1)); width: calc(40 * var(--u1)); justify-content: flex-end; }
+.rk-fila { height: calc(14 * var(--u1)); }
+.rk-fila > * { top: 0; }
+.rk-tu { left: calc(8 * var(--u1)); width: calc(144 * var(--u1)); height: calc(16 * var(--u1));
+    background: url("../img/ranking/ranking-fila-tu.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; color: #181425; }
+.rk-tu > * { top: calc(1 * var(--u1)); }
+.rk-tu .rk-pos { left: calc(2 * var(--u1)); width: calc(14 * var(--u1)); justify-content: center; }
+.rk-tu .rk-apodo { left: calc(19 * var(--u1)); width: calc(80 * var(--u1)); text-overflow: ellipsis; }
+.rk-tu .rk-pts { left: calc(102 * var(--u1)); width: calc(40 * var(--u1)); justify-content: flex-end; }
+.rk .f0.rk-fila { top: calc(29 * var(--u1)); } .rk .f1.rk-fila { top: calc(46 * var(--u1)); } .rk .f2.rk-fila { top: calc(63 * var(--u1)); }
+.rk .f3.rk-fila { top: calc(80 * var(--u1)); } .rk .f4.rk-fila { top: calc(97 * var(--u1)); }
+.rk .f0.rk-tu { top: calc(28 * var(--u1)); } .rk .f1.rk-tu { top: calc(45 * var(--u1)); } .rk .f2.rk-tu { top: calc(62 * var(--u1)); }
+.rk .f3.rk-tu { top: calc(79 * var(--u1)); } .rk .f4.rk-tu { top: calc(96 * var(--u1)); }
+.rk-corona { left: calc(10 * var(--u1)); top: calc(31 * var(--u1)); width: calc(13 * var(--u1)); height: calc(9 * var(--u1));
+    background: url("../img/ranking/ranking-corona.png") 0 0 / 100% 100% no-repeat; image-rendering: pixelated; }
+.rk-pie { margin: 8px 0 0; padding: 4px 8px; max-width: calc(160 * var(--u1)); font: 8px/1.5 "Press Start 2P", system-ui, sans-serif; text-align: center; color: var(--crema); background: var(--contorno); border: 2px solid var(--madera-osc); }
+.perfil-ranking button {
+    margin-left: 8px; padding: 3px 6px; font: 7px "Press Start 2P", system-ui, sans-serif;
+    color: var(--contorno); background: var(--crema); border: 2px solid var(--contorno); cursor: pointer;
+}
+.perfil-ranking button:hover { background: var(--arena); }
+.perfil-ranking { margin-top: 6px; }
+.perfil-nota { margin-top: 6px; font-size: 7px; color: var(--gris); }
+.apodo-cuerpo { min-height: 0; }
+.apodo-cuerpo label { display: block; margin: 0 0 6px; }
+.apodo-cuerpo input {
+    width: 100%; padding: 8px; font: 10px "Press Start 2P", system-ui, sans-serif;
+    color: var(--contorno); background: #fff3d1; border: 3px solid var(--contorno);
+}
+.apodo-error { min-height: 1.9em; margin: 8px 0 0; color: var(--rojo-osc); }
+
 .creditos a { color: var(--crema); text-decoration: underline; }
 .creditos a:hover, .creditos a:focus-visible { color: var(--amarillo, #feae34); }
 .creditos {

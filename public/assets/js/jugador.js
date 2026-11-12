@@ -27,5 +27,16 @@ const Jugador = (function () {
         return enMemoria;
     }
 
-    return { id };
+    /** ¿Es un código de recuperación (UUID) válido? */
+    function valido(texto) { return UUID.test(String(texto || '').trim().toLowerCase()); }
+
+    /** Adopta el código de otro navegador (copiado de allí): conserva su apodo y sus puntos. Devuelve false si no es un UUID. */
+    function fijar(texto) {
+        if (!valido(texto)) { return false; }
+        enMemoria = String(texto).trim().toLowerCase();
+        try { localStorage.setItem(CLAVE, enMemoria); } catch (e) { /* solo dura esta página */ }
+        return true;
+    }
+
+    return { id, valido, fijar };
 })();

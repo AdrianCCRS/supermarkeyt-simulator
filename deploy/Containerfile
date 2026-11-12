@@ -18,4 +18,10 @@ RUN a2enconf d2
 COPY public/ /var/www/html/
 COPY src/ /var/www/src/
 
+# Versión de los scripts del juego: index.html los carga con ?v=VERSION para que el navegador no use JS viejo tras
+# desplegar. desplegar.sh pasa el commit actual; en un build manual vale «dev». Si el patrón no está, el build falla.
+ARG VERSION=dev
+RUN sed -i "s/var VERSION = '[^']*'/var VERSION = '${VERSION}'/" /var/www/html/index.html \
+ && grep -q "var VERSION = '${VERSION}'" /var/www/html/index.html
+
 EXPOSE 8080

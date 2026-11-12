@@ -314,7 +314,7 @@ Es más «correcto» (se despliega exactamente lo que se probó), pero añade un
 | `deploy/compose.yaml` | El script hace `up -d web`, que aplica cambios del servicio web | Para cambios en `db`, a mano y con respaldo previo |
 | `deploy/.env` (puerto, tokens) | **No** está en git | Editar en el servidor y `podman-compose up -d` |
 | Catálogo o precios (`productos_juego.sql`, `precios_cop.sql`) | Solo afecta a una base nueva | Para una base existente, un `UPDATE` o migración manual |
-| Esquema (`init.sql`) | No se aplica a una base existente | Script de migración, ver sección 7 |
+| Esquema (`init.sql`) | No se aplica a una base existente | Script de migración y `./deploy/migrar.sh` antes de desplegar, ver sección 7 |
 | Cloudflare (WAF, rate limit) | Fuera de git; se cambia en el panel | Anótalo en `SERVIDOR.md` |
 
 ## 7. Cambios en la base de datos
@@ -322,15 +322,17 @@ Es más «correcto» (se despliega exactamente lo que se probó), pero añade un
 Es la parte que no se automatiza a ciegas.
 
 1. Escribe un script **idempotente** (que se pueda repetir), como `database/migracion_multijugador.sql`.
-2. Pruébalo en CI: añade un paso que cargue el esquema antiguo y aplique la migración.
-3. En el servidor: **primero respaldo**, después la migración.
+2. Pruébalo en CI. Ya está hecho: `tests/schema_paridad.sh` carga el `init.sql` de la versión anterior (base del PR, o el commit previo en un push), aplica todas las migraciones **dos veces** y compara tablas, columnas, índices y restricciones con el `init.sql` actual. Si añades una migración, actualiza también `init.sql`; el CI falla si no dan lo mismo.
+3. En el servidor: **primero respaldo**, después la migración. `./deploy/migrar.sh` lo hace todo: respaldo (y comprueba que terminó bien), y aplica `database/migracion_*.sql` en orden. A mano sería:
 
 ```bash
 podman exec d2-db mariadb-dump -u root -p"$DB_ROOT_PASS" supermarket_simulator > ~/respaldo-$(date +%F).sql
 podman exec -i d2-db mariadb -u root -p"$DB_ROOT_PASS" supermarket_simulator < database/migracion_x.sql
 ```
 
-4. Solo después, despliega el código que usa el esquema nuevo.
+4. Solo después, despliega el código que usa el esquema nuevo con `./deploy/desplegar.sh`. El script comprueba antes que la base tenga las tablas que el código necesita; si faltan, aborta sin tocar el servicio en marcha. (Cuando una migración nueva sea imprescindible, añade su comprobación a ese bloque.)
+
+**Versión de los scripts del juego:** `index.html` carga sus JS con `?v=VERSION`. `desplegar.sh` pasa el commit actual como `--build-arg VERSION=...` y el `Containerfile` lo escribe en la imagen, así el navegador no usa JS viejo tras desplegar. No hay que editar nada a mano.
 
 Orden seguro: **migración compatible hacia atrás → desplegar código → (más adelante) limpiar lo viejo.** Así, si el código falla, el esquema sigue valiendo para la versión anterior.
 

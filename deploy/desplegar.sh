@@ -33,7 +33,18 @@ podman build -f deploy/Containerfile --build-arg VERSION="$(git rev-parse --shor
 
 echo "==> Reiniciando servicio web"
 cd deploy
-podman-compose up -d web
+# La web no guarda datos (viven en la base), así que se recrea siempre. Es necesario: si el contenedor d2-web ya existe,
+# esta versión de podman-compose falla al crearlo y arranca el VIEJO, con la imagen antigua, aunque la nueva esté
+# construida. El despliegue parecía bien y seguía sirviendo el código anterior.
+podman rm -f d2-web >/dev/null 2>&1 || true
+# podman-compose imprime el comando completo, con contraseñas y token: se tapan para poder pegar la salida sin filtrarlos
+podman-compose up -d web 2>&1 | sed -E 's/((PASS|PASSWORD|TOKEN)=)[^ ]+/\1***/g'
+
+echo "==> Comprobando que corre la imagen nueva"
+if [ "$(podman image inspect -f '{{.Id}}' localhost/d2-web:latest)" != "$(podman inspect -f '{{.Image}}' d2-web)" ]; then
+  echo "ERROR: d2-web no usa la imagen recién construida (sigue sirviendo el código anterior)." >&2
+  exit 1
+fi
 
 echo "==> Comprobando que responde"
 PORT="$(grep -E '^WEB_PORT=' .env | cut -d= -f2)"

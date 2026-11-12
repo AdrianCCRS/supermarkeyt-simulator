@@ -354,6 +354,8 @@ Orden seguro: **migración compatible hacia atrás → desplegar código → (m�
 | Deploy: `podman: command not found` | El PATH del servicio del runner no incluye Podman | Pon la ruta completa o define `PATH` en el workflow |
 | Deploy: permisos de Podman | El runner corre con otro usuario | Instalarlo con el usuario dueño de los contenedores |
 | El script termina «ERROR: no responde» | El contenedor no arrancó | `podman logs d2-web`, y haz rollback (4.3) |
+| Desplegué y el sitio sigue con el código viejo (p. ej. `ranking.php` da 404) | Se construyó la imagen nueva, pero `podman-compose` arrancó el contenedor `d2-web` **antiguo** («the container name is already in use… podman start d2-web») | `desplegar.sh` ya recrea la web y comprueba que corre la imagen nueva. En un servidor con el script viejo: `podman rm -f d2-web && cd deploy && podman-compose up -d web` |
+| Tras reiniciar el servidor, no hay juego (`Exited (0)`) | Podman sin root: `restart: always` no basta sin _linger_ | `sudo loginctl enable-linger $USER` y `systemctl --user enable --now podman-restart.service` |
 | Cambié CSS y no se ve | Caché del navegador o de Cloudflare | Ctrl+F5; en Cloudflare, Caching → Purge |
 
 ## 10. Autoevaluación

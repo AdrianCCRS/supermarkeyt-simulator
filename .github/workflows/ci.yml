@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request: 
+    branches: [main]
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-24.04
+
+    services:
+      db:
+        image: mariadb:10.11
+        env:
+          MARIADB_ROOT_PASSWORD: ci-root
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASS: ci-root
+      DB_NAME: supermarket_simulator
+      DB_NAME_TEST: supermarket_simulator_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          extensions: pdo_mysql, mbstring
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Sintaxis PHP
+        run: |
+          find src public tests -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Pruebas de JavaScript
+        run: node tests/js/run.mjs
+
+      - name: Pruebas de PHP
+        run: php tests/run.php
+
+  imagen:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir la imagen (desde la raíz del repo)
+        run: docker build -f deploy/Containerfile -t d2-web:ci .

@@ -163,38 +163,8 @@
 
     <script src="assets/js/vendor/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
     <script src="assets/js/vendor/phaser-3.90.0.min.js"></script>
-    <!-- Los scripts propios se cargan con ?v=VERSION para que el navegador no use una copia vieja tras desplegar.
-         Cambia VERSION en cada despliegue (es el único sitio) o haz que el script de despliegue la sustituya. -->
-    <script>
-    (function () {
-        var VERSION = '1';
-        var scripts = [
-        'money.js',
-        'pricing.js',
-        'venta.js',
-        'auditoria.js',
-        'cobro.js',
-        'compra.js',
-        'reloj.js',
-        'paciencia.js',
-        'perfil.js',
-        'sonido.js',
-        'nombres.js',
-        'jugador.js',
-        'api.js',
-        'ranking.js',
-        'phaser/assets.js',
-        'phaser/CheckoutScene.js',
-        'phaser/ControlJornada.js',
-        'phaser/HudScene.js',
-        'phaser/config.js',
-        'pantalla.js',
-        'ayuda.js',
-        'pausa.js',
-        'app.js'
-        ];
-        scripts.forEach(function (s) { document.write('<script src="assets/js/' + s + '?v=' + VERSION + '"><\/script>'); });
-    })();
-    </script>
+    <!-- Los scripts propios los carga cargador.js (la CSP no admite scripts en línea). El ?v= es la versión: el build de la
+         imagen lo sustituye por el commit desplegado (deploy/Containerfile), así el navegador no usa JS viejo. -->
+    <script src="assets/js/cargador.js?v=1"></script>
 </body>
 </html>

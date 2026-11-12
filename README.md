@@ -34,6 +34,7 @@ supermarket-simulator/
 ├── src/                     # Backend: Config, Http, Repositories, Services
 ├── database/                # init.sql, seed.sql, productos_juego.sql, precios_cop.sql
 ├── tests/                   # Pruebas de PHP (run.php) y de JS (js/run.mjs)
+├── deploy/                  # Containerfile, compose, configuración de Apache/PHP y desplegar.sh
 ├── tools/                   # generar_catalogo.py (catálogo, seed y SQL)
 ├── assets-src/              # Fuentes de Aseprite, scripts de dibujo y previews
 └── docs/                    # Documentación (ver índice abajo)
@@ -138,6 +139,13 @@ ALTER TABLE jornadas
 - El arte propio se dibuja con Aseprite; las fuentes (`.aseprite`), los scripts y las previews están en `assets-src/`. Reglas y medidas: [docs/ARTE.md](docs/ARTE.md).
 - Créditos y licencias: [CREDITS.md](CREDITS.md). La marca «Tiendas D2» es una parodia sin fines comerciales de una marca existente.
 
+### CI y despliegue
+
+![CI](https://github.com/AdrianCCRS/supermarkeyt-simulator/actions/workflows/ci.yml/badge.svg)
+
+Cada push y pull request a `main` ejecuta `.github/workflows/ci.yml`: sintaxis PHP, pruebas de JS y de PHP (contra MariaDB 10.11) y construcción de la imagen.
+El despliegue en el servidor es manual con un solo comando: `./deploy/desplegar.sh` (`git pull`, reconstruye la imagen, reinicia solo el contenedor web y comprueba que responde; no toca la base ni `deploy/.env`). Detalle en [docs/CICD.md](docs/CICD.md).
+
 ## Documentación
 
 | Documento | Para qué |
@@ -145,6 +153,8 @@ ALTER TABLE jornadas
 | [docs/GUIA.md](docs/GUIA.md) | Entender el proyecto: arquitectura, cómo fluye una venta, conceptos del backend, decisiones y autoevaluación |
 | [docs/PUBLICAR.md](docs/PUBLICAR.md) | Pasos para publicarlo (hosting, base, seguridad, comprobaciones) y riesgos aceptados |
 | [docs/SERVIDOR.md](docs/SERVIDOR.md) | Montarlo en tu propio servidor con Podman, paso a paso y con los conceptos explicados |
+| [docs/CICD.md](docs/CICD.md) | Pruebas y despliegue automáticos: CI con GitHub Actions, script de despliegue, rollback y cambios de base de datos |
+| [docs/SEGURIDAD.md](docs/SEGURIDAD.md) | Informe de seguridad básico del servidor publicado: hallazgos por prioridad y cómo corregirlos |
 | [docs/ARTE.md](docs/ARTE.md) | Reglas del pixel art (las usa el agente `pixel-artist`) |
 | [CREDITS.md](CREDITS.md) | Créditos y licencias |
 

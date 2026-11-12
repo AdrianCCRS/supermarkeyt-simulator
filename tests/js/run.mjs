@@ -408,5 +408,33 @@ console.log('Cobro: ' + (pruebas - n1) + ' comprobaciones');
     ok(!Jugador.fijar('nope') && Jugador.fijar('123e4567-e89b-42d3-a456-426614174000') && Jugador.id() === '123e4567-e89b-42d3-a456-426614174000', 'fijar adopta el código');
 }
 
+// 7) La CSP del sitio (public/.htaccess): script-src 'self' y style-src 'self' no admiten nada en línea.
+//    Esto ya falló una vez: un <script> en línea en index.html dejó el juego sin cargar en producción, y no se vio
+//    porque `php -S` no aplica las cabeceras de Apache. Aquí se comprueba el HTML contra la política real.
+{
+    const htaccess = fs.readFileSync(path.join(raiz, 'public/.htaccess'), 'utf8');
+    const csp = (/Content-Security-Policy\s+"([^"]+)"/.exec(htaccess) || [])[1] || '';
+    ok(/script-src 'self'(;|$)/.test(csp) && !/'unsafe-inline'/.test(csp), 'CSP: script-src es solo \'self\' (si cambia, revisa esta sección)');
+    const html = fs.readFileSync(path.join(raiz, 'public/index.html'), 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+    ok(!/<script(?![^>]*\bsrc=)[^>]*>/i.test(html), 'index.html: ningún <script> en línea (la CSP lo bloquea)');
+    ok(!/\son[a-z]+\s*=\s*["']/i.test(html), 'index.html: ningún manejador on...= en atributos (la CSP los bloquea)');
+    ok(!/\sstyle\s*=\s*["']/i.test(html) && !/<style[\s>]/i.test(html), 'index.html: ni style="" ni <style> (style-src \'self\')');
+    const externos = [...html.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)=["']([^"']+)["']/gi)].map((m) => m[1]).filter((u) => /^(https?:)?\/\//i.test(u));
+    ok(externos.length === 0, 'index.html: scripts y hojas de estilo solo del propio sitio' + (externos.length ? ' (hay: ' + externos.join(', ') + ')' : ''));
+
+    // El cargador: lo carga index.html con ?v=, y cada script que lista debe existir (si no, el juego no arranca)
+    ok(/<script src="assets\/js\/cargador\.js\?v=[^"]*"><\/script>/.test(html), 'index.html carga assets/js/cargador.js?v=VERSION (deploy/Containerfile sustituye ese valor)');
+    const cargador = fs.readFileSync(path.join(raiz, 'public/assets/js/cargador.js'), 'utf8');
+    const lista = [...(/var scripts = \[([\s\S]*?)\];/.exec(cargador) || [, ''])[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+    ok(lista.length > 10 && lista[lista.length - 1] === 'app.js', 'cargador.js: lista de scripts completa, con app.js al final');
+    ok(lista.every((f) => fs.existsSync(path.join(raiz, 'public/assets/js', f))), 'cargador.js: cada script de la lista existe' + lista.filter((f) => !fs.existsSync(path.join(raiz, 'public/assets/js', f))).map((f) => ' (falta ' + f + ')').join(''));
+    ok(!/eval\(|new Function\(/.test(cargador), 'cargador.js: sin eval');
+    // ...y la versión se lee del ?v= del propio archivo
+    const doc = []; const falso = { currentScript: { src: 'https://x.test/assets/js/cargador.js?v=abc1234' }, write: (t) => doc.push(t) };
+    vm.runInContext(cargador, vm.createContext({ document: falso }));
+    ok(doc.length === lista.length && doc.every((t) => t.includes('?v=abc1234')), 'cargador.js: pide cada script con la versión de su propia URL');
+    ok(doc[0].startsWith('<script src="assets/js/money.js') && doc[doc.length - 1].includes('app.js'), 'cargador.js: respeta el orden');
+}
+
 console.log(fallos ? '\n' + fallos + ' FALLOS de ' + pruebas : '\nTodo correcto (' + pruebas + ' comprobaciones)');
 process.exit(fallos ? 1 : 0);

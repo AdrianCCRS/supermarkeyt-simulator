@@ -4,6 +4,8 @@ FROM docker.io/library/php:8.3-apache
 
 RUN docker-php-ext-install pdo_mysql \
  && a2enmod headers \
+ # Sin mod_status: /server-status no debe existir (filtraba versión, carga y peticiones en curso)
+ && a2dismod -f status \
  # Puerto 8080 dentro del contenedor (no hace falta ningún puerto privilegiado)
  && sed -i 's/Listen 80$/Listen 8080/' /etc/apache2/ports.conf \
  && sed -i 's/<VirtualHost \*:80>/<VirtualHost *:8080>/' /etc/apache2/sites-available/000-default.conf

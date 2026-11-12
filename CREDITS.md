@@ -6,6 +6,7 @@
 | `public/assets/img/icons/lac-001.png` | Generado con IA para este proyecto | Propio | `assets-src/supermarket_pixel_art_assets.zip` |
 | `public/assets/img/tienda/*`, `public/assets/img/characters/*` (incluidas las animaciones `*-anim.png`), `icons/` (los 11 productos que faltaban) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/tienda.aseprite`, `assets-src/puesto-caja.aseprite`, `assets-src/iconos-faltantes.aseprite` |
 | `public/assets/img/caja/*` (cuerpo y teclas de la caja), `public/assets/img/banda/*` | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/caja.aseprite`, `assets-src/banda.aseprite` |
+| `public/assets/img/ranking/*` (pizarra del top 5, fila «tu posición», corona y estado vacío) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/ranking.aseprite` |
 | `public/assets/img/hud/*` (barra de jornada, botones, lámpara, iconos, panel de cierre) | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/hud.aseprite` |
 | `public/assets/img/entorno/*` (cielo, nubes, cartel, toldo, ladrillo, acera, fachadas) y `favicon.png` / `public/favicon.ico` | Diseñados con IA + Aseprite para este proyecto | Propio | `assets-src/entorno.aseprite` |
 | `public/assets/img/entorno/logo-d2*.png` («Tiendas D2») | Diseñado con IA + Aseprite. **Parodia** sin fines comerciales de una marca existente; no es la marca original | Propio | `assets-src/logo-d2.aseprite` |

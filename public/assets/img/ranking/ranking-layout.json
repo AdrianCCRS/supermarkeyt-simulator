@@ -1,0 +1,14 @@
+{
+  "panel": {"archivo": "panel-ranking.png", "ancho": 160, "alto": 120},
+  "titulo": [26, 8, 108, 14],
+  "filas": [
+    {"posicion": [10, 29, 14, 14], "apodo": [27, 29, 80, 14], "puntos": [110, 29, 40, 14], "fila": [8, 28, 144, 16]},
+    {"posicion": [10, 46, 14, 14], "apodo": [27, 46, 80, 14], "puntos": [110, 46, 40, 14], "fila": [8, 45, 144, 16]},
+    {"posicion": [10, 63, 14, 14], "apodo": [27, 63, 80, 14], "puntos": [110, 63, 40, 14], "fila": [8, 62, 144, 16]},
+    {"posicion": [10, 80, 14, 14], "apodo": [27, 80, 80, 14], "puntos": [110, 80, 40, 14], "fila": [8, 79, 144, 16]},
+    {"posicion": [10, 97, 14, 14], "apodo": [27, 97, 80, 14], "puntos": [110, 97, 40, 14], "fila": [8, 96, 144, 16]}
+  ],
+  "corona": {"archivo": "ranking-corona.png", "ancho": 13, "alto": 9, "sobre_fila_1": [10, 31]},
+  "fila_tu": {"archivo": "ranking-fila-tu.png", "ancho": 144, "alto": 16, "posicion": [2, 1, 14, 14], "apodo": [19, 1, 80, 14], "puntos": [102, 1, 40, 14], "colocar_en_panel": "x=8, y=y de la fila"},
+  "vacio": {"archivo": "ranking-vacio.png", "ancho": 160, "alto": 120, "titulo": [26, 8, 108, 14], "mensaje": [12, 62, 136, 46]}
+}
